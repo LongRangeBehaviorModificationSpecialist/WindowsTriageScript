@@ -17,11 +17,11 @@ function Get-TriageEventLogData {
             if (Test-Path -Path (Join-Path -Path $eventLogPath -ChildPath (($eventLogName -replace "[/]", "%4") + ".evtx"))) {
                 $command = { Get-WinEvent -FilterHashtable @{ Logname = $eventLogName } | Select-Object -Property * | Sort-Object -Property @{ Expression = "TimeCreated"; Descending = $true } }
                 $data = &($command)
-                Save-OutputAsCsv -Data $data -OutputFile $outputFile
+                Write-OutputToCsv -Data $data -OutputFile $outputFile
                 Show-MessageAndWriteLogEntry -File $outputFile -Level SUCCESS
             }
             else {
-                $fileNotFoundMsg = "The Event Log '$eventLogName' was not found in '$eventLogPath'"
+                $fileNotFoundMsg = "Event Log '$eventLogName' was not found in '$eventLogPath'"
                 Show-MessageAndWriteLogEntry -Message $fileNotFoundMsg -Level WARNING
                 continue
             }
@@ -39,7 +39,11 @@ function Get-TriageEventLogData {
         )
         $beginMsg = "Gathering list of available Event Log files..."
         Show-MessageAndWriteLogEntry -Message $beginMsg -Level INFO
-        $command = { Get-WinEvent -ListLog * | Where-Object { $_.IsEnabled } | Select-Object LogName, RecordCount, FileSize, LogMode, LogFilePath, LastWriteTime | Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true } }
+        $command =  { Get-WinEvent -ListLog * |
+                        Where-Object { $_.IsEnabled } |
+                        Select-Object LogName, RecordCount, FileSize, LogMode, LogFilePath, LastWriteTime |
+                        Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true }
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
         Show-MessageAndWriteLogEntry -File $outputFile -Level SUCCESS

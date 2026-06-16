@@ -3,29 +3,29 @@ function Get-ComputerDetails {
     param()
 
     Enum DomainRole {
-        StandaloneWorkstation = 0
-        MemberWorkstation = 1
-        StandaloneServer = 2
-        MemberServer = 3
-        BackupDomainController = 4
+        StandaloneWorkstation   = 0
+        MemberWorkstation       = 1
+        StandaloneServer        = 2
+        MemberServer            = 3
+        BackupDomainController  = 4
         PrimaryDomainController = 5
     }
 
     Enum LicenseStatus {
-        Unlicensed = 0
-        Licensed = 1
-        OOBGrace = 2
-        OOTGrace = 3
+        Unlicensed      = 0
+        Licensed        = 1
+        OOBGrace        = 2
+        OOTGrace        = 3
         NonGenuineGrace = 4
-        Notification = 5
-        ExtendedGrace = 6
+        Notification    = 5
+        ExtendedGrace   = 6
     }
 
     try {
-        $win32_OperatingSystem = Get-CimInstance -ClassName Win32_OperatingSystem
-        $win32_ComputerSystem = Get-CimInstance -ClassName Win32_ComputerSystem
-        $win32_BIOS = Get-CimInstance -ClassName Win32_BIOS
-        $win32_Processor = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
+        $win32_OperatingSystem    = Get-CimInstance -ClassName Win32_OperatingSystem
+        $win32_ComputerSystem     = Get-CimInstance -ClassName Win32_ComputerSystem
+        $win32_BIOS               = Get-CimInstance -ClassName Win32_BIOS
+        $win32_Processor          = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
         $softwareLicensingProduct = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" | Where-Object { $_.PartialProductKey }
 
         $dataProps = [ordered]@{
@@ -74,15 +74,15 @@ function Get-ComputerDetails {
         $dataProps["USBStorageLock"] = if ($usbStor) { $usbStor.Start } else { $null }
 
         if ($softwareLicensingProduct) {
-            $dataProps["LicenseType"] = ($softwareLicensingProduct.Description).Split(",")[1].Trim()
+            $dataProps["LicenseType"]   = ($softwareLicensingProduct.Description).Split(",")[1].Trim()
             $dataProps["LicenseStatus"] = ([LicenseStatus]$softwareLicensingProduct.LicenseStatus).ToString()
         }
         else {
-            $dataProps["LicenseType"] = $null
+            $dataProps["LicenseType"]   = $null
             $dataProps["LicenseStatus"] = $null
         }
 
-        $dataProps["BIOSInstallDate"] = $win32_BIOS.InstallDate
+        $dataProps["BIOSInstallDate"]  = $win32_BIOS.InstallDate
         $dataProps["BIOSManufacturer"] = $win32_BIOS.Manufacturer
         $dataProps["BIOSSerialNumber"] = $win32_BIOS.SerialNumber
 

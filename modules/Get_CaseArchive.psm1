@@ -6,7 +6,7 @@ function Get-CaseArchive {
     )
 
     begin {
-        $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $stopwatch   = [System.Diagnostics.Stopwatch]::StartNew()
         $makeArchive = Read-Host -Prompt "`n[?] Do you want to package the results into a .zip file? (y/n)"
     }
     process {
@@ -16,14 +16,14 @@ function Get-CaseArchive {
                 Show-MessageAndWriteLogEntry -Message $createArchiveMsg -Level INFO
 
                 $resultsFolderParent = Split-Path -Path $resultsFolder -Parent
-                $resultsFolderTitle = (Get-Item -Path $resultsFolder).Name
-                $archiveFileName = "$resultsFolderTitle.zip"
+                $resultsFolderTitle  = (Get-Item -Path $resultsFolder).Name
+                $archiveFileName     = "$resultsFolderTitle.zip"
 
                 Compress-Archive -Path $resultsFolder -DestinationPath "$resultsFolderParent\$archiveFileName" -Force
 
-                $currentExecutionTime = $stopwatch.Elapsed.TotalSeconds
+                $executionTime = $stopwatch.Elapsed.TotalSeconds
 
-                Show-MessageAndWriteLogEntry -File $archiveFileName -ExecutionTime "$currentExecutionTime seconds" -Level SUCCESS
+                Show-MessageAndWriteLogEntry -File $archiveFileName -ExecutionTime "$($executionTime) seconds" -Level SUCCESS
 
                 $stopwatch.Stop()
             }

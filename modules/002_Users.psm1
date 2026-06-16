@@ -27,7 +27,7 @@ function Get-TriageUserData {
         param(
             [string]$outputFile = "$userFolder\who_am_I.txt"
         )
-        $command = { whoami /ALL /FO LIST }
+        $command =  { whoami /ALL /FO LIST }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -37,7 +37,9 @@ function Get-TriageUserData {
         param(
             [string]$outputFile = "$userFolder\win32_user_profile.txt"
         )
-        $command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
+        $command =  { Get-CimInstance -ClassName Win32_UserProfile |
+                        Select-Object -Property *
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -47,7 +49,10 @@ function Get-TriageUserData {
         param(
             [string]$outputFile = "$userFolder\local_users.txt"
         )
-        $command = { Get-LocalUser | Select-Object -Property * | Format-List }
+        $command =  { Get-LocalUser |
+                        Select-Object -Property * |
+                        Format-List
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -55,11 +60,13 @@ function Get-TriageUserData {
 
     function Get-UserGroups {
         param(
-            [string]$outputFile = "$userFolder\user_groups.txt"
+            [string]$outputFile = "$userFolder\user_groups.csv"
         )
-        $command = { Get-WMIObject -Class Win32_Group | Select-Object -Property * }
+        $command =  { Get-CimInstance -Class Win32_Group |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $outputFile
+        Write-OutputToCsv -Data $data -OutputFile $outputFile
     }
 
 
@@ -67,7 +74,9 @@ function Get-TriageUserData {
         param(
             [string]$outputFile = "$userFolder\win32_local_logons.txt"
         )
-        $command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
+        $command =  { Get-CimInstance -ClassName Win32_LogonSession |
+                        Select-Object -Property *
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -77,7 +86,9 @@ function Get-TriageUserData {
         param(
             [string]$outputFile = "$userFolder\win32_user_account.txt"
         )
-        $command = { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
+        $command =  { Get-CimInstance -ClassName Win32_UserAccount |
+                        Select-Object -Property *
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -127,7 +138,7 @@ function Get-TriageUserData {
         )
         { Get-UserGroups } = (
             "Getting User Groups...",
-            "user_groups.txt"
+            "user_groups.csv"
         )
         { Get-Win32LocalLogons } = (
             "Getting Win32 Local Logons...",

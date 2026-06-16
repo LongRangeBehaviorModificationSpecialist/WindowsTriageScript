@@ -90,16 +90,16 @@ INSTRUCTIONS
             # Gather some basic operator information to add to the log file.
             param()
 
-            $user = Read-Host -Prompt "`n[-] Enter your name for the report"
-            $userMsg = "Operator Name entered as: $user"
+            $user    = Read-Host -Prompt "`n[-] Enter your name for the report"
+            $userMsg = "Operator Name entered as: $($user)"
             Show-MessageAndWriteLogEntry -Message $userMsg -Level INFO
 
-            $agency = Read-Host -Prompt "`n[-] Enter Agency Name"
-            $agencyMsg = "Agency Name entered as: $agency"
+            $agency    = Read-Host -Prompt "`n[-] Enter Agency Name"
+            $agencyMsg = "Agency Name entered as: $($agency)"
             Show-MessageAndWriteLogEntry -Message $agencyMsg -Level INFO
 
-            $caseNumber = Read-Host -Prompt "`n[-] Enter Case Number"
-            $caseNumberMsg = "Case Number entered as: $caseNumber"
+            $caseNumber    = Read-Host -Prompt "`n[-] Enter Case Number"
+            $caseNumberMsg = "Case Number entered as: $($caseNumber)"
             Show-MessageAndWriteLogEntry -Message $caseNumberMsg -Level INFO
         }
 
@@ -128,7 +128,7 @@ INSTRUCTIONS
                 )
                 try {
                     $subFolderPathName = Join-Path -Path $resultsFolder -ChildPath $folderName
-                    $null = New-Item -ItemType Directory -Path $subFolderPathName -Force
+                    $null              = New-Item -ItemType Directory -Path $subFolderPathName -Force
                     Test-IfExists -FolderName $subFolderPathName -Type FOLDER
                     & $action
                 }

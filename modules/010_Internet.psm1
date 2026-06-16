@@ -27,7 +27,11 @@ function Get-TriageInternetData {
         param(
             [string]$outputFile = "$internetFolder\temp_internet_files.txt"
         )
-        $command = { Get-ChildItem -Recurse -Force "$env:LOCALAPPDATA\Microsoft\Windows\Temporary Internet Files" | Select-Object Name, LastWriteTime, CreationTime, Directory | Where-Object { $_.LastWriteTime -gt ((Get-Date).AddDays(-5)) } | Sort-Object CreationTime -Desc }
+        $command =  { Get-ChildItem -Recurse -Force "$env:LOCALAPPDATA\Microsoft\Windows\Temporary Internet Files" |
+                        Select-Object Name, LastWriteTime, CreationTime, Directory |
+                        Where-Object { $_.LastWriteTime -gt ((Get-Date).AddDays(-5)) } |
+                        Sort-Object CreationTime -Desc
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -37,7 +41,11 @@ function Get-TriageInternetData {
         param(
             [string]$outputFile = "$internetFolder\stored_cookies.txt"
         )
-        $command = { Get-ChildItem -Recurse -Force "$env:APPDATA\Microsoft\Windows\cookies" | Select-Object Name | ForEach-Object { $n = $_.Name; Get-Content "$env:APPDATA\Microsoft\Windows\cookies\$n" | Select-String "/" } }
+        $command =  { Get-ChildItem -Recurse -Force "$env:APPDATA\Microsoft\Windows\cookies" |
+                        Select-Object Name |
+                        ForEach-Object { $n = $_.Name; Get-Content "$env:APPDATA\Microsoft\Windows\cookies\$n" |
+                            Select-String "/" }
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -47,7 +55,9 @@ function Get-TriageInternetData {
         param(
             [string]$outputFile = "$internetFolder\typed_urls.txt"
         )
-        $command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Internet Explorer\TypedURLs" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Internet Explorer\TypedURLs" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -57,7 +67,9 @@ function Get-TriageInternetData {
         param(
             [string]$outputFile = "$internetFolder\internet_settings.txt"
         )
-        $command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -67,7 +79,9 @@ function Get-TriageInternetData {
         param(
             [string]$outputFile = "$internetFolder\trusted_internet_domains.txt"
         )
-        $command = { Get-ChildItem "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains" | Select-Object PSChildName }
+        $command =  { Get-ChildItem "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains" |
+                        Select-Object PSChildName
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -79,18 +93,23 @@ function Get-TriageInternetData {
         )
         $sqlitePath = $binaries["SQLite3"]
         $chromeHistoryPath = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History"
+
         if ((Test-Path $chromeHistoryPath) -and (Test-Path $sqlitePath)) {
             # Copy the history file to a temporary location so it works even if Chrome is open
-            $TempHistoryPath = Join-Path -Path $TempFolder -ChildPath "ChromeHistoryCopy"
-            Copy-Item -Path $chromeHistoryPath -Destination $TempHistoryPath -Force
+            $tempHistoryPath = Join-Path -Path $tempFolder -ChildPath "Chrome_History_Copy"
+            $null            = New-Item -ItemType Directory -Name $tempHistoryPath
+            Copy-Item -Path $chromeHistoryPath -Destination $tempHistoryPath -Force
             Add-Content -Path $outputFile -Value "`nGoogle Chrome History:`n"
-            $Query = "SELECT ROW_NUMBER() OVER() AS 'row_number', datetime(last_visit_time/1000000 - 11644473600, 'unixepoch') AS LastVisit, url, title FROM urls ORDER BY last_visit_time DESC"
-            $data = & $sqlitePath $TempHistoryPath $Query
-            $command = "$sqlitePath `"$TempHistoryPath`" `"$Query`""
+
+            $query = "SELECT ROW_NUMBER() OVER() AS 'row_number', datetime(last_visit_time/1000000 - 11644473600, 'unixepoch') AS LastVisit, url, title FROM urls ORDER BY last_visit_time DESC"
+
+            $data    = & $sqlitePath $tempHistoryPath $query
+            $command = "$sqlitePath `"$tempHistoryPath`" `"$query`""
+
             Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile -Append
         }
         else {
-            Add-Content -Path $outputFile -Value "Chrome History file or sqlite3.exe not found."
+            Add-Content -Path $outputFile -Value "Chrome History file or sqlite3.exe not found." -Encoding UTF8
         }
     }
 
@@ -101,17 +120,23 @@ function Get-TriageInternetData {
         )
         $sqlitePath = $binaries["SQLite3"]
         $chromeHistoryPath = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History"
+
         if ((Test-Path $chromeHistoryPath) -and (Test-Path $sqlitePath)) {
             # Copy the history file to a temporary location so it works even if Chrome is open
-            $TempHistoryPath = Join-Path -Path $TempFolder -ChildPath "ChromeHistoryCopy"
+            $tempHistoryPath = Join-Path -Path $tempFolder -ChildPath "Chrome_History_Copy"
+            $null            = New-Item -ItemType Directory -Name $tempHistoryPath
+            Copy-Item -Path $chromeHistoryPath -Destination $tempHistoryPath -Force
             Add-Content -Path $outputFile -Value "`nChrome Download History:`n"
-            $Query = "SELECT ROW_NUMBER() OVER() AS 'row_number', id, current_path, datetime(start_time/1000000 - 11644473600, 'unixepoch') AS 'StartTime', tab_url, printf('%,d', received_bytes) AS 'ReceivedBytes', printf('%,d', total_bytes) AS 'TotalBytes' FROM downloads ORDER BY start_time DESC"
-            $data = & $sqlitePath $TempHistoryPath $Query
-            $command = "$sqlitePath `"$TempHistoryPath`" `"$Query`""
+
+            $query = "SELECT ROW_NUMBER() OVER() AS 'row_number', id, current_path, datetime(start_time/1000000 - 11644473600, 'unixepoch') AS 'StartTime', tab_url, printf('%,d', received_bytes) AS 'ReceivedBytes', printf('%,d', total_bytes) AS 'TotalBytes' FROM downloads ORDER BY start_time DESC"
+
+            $data    = & $sqlitePath $tempHistoryPath $query
+            $command = "$sqlitePath `"$tempHistoryPath`" `"$query`""
+
             Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile -Append
         }
         else {
-            Add-Content -Path $outputFile -Value "Chrome History file or sqlite3.exe not found."
+            Add-Content -Path $outputFile -Value "Chrome History file or sqlite3.exe not found." -Encoding UTF8
         }
     }
 
@@ -134,7 +159,7 @@ function Get-TriageInternetData {
                 #"Firefox" = "AppData\Roaming\Mozilla\Firefox\Profiles\*\places.sqlite"
             }
 
-            # foreach loop to make single search for each browser path
+            # Make single search for each browser path
             foreach ($browserName in $browserPaths.Keys) {
                 # Full path to chech each user for each browser path
                 $userWithBrowserPath = Join-Path -Path $fullUserPath -ChildPath $browserPaths[$browserName]
@@ -142,10 +167,13 @@ function Get-TriageInternetData {
                 # If the user have the browser path.
                 if (Test-Path $userWithBrowserPath) {
                     $analysisParentDir  = "$internetFolder\Browser_Analysis"
+                    $null               = New-Item -ItemType Directory -Force -Path $analysisParentDir
+
                     $analysisBrowserDir = "$analysisParentDir\$browserName"
-                    $null = New-Item -ItemType Directory -Force -Path $analysisParentDir
-                    $null = New-Item -ItemType Directory -Force -Path "$analysisBrowserDir"
+                    $null               = New-Item -ItemType Directory -Force -Path "$analysisBrowserDir"
+
                     Copy-Item -Path $userWithBrowserPath -Destination "$analysisBrowserDir\$name-$browserName-History-File.sqlite"
+
                     $urlOutputFile      = "$analysisBrowserDir\$name-$browserName-Url_analysis.txt"
                     $keywordOutputFile  = "$analysisBrowserDir\$name-$browserName-keyword_search_term_analysis.txt"
                     $downloadOutputFile = "$analysisBrowserDir\$name-$browserName-download-analysis.txt"
@@ -153,17 +181,19 @@ function Get-TriageInternetData {
 
                     $urlQuery   = "SELECT datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch') AS 'Visit Time UTC Form', substr(datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch', '+3 hours'), 12, 8) AS 'GMT+3 IL', substr(datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch', '+2 hours'), 12, 8) AS 'GMT+2 IL', visit_count AS 'Count', SUBSTR(title, 1, 90) AS 'URL Title', url AS 'Full URL' FROM urls ORDER BY last_visit_time DESC"
                     $urlData    = & $sqlitePath $db $urlQuery
-                    $urlCommand = "$sqlitePath '$db' '$urlQuery'"
+                    $urlCommand = "$sqlitePath `"$db`" `"$urlQuery`""
                     Write-OutputToFile -Command $urlCommand -Data $urlData -OutputFile $urlOutputFile
 
                     $keywordQuery   = "SELECT url_id AS 'Term ID', term AS 'Browser Keyword Search Term' FROM keyword_search_terms ORDER BY url_id DESC"
                     $keywordData    = & $sqlitePath $db $keywordQuery
-                    $keywordCommand = "$sqlitePath '$db' '$keywordQuery'"
+                    $keywordCommand = "$sqlitePath `"$db`" `"$keywordQuery`""
                     Write-OutputToFile -Command $keywordCommand -Data $keywordData -OutputFile $keywordOutputFile
 
                     $downloadQuery = "SELECT datetime((start_time / 1000000) - 11644473600, 'unixepoch') AS 'Download Start Time', strftime('%H:%M:S', (end_time / 1000000) - 11644473600, 'unixepoch') AS 'End Time', (ROUND(total_bytes / 1048576.0, 3) || ' MB') AS 'File Size', SUBSTR(mime_type, 1, 30) AS 'File Type', CASE WHEN opened = 1 THEN 'Yes' WHEN opened = 0 THEN 'No' ELSE opened END AS 'Opened From Browser?', current_path AS 'Path Of The Downloaded File', tab_url AS 'File Was Downloaded From This Link' FROM downloads ORDER BY start_time DESC"
+
                     $downloadData    = & $sqlitePath $db $keywordQuery
-                    $downloadCommand = "$sqlitePath '$db' '$downloadQuery'"
+                    $downloadCommand = "$sqlitePath `"$db`" `"$downloadQuery`""
+
                     Write-OutputToFile -Command $downloadCommand -Data $downloadData -OutputFile $downloadOutputFile
                 }
             }

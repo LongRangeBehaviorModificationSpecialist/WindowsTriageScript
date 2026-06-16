@@ -13,12 +13,12 @@ function Get-RunningProcesses {
     process {
         if ($runProcessCapture -eq "y") {
             try {
-                $beginMessage = "Starting Process Capture from computer: $computerName. Please wait..."
+                $beginMessage = "Starting Process Capture from computer: $($computerName). Please wait..."
                 Show-MessageAndWriteLogEntry -Message $beginMessage -Level INFO
 
                 # Make new directory to store the process .dmp files
                 $processCaptureFolder = Join-Path -Path $resultsFolder -ChildPath "Process_Capture"
-                $null = New-Item -ItemType Directory -Path $processCaptureFolder -Force
+                $null                 = New-Item -ItemType Directory -Path $processCaptureFolder -Force
 
                 Test-IfExists -FolderName $processCaptureFolder -Type FOLDER
 
@@ -27,12 +27,12 @@ function Get-RunningProcesses {
                 # 'MagnetProcessCapture-YYYYMMDD-HHMMSS'
                 Start-Process -NoNewWindow -FilePath $binaries["MagnetProcessCapture"] -ArgumentList "/saveall '$processCaptureFolder'" -Wait
 
-                $currentExecutionTime = $stopwatch.Elapsed.TotalSeconds
+                $executionTime = $stopwatch.Elapsed.TotalSeconds
 
-                $successMsg = "Process Capture completed successfully from computer: $computerName"
+                $successMsg = "Process Capture completed successfully from computer: $($computerName)"
                 Show-MessageAndWriteLogEntry -Message $successMsg -Level SUCCESS
 
-                Show-MessageAndWriteLogEntry -File $(Split-Path -Path $processCaptureFolder -Leaf) -ExecutionTime "$currentExecutionTime seconds" -Level SUCCESS
+                Show-MessageAndWriteLogEntry -File $(Split-Path -Path $processCaptureFolder -Leaf) -ExecutionTime "$($executionTime) seconds" -Level SUCCESS
 
                 $stopwatch.Stop()
             }

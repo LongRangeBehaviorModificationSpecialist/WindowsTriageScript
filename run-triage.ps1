@@ -5,6 +5,7 @@
     Compiled by: mikespon
     DLU:         31-May-2026
 #>
+
 [CmdletBinding()]
 param(
     [switch]$gui
@@ -41,20 +42,20 @@ if (-not $isAdmin) {
     Exit
 }
 
-$runDate = Get-Date -Format yyyyMMdd_HHmmss
+$runDate      = Get-Date -Format yyyyMMdd_HHmmss
 $computerName = $env:computername
-$ipv4 = (Test-Connection $computerName -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
+$ipv4         = (Test-Connection $computerName -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
 
 $mergedName = $runDate + "_" + $ipv4 + "_" + $computerName
 
 $resultsFolder = Join-Path -Path $usbDirectory -ChildPath $mergedName
-$null = New-Item -ItemType Directory -Path $resultsFolder -Force
+$null          = New-Item -ItemType Directory -Path $resultsFolder -Force
 
 $logFolder = Join-Path -Path $resultsFolder -ChildPath "Logs"
-$null = New-Item -ItemType Directory -Path $logFolder -Force
+$null      = New-Item -ItemType Directory -Path $logFolder -Force
 
 $logFile = Join-Path -Path $logFolder -ChildPath "${mergedName}_Script.log"
-$null = New-Item -ItemType File -Path $logFile -Force
+$null    = New-Item -ItemType File -Path $logFile -Force
 
 
 # Stops the script until the user presses the ENTER key so the script does not begin before the user is ready

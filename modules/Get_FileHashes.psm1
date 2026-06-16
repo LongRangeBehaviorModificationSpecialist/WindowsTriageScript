@@ -13,17 +13,17 @@ function Get-FileHashes {
     }
     process {
         try {
-            $beginMessage = "Hashing triage files for computer: $computerName"
+            $beginMessage = "Hashing triage files for computer: $($computerName)"
             Show-MessageAndWriteLogEntry -Message $beginMessage -Level INFO
 
             $hashResultsFolder  = Join-Path -Path $resultsFolder -ChildPath "Hash_Results"
-            $null = New-Item -ItemType Directory -Path $hashResultsFolder  -Force
+            $null               = New-Item -ItemType Directory -Path $hashResultsFolder  -Force
 
             Test-IfExists -FolderName $hashResultsFolder -Type FOLDER
 
             # Add the filename and filetype to the end
             $hashResultsFilePath = Join-Path -Path $hashResultsFolder -ChildPath "$((Get-Item -Path $resultsFolder).Name)_hash_values.csv"
-            $null = New-Item -ItemType File -Path $hashResultsFilePath -Force
+            $null                = New-Item -ItemType File -Path $hashResultsFilePath -Force
 
             $hashResultsFileName = [System.IO.Path]::GetFileName($hashResultsFilePath)
 
@@ -47,8 +47,7 @@ function Get-FileHashes {
                 [PSCustomObject]@{
                     DirectoryName      = $(Split-Path $_.DirectoryName -Leaf)
                     Name               = $_.Name
-                    # BaseName           = $_.BaseName
-                    # Extension          = $_.Extension
+                    Extension          = $_.Extension
                     PSIsContainer      = $_.PSIsContainer
                     SizeInKB           = [math]::Round(($_.Length / 1KB), 2)
                     Mode               = $_.Mode
@@ -71,9 +70,9 @@ function Get-FileHashes {
             # Export the results to the CSV file
             $results | Export-Csv -Path $hashResultsFilePath -NoTypeInformation -Encoding UTF8
 
-            $currentExecutionTime = $stopwatch.Elapsed.TotalSeconds
+            $executionTime = $stopwatch.Elapsed.TotalSeconds
 
-            Show-MessageAndWriteLogEntry -File $hashResultsFileName -ExecutionTime "$currentExecutionTime seconds" -Level SUCCESS
+            Show-MessageAndWriteLogEntry -File $hashResultsFileName -ExecutionTime "$($executionTime) seconds" -Level SUCCESS
 
             $stopwatch.Stop()
         }

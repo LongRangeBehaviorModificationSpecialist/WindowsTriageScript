@@ -27,9 +27,11 @@ function Get-TriagePrefetchData {
         param(
             [string]$csvOutputFile = "$prefetchFolder\prefetch_files.csv"
         )
-        $command = { Get-ChildItem -Path "C:\Windows\Prefetch\*.pf" | Select-Object -Property * }
+        $command =  { Get-ChildItem -Path "C:\Windows\Prefetch\*.pf" |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $csvOutputFile
+        Write-OutputToCsv -Data $data -OutputFile $csvOutputFile
     }
 
 
@@ -42,7 +44,11 @@ function Get-TriagePrefetchData {
             "$env:USERPROFILE\AppData\Roaming",
             "$env:USERPROFILE\AppData\Local\Temp"
         )
-        $command = { foreach ($folder in $foldersToCheck) { Get-ChildItem -Path $folder -Recurse | Sort-Object LastAccessTime -Descending | Select-Object -Property * } }
+        $command = { foreach ($folder in $foldersToCheck) {
+                        Get-ChildItem -Path $folder -Recurse |
+                        Select-Object -Property * |
+                        Sort-Object LastAccessTime -Descending
+                    } }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -53,11 +59,11 @@ function Get-TriagePrefetchData {
     # ----------------------------------
 
     $workFlow = [ordered]@{
-        { Get-PrefetchFiles }        = (
+        { Get-PrefetchFiles } = (
             "Getting Prefetch File Information...",
             "prefetch_files.csv"
         )
-        { Get-RecentExecutions }     = (
+        { Get-RecentExecutions } = (
             "Gatting Recently Executed Files...",
             "recent_executions.txt"
         )

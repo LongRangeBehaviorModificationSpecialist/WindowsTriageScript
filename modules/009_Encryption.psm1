@@ -27,7 +27,10 @@ function Get-TriageEncryptionData {
         param(
             [string]$outputFile = "$encryptionFolder\bitlocker_encryption.txt"
         )
-        $command = { Get-BitLockerVolume | Select-Object -Property * | Sort-Object MountPoint }
+        $command =  { Get-BitLockerVolume |
+                        Select-Object -Property * |
+                        Sort-Object MountPoint
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
 

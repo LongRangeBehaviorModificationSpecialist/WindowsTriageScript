@@ -27,7 +27,7 @@ function Get-TriageFirewallData {
         param(
             [string]$outputFile = "$firewallFolder\firewall_rules.txt"
         )
-        $command = { netsh advfirewall firewall show rule name=all verbose }
+        $command =  { netsh advfirewall firewall show rule name=all verbose }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -37,22 +37,31 @@ function Get-TriageFirewallData {
         param(
             [string]$outputFile = "$firewallFolder\defender_preferences.txt"
         )
-        $command = { Get-MpPreference | Select-Object -Property * }
+        $command =  { Get-MpPreference |
+                        Select-Object -Property *
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
 
     function Copy-DefenderLogs {
         param(
-            [string]$outputFile = "$firewallFolder\Defender_Log_Files"
+            [string]$outputFile = "$firewallFolder\defender_log_file_list.txt"
         )
+        Show-MessageAndWriteLogEntry -Message "Copying Windows Defender Log Files..." -Level INFO
+
         $mpOutputFolder = Join-Path -Path $firewallFolder -ChildPath "Defender_Log_Files"
         $null = New-Item -ItemType Directory -Name $mpOutputFolder -Force
+
         $mpLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support"
-        $mpListFiles = Get-ChildItem -Path $mpLogLocation -Name "*.log"
-        foreach ($file in $mpListFiles) {
+        $mpLogFiles = Get-ChildItem -Path $mpLogLocation -Name "*.log"
+
+        foreach ($file in $mpLogFiles) {
             Copy-Item -Path $file -Destination $mpOutputFolder
+            Add-Content -Path $outputFile -Value "$($file.Name)" -Encoding UTF8 -Force
         }
+
+        Show-MessageAndWriteLogEntry -File $outputFile -Level SUCCESS
     }
 
 
@@ -69,7 +78,7 @@ function Get-TriageFirewallData {
             "Parsing Windows Defender Preferences...",
             "defender_preferences.txt"
         )
-        # { Copy-DefenderLogs }      = (
+        # { Copy-DefenderLogs } = (
         #     "Copying Windows Defender Log Files...",
         #     "defender_log_files.txt"
         # )
@@ -78,4 +87,6 @@ function Get-TriageFirewallData {
     foreach ($task in $workFlow.GetEnumerator()) {
         Invoke-ScriptBlock -Action $task.key -functionMsg $task.value[0] -OutputFile $task.value[1]
     }
+
+    Copy-DefenderLogs
 }

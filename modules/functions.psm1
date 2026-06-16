@@ -57,7 +57,7 @@ function Invoke-TriageTranscript {
 }
 
 
-function Save-OutputAsCsv {
+function Write-OutputToCsv {
     param(
         [Parameter(Mandatory)]
         [object]$data,
@@ -85,7 +85,7 @@ function Show-IsAdmin {
         }
     }
     catch {
-        $errorMessage = "Execution failed during '$($MyInvocation.MyCommand.Name)'. Error: $($_.Exception.Message)"
+        $errorMessage = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
         Show-MessageAndWriteLogEntry -Message $errorMessage -Level ERROR
     }
 }
@@ -142,19 +142,19 @@ function Show-MessageAndWriteLogEntry {
     process {
         try {
             if ($level -eq "SUCCESS") {
-                $message = "Process completed successfully. Output saved to -> '$([System.IO.Path]::GetFileName($file))'"
+                $message = "Process completed successfully. Output saved to -> `"$([System.IO.Path]::GetFileName($file))`""
                 if ($executionTime) {
-                    $message += " (completed in $executionTime)."
+                    $message += " (completed in $($executionTime))."
                 }
             }
 
             $fullMessage = "$entryPrefix$message"
 
             switch ($level) {
-                "SUCCESS" { Write-Host "$fullMessage" -ForegroundColor Green }
-                "WARNING" { Write-Host "$fullMessage" -ForegroundColor Yellow }
-                "ERROR" { Write-Error "$fullMessage" -ErrorAction Continue }
-                default { Write-Host "$fullMessage" -ForegroundColor White }
+                "SUCCESS" { Write-Host "$($fullMessage)" -ForegroundColor Green }
+                "WARNING" { Write-Host "$($fullMessage)" -ForegroundColor Yellow }
+                "ERROR"   { Write-Error "$($fullMessage)" -ErrorAction Continue }
+                default   { Write-Host "$($fullMessage)" -ForegroundColor White }
             }
 
             "$fullMessage" | Out-File -FilePath $logFile -Append -Encoding utf8 -NoClobber
@@ -205,7 +205,7 @@ function Write-OutputToFile {
     }
     process {
         if (-not $data) {
-            "$commandString No data found when running this function." | Out-File -FilePath $outputFile
+            "$($commandString) No data found when running this function." | Out-File -FilePath $outputFile
         }
         else {
             if (-not $append) {
@@ -230,22 +230,22 @@ function Test-IfExists {
     if ($type -eq "FOLDER") {
         $folderNameText = $(Split-Path -Path $folderName -Leaf)
         if (Test-Path $folderName) {
-            $folderCreatedMsg = "---- '$folderNameText' ---- sub-directory created successfully."
+            $folderCreatedMsg = "---- `"$($folderNameText)`" ---- sub-directory created successfully."
             Show-MessageAndWriteLogEntry -Message $folderCreatedMsg -Level INFO
         }
         else {
-            Show-MessageAndWriteLogEntry -Message "The necessary sub-directory does not exist or could not be created -> '$folderNameText'" -Level ERROR
+            Show-MessageAndWriteLogEntry -Message "The necessary sub-directory does not exist or could not be created -> `"$($folderNameText)`"" -Level ERROR
             return
         }
     }
     if ($type -eq "FILE") {
         $fileNameText = $(Split-Path -Path $fileName -Leaf)
         if (Test-Path $fileName) {
-            $fileCreatedMsg = "The '$fileNameText' file was created successfully."
+            $fileCreatedMsg = "The `"$($fileNameText)`" file was created successfully."
             Show-MessageAndWriteLogEntry -Message $fileCreatedMsg -Level INFO
         }
         else {
-            Show-MessageAndWriteLogEntry -Message "There was an error creating the '$fileNameText' file." -Level ERROR
+            Show-MessageAndWriteLogEntry -Message "There was an error creating the `"$($fileNameText)`" file." -Level ERROR
             return
         }
     }

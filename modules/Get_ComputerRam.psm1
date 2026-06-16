@@ -13,11 +13,11 @@ function Get-ComputerRam {
     process {
         if ($runRamCapture -eq "y") {
             try {
-                $beginMessage = "Starting RAM capture from computer: $computerName. Please wait..."
+                $beginMessage = "Starting RAM capture from computer: $($computerName). Please wait..."
                 Show-MessageAndWriteLogEntry -Message $beginMessage -Level INFO
 
                 $ramCaptureFolder = Join-Path -Path $resultsFolder -ChildPath "Ram_Capture"
-                $null = New-Item -ItemType Directory -Path $ramCaptureFolder -Force
+                $null             = New-Item -ItemType Directory -Path $ramCaptureFolder -Force
 
                 Test-IfExists -FolderName $ramCaptureFolder -Type FOLDER
 
@@ -27,14 +27,13 @@ function Get-ComputerRam {
                 # Once the RAM has been acquired, move the file to the 'RAM' folder
                 Move-Item -Path .\bin\*.raw -Destination $ramCaptureFolder -Force
 
-                $ramCaptureFileName = (Get-ChildItem -Path $ramCaptureFolder -Filter "*.raw").Name
+                $ramCaptureFileName   = (Get-ChildItem -Path $ramCaptureFolder -Filter "*.raw").Name
+                $executionTime = $stopwatch.Elapsed.TotalSeconds
 
-                $currentExecutionTime = $stopwatch.Elapsed.TotalSeconds
-
-                $successMsg = "RAM capture completed successfully from computer: $computerName"
+                $successMsg = "RAM capture completed successfully from computer: $($computerName)"
                 Show-MessageAndWriteLogEntry -Message $successMsg -Level SUCCESS
 
-                Show-MessageAndWriteLogEntry -File $ramCaptureFileName -ExecutionTime "$currentExecutionTime seconds" -Level SUCCESS
+                Show-MessageAndWriteLogEntry -File $ramCaptureFileName -ExecutionTime "$($executionTime) seconds" -Level SUCCESS
 
                 $stopwatch.Stop()
             }

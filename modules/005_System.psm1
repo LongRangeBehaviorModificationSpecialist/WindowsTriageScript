@@ -5,6 +5,10 @@ function Get-TriageSystemData {
     )
 
 
+    $connectedDevicesFolder = Join-Path -Path $systemFolder -ChildPath "Connected_Devices"
+    $null = New-Item -ItemType Directory -Path $connectedDevicesFolder -Force
+
+
     function Invoke-ScriptBlock {
         param(
             [scriptblock]$action,
@@ -28,7 +32,17 @@ function Get-TriageSystemData {
             [string]$outputFile = "$systemFolder\last_50_dll_files.txt"
         )
         try {
-            $command = { Get-ChildItem -Path C:\ -Recurse -Force -Include *.dll | Select-Object Name, CreationTime, LastAccessTime, Directory | Sort-Object CreationTime -Desc | Select-Object -first 50 }
+            # Set up the .NET directory enumeration rules
+            $options = [System.IO.EnumerationOptions]::new()
+            $options.RecurseSubdirectories = $true
+            $options.AttributesToSkip = [System.IO.FileAttributes]::None
+            $options.IgnoreInaccessible = $true
+            $command =  { [System.IO.Directory]::EnumerateFiles("C:\", "*.dll", $options) |
+                            Get-Item |
+                            Select-Object -Property Name, CreationTime, LastAccessTime, Directory |
+                            Sort-Object -Property CreationTime -Descending |
+                            Select-Object -First 50
+                        }
             $data = &($command)
             Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
         }
@@ -53,17 +67,10 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\open_shares.txt"
         )
-        $command = { Get-CimInstance -ClassName Win32_Share | Select-Object Name, Path, Description }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
-    }
-
-
-    function Get-MappedDrives {
-        param(
-            [string]$outputFile = "$systemFolder\mapped_drives.txt"
-        )
-        $command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Map Network Drive MRU" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-CimInstance -ClassName Win32_Share |
+                        Select-Object -Property * |
+                        Sort-Object -Property Path
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -73,9 +80,11 @@ function Get-TriageSystemData {
         param(
             [string]$csvOutputFile = "$systemFolder\logical_disks.csv"
         )
-        $command = { Get-WMIObject -Class Win32_LogicalDisk | Select-Object -Property * }
+        $command =  { Get-CimInstance -Class Win32_LogicalDisk |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $csvOutputFile
+        Write-OutputToCsv -Data $data -OutputFile $csvOutputFile
     }
 
 
@@ -83,7 +92,10 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\logical_disks_mapped.txt"
         )
-        $command = { Get-WMIObject -Class Win32_MappedLogicalDisk | Select-Object -Property * | Format-List }
+        $command =  { Get-CimInstance -Class Win32_MappedLogicalDisk |
+                        Select-Object -Property * |
+                        Format-List
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $csvOutputFile
     }
@@ -93,7 +105,7 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\scheduled_jobs.txt"
         )
-        $command = { Get-CIMinstance -ClassName Win32_ScheduledJob }
+        $command =  { Get-CimInstance -ClassName Win32_ScheduledJob }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -102,24 +114,33 @@ function Get-TriageSystemData {
     function Get-ScheduledTasks {
         param(
             [string]$outputFile = "$systemFolder\scheduled_task_events.txt",
-            [string]$InfoOutputFile = "$systemFolder\scheduled_task_info.txt"
+            [string]$infoOutputFile = "$systemFolder\scheduled_task_info.txt"
         )
-        $command1 = { Get-ScheduledTask | Where-Object { $_.State -ne "Disabled" } | Format-List }
-        $command2 = { Get-ScheduledTask | Where-Object { $_.State -ne "Disabled" } | Get-ScheduledTaskInfo }
+        $command1 = { Get-ScheduledTask |
+                        Select-Object -Property * |
+                        Where-Object { $_.State -ne "Disabled" } |
+                        Format-List
+                    }
+        $command2 = { Get-ScheduledTask |
+                        Where-Object { $_.State -ne "Disabled" } |
+                        Get-ScheduledTaskInfo
+                    }
         $data1 = &$command1
         $data2 = &$command2
         Write-OutputToFile -Command $command1 -Data $data1 -OutputFile $outputFile
-        Write-OutputToFile -Command $command2 -Data $data2 -OutputFile $InfoOutputFile
+        Write-OutputToFile -Command $command2 -Data $data2 -OutputFile $infoOutputFile
     }
 
 
     function Get-HotFixes {
         param(
-            [string]$outputFile = "$systemFolder\hot_fixes.txt"
+            [string]$outputFile = "$systemFolder\hot_fixes.csv"
         )
-        $command = { Get-HotFix | Select-Object HotfixID, Description, InstalledBy, InstalledOn | Sort-Object InstalledOn -Descending }
+        $command =  { Get-HotFix |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+        Write-OutputToCsv -Command $command -Data $data -OutputFile $outputFile
     }
 
 
@@ -146,11 +167,13 @@ function Get-TriageSystemData {
 
     function Get-VolumeShadowCopies {
         param(
-            [string]$outputFile = "$systemFolder\volume_shadow_copies.txt"
+            [string]$outputFile = "$systemFolder\volume_shadow_copies.csv"
         )
-        $command = { Get-CimInstance -ClassName Win32_ShadowCopy | Select-Object DeviceObject, @{N = "CreationDate"; E = { $_.ConvertToDateTime($_.InstallDate) } } }
+        $command =  { Get-CimInstance -ClassName Win32_ShadowCopy |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+        Write-OutputAsCsv -Command $command -Data $data -OutputFile $outputFile
     }
 
 
@@ -158,7 +181,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\appinit_dll_key.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" | Select-Object AppInit_DLLs }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" |
+                        Select-Object AppInit_DLLs
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -168,7 +193,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\uac_group_policy.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -178,7 +205,10 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\active_setup_installs.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" | Select-Object ComponentID, Version, "(Default)", StubPath | Format-List }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" |
+                        Select-Object ComponentID, Version, "(Default)", StubPath |
+                        Format-List
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -188,7 +218,10 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\app_path_reg_keys.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\*" | Select-Object PSChildName, "(Default)" | Format-List }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\*" |
+                        Select-Object PSChildName, "(Default)" |
+                        Format-List
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -198,7 +231,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\dlls_loaded_by_explorer_shell.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" | Select-Object "(Default)", DllName }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" |
+                        Select-Object "(Default)", DllName
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -208,7 +243,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\shell_and_user_init_values.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -218,7 +255,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\svc_values.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -228,7 +267,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\desktop_address_bar.txt"
         )
-        $command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -238,7 +279,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\run_mru_key_info.txt"
         )
-        $command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RunMRU" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RunMRU" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -248,7 +291,10 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\start_menu_data.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartMenu" | Select-Object * -ExcludeProperty PS* | Format-List }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartMenu" |
+                        Select-Object * -ExcludeProperty PS* |
+                        Format-List
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -258,7 +304,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\prog_exe_by_session_manager.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" |
+                        Select-Object * -ExcludeProperty PS*
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -266,19 +314,9 @@ function Get-TriageSystemData {
 
     function Get-ShellFolderInfo {
         param(
-            [string]$outputFile = "$systemFolder\shell_folder_info.txt"
+            [string]$outputFile = "$systemFolder\shell_foldes.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" | Select-Object * -ExcludeProperty PS* }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
-    }
-
-
-    function Get-StartUpShellFolderInfo {
-        param(
-            [string]$outputFile = "$systemFolder\startup_shell_folder_info.txt"
-        )
-        $command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" | Select-Object Startup }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -288,7 +326,7 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\approved_shell_exts.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -298,7 +336,7 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\app_cert_dlls.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -308,7 +346,7 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\exe_file_shell_commands.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\exefile\shell\open\command" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Classes\exefile\shell\open\command" }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -318,7 +356,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\shell_commands.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\http\shell\open\command" | Select-Object "(Default)" }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Classes\http\shell\open\command" |
+                        Select-Object "(Default)"
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -328,7 +368,11 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\bcd_related_data.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\BCD00000000\*\*\*\*" | Select-Object Element | Select-String "exe" | Select-Object Line }
+        $command =  { Get-ItemProperty "HKLM:\BCD00000000\*\*\*\*" |
+                        Select-Object Element |
+                        Select-String "exe" |
+                        Select-Object Line
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -338,7 +382,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\loaded_lsa_packages.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" | Select-Object * -ExcludeProperty PS* }
+        $command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" |
+                        Select-Object -Property *
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -348,7 +394,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\browser_helper_objects.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" | Select-Object "(Default)" }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
+                        Select-Object "(Default)"
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -358,7 +406,9 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\browser_helper_objects_x64.txt"
         )
-        $command = { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" | Select-Object "(Default)" }
+        $command =  { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
+                        Select-Object "(Default)"
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -376,21 +426,35 @@ function Get-TriageSystemData {
 
     function Get-UsbDevices {
         param(
-            [string]$outputFile = "$systemFolder\usb_devices.txt"
+            [string]$outputFile = "$connectedDevicesFolder\usb_devices.csv"
         )
-        $command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR\*\*" | Select-Object FriendlyName, PSChildName, ContainerID }
+        $command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR\*\*" |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+        Write-OutputToCsv -Command $command -Data $data -OutputFile $outputFile
     }
 
 
     function Get-PnpDevices {
         param(
-            [string]$outputFile = "$systemFolder\pnp_devices.csv"
+            [string]$outputFile = "$connectedDevicesFolder\pnp_devices.csv"
         )
-        $command = { Get-PnpDevice }
+        $command =  { Get-PnpDevice | Select-Object -Property *}
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $outputFile
+        Write-OutputToCsv -Data $data -OutputFile $outputFile
+    }
+
+
+    function Get-PnPSignedDrivers {
+        param(
+            [string]$outputFile = "$connectedDevicesFolder\pnp_signed_drivers.csv"
+        )
+        $command =  { Get-CimInstance -ClassName Win32_PnPSignedDriver |
+                        Select-Object -Property *
+                    }
+        $data = &($command)
+        Write-OutputToCsv -Data $data -OutputFile $outputFile
     }
 
 
@@ -408,7 +472,7 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\services_file.txt"
         )
-        $command = { Get-Content $Env:windir\system32\drivers\etc\services }
+        $command =  { Get-Content $Env:windir\system32\drivers\etc\services }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -418,7 +482,7 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\audit_policy.txt"
         )
-        $command = { auditpol /get /category:* }
+        $command =  { auditpol /get /category:* }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -428,7 +492,40 @@ function Get-TriageSystemData {
         param(
             [string]$outputFile = "$systemFolder\non_valid_exe_files.txt"
         )
-        $command = { Get-ChildItem -Force -Recurse -Path "C:\Windows\*\*.exe" -File | Get-AuthenticodeSignature | Where-Object { $_.status -ne "Valid" } }
+        $command =  { Get-ChildItem -Force -Recurse -Path "C:\Windows\*\*.exe" -File |
+                        Get-AuthenticodeSignature |
+                        Where-Object { $_.status -ne "Valid" }
+                    }
+        $data = &($command)
+        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+    }
+
+
+    function Get-WindowsUpdateEtlFiles {
+        param(
+            [string]$outputFile = "$systemFolder\windows_update_log.txt"
+        )
+        $command = { Get-WindowsUpdateLog -IncludeAllLogs }
+        $data = &($command)
+        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+    }
+
+
+    function Get-WindowsFeaturesList {
+        param(
+            [string]$outputFile = "$systemFolder\windows_features_list.txt"
+        )
+        $command = { dism /online /get-features }
+        $data = &($command)
+        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+    }
+
+
+    function Get-WindowsCapabilitiesList {
+        param(
+            [string]$outputFile = "$systemFolder\windows_capabilities_list.txt"
+        )
+        $command = { dism /online /get-capabilities }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -450,10 +547,6 @@ function Get-TriageSystemData {
         { Get-OpenShares } = (
             "Getting Open Shares...",
             "open_shares.txt"
-        )
-        { Get-MappedDrives } = (
-            "Getting Mapped Drives...",
-            "mapped_drives.txt"
         )
         { Get-LogicalDisks } = (
             "Getting Logical Drives...",
@@ -528,12 +621,8 @@ function Get-TriageSystemData {
             "prog_exe_by_session_manager.txt"
         )
         { Get-ShellFolderInfo } = (
-            "Getting Shell Folder Information...",
-            "shell_folder_info.txt"
-        )
-        { Get-StartUpShellFolderInfo } = (
             "Getting User Startup Shell Folder Information...",
-            "startup_shell_folder_info.txt"
+            "shell_folders.txt"
         )
         { Get-ApprovedShellExts } = (
             "Listing Approved Shell Extensions...",
@@ -576,8 +665,12 @@ function Get-TriageSystemData {
             "usb_devices.txt"
         )
         { Get-PnpDevices } = (
-            "Listing Connected PNP Devices...",
+            "Listing Connected PnP Devices...",
             "pnp_devices.csv"
+        )
+        { Get-PnPSignedDrivers } = (
+            "Gathering Driver Info for PnP Devices...",
+            "pnp_signed_drivers.csv"
         )
         { Copy-HostFile } = (
             "Copying *hosts* File...",
@@ -594,6 +687,18 @@ function Get-TriageSystemData {
         { Get-NonValidExes } = (
             "Listing Executables Without Valid Authenticode Signature...",
             "non_valid_exe_files.txt"
+        )
+        { Get-WindowsUpdateEtlFiles } = (
+            "Gathering Windows Update logs...",
+            "windows_update_log.txt"
+        )
+        { Get-WindowsFeaturesList } = (
+            "Gathering List of Windows Features...",
+            "windows_features_list.txt"
+        )
+        { Get-WindowsCapabilitiesList }   = (
+            "Gathering List of Windows Capabilities...",
+            "windows_capabilities_list.txt"
         )
     }
 

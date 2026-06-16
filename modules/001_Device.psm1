@@ -27,7 +27,7 @@ function Get-TriageDeviceData {
         param(
             [string]$outputFile = "$deviceFolder\device_info.txt"
         )
-        $command = { Get-ComputerDetails }
+        $command =  { Get-ComputerDetails }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -45,7 +45,7 @@ function Get-TriageDeviceData {
         param(
             [string]$outputFile = "$deviceFolder\full_dir_list.txt"
         )
-        $command = { cmd.exe /c "dir C:\ /A:H /Q /R /S /X" }
+        $command =  { cmd.exe /c "dir C:\ /A:H /Q /R /S /X" }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -55,7 +55,7 @@ function Get-TriageDeviceData {
         param(
             [string]$outputFile = "$deviceFolder\computer_info.txt"
         )
-        $command = { Get-ComputerInfo }
+        $command =  { Get-ComputerInfo }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -69,7 +69,9 @@ function Get-TriageDeviceData {
         $data1 = &($command1)
         Write-OutputToFile -Command $command1 -Data $data1 -OutputFile $outputFile
 
-        $command2 = { Get-CimInstance -Class Win32_ComputerSystem | Select-Object -Property * }
+        $command2 = { Get-CimInstance -Class Win32_ComputerSystem |
+                        Select-Object -Property *
+                    }
         $data2 = &($command2)
         Write-OutputToFile -Command $command2 -Data $data2 -OutputFile $outputFile -Append
     }
@@ -79,7 +81,9 @@ function Get-TriageDeviceData {
         param(
             [string]$outputFile = "$deviceFolder\physical_memory.txt"
         )
-        $command = { Get-CimInstance -Class Win32_PhysicalMemory | Select-Object -Property * }
+        $command =  { Get-CimInstance -Class Win32_PhysicalMemory |
+                        Select-Object -Property *
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -89,7 +93,9 @@ function Get-TriageDeviceData {
         param(
             [string]$outputFile = "$deviceFolder\env_vars.txt"
         )
-        $command = { Get-ChildItem -Path env: | Format-List }
+        $command =  { Get-ChildItem -Path env: |
+                        Format-List
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -97,11 +103,13 @@ function Get-TriageDeviceData {
 
     function Get-DiskPart {
         param(
-            [string]$outputFile = "$deviceFolder\disk_partitions.txt"
+            [string]$outputFile = "$deviceFolder\disk_partitions.csv"
         )
-        $command = { Get-CimInstance -ClassName Win32_DiskPartition | Format-List }
+        $command =  { Get-CimInstance -ClassName Win32_DiskPartition |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+        Write-OutputToCsv -Command $command -Data $data -OutputFile $outputFile
     }
 
 
@@ -109,7 +117,9 @@ function Get-TriageDeviceData {
         param(
             [string]$outputFile = "$deviceFolder\user_accounts.txt"
         )
-        $command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object LocalPath, SID, @{ N = "last used"; E = { $_.ConvertToDateTime($_.lastusetime) } } | Out-File -FilePath $outputFile }
+        $command =  { Get-CimInstance -ClassName Win32_UserProfile |
+                        Select-Object LocalPath, SID, @{ N = "last used"; E = { $_.lastusetime } }
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -119,7 +129,9 @@ function Get-TriageDeviceData {
         param(
             [string]$outputFile = "$deviceFolder\logon_sessions.txt"
         )
-        $command = { Get-CimInstance -Class Win32_LogonSession | Select-Object -Property * }
+        $command =  { Get-CimInstance -Class Win32_LogonSession |
+                        Select-Object -Property *
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -127,12 +139,14 @@ function Get-TriageDeviceData {
 
     function Get-StartUpApps {
         param(
-            [string]$outputFile = "$deviceFolder\start_up_apps.txt",
-            [string]$csvOutputFile = "$deviceFolder\start_up_apps.csv"
+            [string]$csvOutputFile = "$deviceFolder\start_up_apps.csv",
+            [string]$outputFile = "$deviceFolder\start_up_apps.txt"
         )
-        $command = { Get-CimInstance -ClassName Win32_StartupCommand | Select-Object -Property * }
+        $command =  { Get-CimInstance -ClassName Win32_StartupCommand |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $csvOutputFile
+        Write-OutputToCsv -Data $data -OutputFile $csvOutputFile
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
 
         "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`n" | Out-File -FilePath $outputFile -Append

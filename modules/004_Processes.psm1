@@ -30,13 +30,16 @@ function Get-TriageProcessData {
             [string]$uniqueProcessHashOutput = "$processFolder\unique_process_hashes.csv",
             [string]$processListOutput = "$processFolder\process_list.csv"
         )
-        $command = { Get-CimInstance -ClassName Win32_Process | Select-Object -Property * | Sort-Object ParentProcessId -Desc }
+        $command =  { Get-CimInstance -ClassName Win32_Process |
+                        Select-Object -Property * |
+                        Sort-Object ParentProcessId -Descending
+                    }
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $csvOutputFile
+        Write-OutputToCsv -Data $data -OutputFile $csvOutputFile
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
         $processes_list = @()
 
-        foreach ($process in (Get-WmiObject Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId)) {
+        foreach ($process in (Get-CimInstance -Class Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId)) {
             $process_obj = New-Object PSCustomObject
             if ($null -ne $process.ExecutablePath) {
                 $hash = (Get-FileHash -Algorithm SHA256 -Path $process.ExecutablePath).Hash
@@ -58,7 +61,14 @@ function Get-TriageProcessData {
         param(
             [string]$outputFile = "$processFolder\svc_host_and_processes.txt"
         )
-        $command = { Get-CimInstance -ClassName Win32_Process | Where-Object { $_.name -eq "svchost.exe" } | Select-Object ProcessId | ForEach-Object { $p = $_.ProcessID; Get-CimInstance -ClassName Win32_Service | Where-Object { $_.processId -eq $p } | Select-Object ProcessID, Name, DisplayName, State, ServiceType, StartMode, PathName, Status } }
+        $command =  { Get-CimInstance -ClassName Win32_Process |
+                        Where-Object { $_.name -eq "svchost.exe" } |
+                        Select-Object ProcessId |
+                        ForEach-Object { $p = $_.ProcessID; Get-CimInstance -ClassName Win32_Service |
+                            Where-Object {
+                                $_.processId -eq $p } |
+                                Select-Object ProcessID, Name, DisplayName, State, ServiceType, StartMode, PathName, Status }
+                    }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -69,9 +79,12 @@ function Get-TriageProcessData {
             [string]$outputFile = "$processFolder\running_services.txt",
             [string]$csvOutputFile = "$processFolder\running_services.csv"
         )
-        $command = { Get-CimInstance -ClassName Win32_Service | Select-Object -Property * | Sort-Object State }
+        $command =  { Get-CimInstance -ClassName Win32_Service |
+                        Select-Object -Property * |
+                        Sort-Object State
+                    }
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $csvOutputFile
+        Write-OutputToCsv -Data $data -OutputFile $csvOutputFile
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
 
@@ -80,7 +93,7 @@ function Get-TriageProcessData {
         param(
             [string]$outputFile = "$processFolder\driver_query.csv"
         )
-        $command = { driverquery.exe /v /FO CSV }
+        $command =  { driverquery.exe /v /FO CSV }
         $data = &($command)
         Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
     }
@@ -90,9 +103,11 @@ function Get-TriageProcessData {
         param(
             [string]$csvOutputFile = "$processFolder\system_drivers.csv"
         )
-        $command = { Get-WMIObject -Class Win32_SystemDriver | Select-Object -Property * }
+        $command =  { Get-CimInstance -Class Win32_SystemDriver |
+                        Select-Object -Property *
+                    }
         $data = &($command)
-        Save-OutputAsCsv -Data $data -OutputFile $csvOutputFile
+        Write-OutputToCsv -Data $data -OutputFile $csvOutputFile
     }
 
 
