@@ -20,7 +20,7 @@ function Get-Gui {
     $groupbox_btn_width        = 150
     $groupbox_btn_height       = 30
     $global_font               = New-Object System.Drawing.Font($default_font_face, 8.5)
-    $textbox_font_style        = New-Object System.Drawing.Font($default_font_face, 9)
+    $txtbx_font_style          = New-Object System.Drawing.Font($default_font_face, 9)
     $default_lbl_size          = New-Object System.Drawing.Size($default_lbl_width, $default_lbl_height)
 
 
@@ -58,7 +58,7 @@ function Get-Gui {
     $txtbx_user_name             = New-Object System.Windows.Forms.TextBox
     $txtbx_user_name.Location    = New-Object System.Drawing.Point(90, 15)  # (x, y) position
     $txtbx_user_name.Width       = $default_txtbx_width
-    $txtbx_user_name.Font        = $textbox_font_style
+    $txtbx_user_name.Font        = $txtbx_font_style
     $txtbx_user_name.BackColor   = [System.Drawing.Color]::White
     $txtbx_user_name.ForeColor   = [System.Drawing.Color]::Black
     $txtbx_user_name.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
@@ -79,7 +79,7 @@ function Get-Gui {
     $txtbx_agency             = New-Object System.Windows.Forms.TextBox
     $txtbx_agency.Location    = New-Object System.Drawing.Point(90, 50)  # (x, y) position
     $txtbx_agency.Width       = $default_txtbx_width
-    $txtbx_agency.Font        = $textbox_font_style
+    $txtbx_agency.Font        = $txtbx_font_style
     $txtbx_agency.BackColor   = [System.Drawing.Color]::White
     $txtbx_agency.ForeColor   = [System.Drawing.Color]::Black
     $txtbx_agency.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
@@ -100,7 +100,7 @@ function Get-Gui {
     $txtbx_case_number             = New-Object System.Windows.Forms.TextBox
     $txtbx_case_number.Location    = New-Object System.Drawing.Point(90, 85)  # (x, y) position
     $txtbx_case_number.Width       = $default_txtbx_width
-    $txtbx_case_number.Font        = $textbox_font_style
+    $txtbx_case_number.Font        = $txtbx_font_style
     $txtbx_case_number.BackColor   = [System.Drawing.Color]::White
     $txtbx_case_number.ForeColor   = [System.Drawing.Color]::Black
     $txtbx_case_number.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
