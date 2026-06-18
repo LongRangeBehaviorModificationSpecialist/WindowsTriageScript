@@ -102,7 +102,7 @@ function Get-TriageUserData {
 
         foreach ($user_dir in $user_dirs) {
             if ($user_dir.Count -eq 0) {
-                $no_data_found_msg = "No data found when running the $($MyInvocation.MyCommand.Name) command"
+                $no_data_found_msg = "No data found when running the `"$($MyInvocation.MyCommand.Name)`" command."
                 Show-MessageAndWriteLogEntry -Msg $no_data_found_msg -Level INFO
             }
             else {

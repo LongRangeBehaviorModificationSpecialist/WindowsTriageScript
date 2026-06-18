@@ -17,7 +17,7 @@ function Get-TriageDeviceData {
             Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
         }
         catch {
-            $error_msg = "Execution failed during '$($MyInvocation.MyCommand.Name)'. Error: $($_.Exception.Message)"
+            $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
             Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
         }
     }
