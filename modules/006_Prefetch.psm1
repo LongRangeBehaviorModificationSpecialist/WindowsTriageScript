@@ -1,56 +1,57 @@
 function Get-TriagePrefetchData {
     [CmdletBinding()]
     param(
-        [string]$prefetchFolder
+        [string]$prefetch_folder
     )
 
 
     function Invoke-ScriptBlock {
         param(
             [scriptblock]$action,
-            [string]$functionMsg,
-            [string]$outputFile
+            [string]$function_msg,
+            [string]$output_file
         )
         try {
-            Show-MessageAndWriteLogEntry -Message $functionMsg -Level INFO
+            Show-MessageAndWriteLogEntry -Msg $function_msg -Level INFO
             & $action
-            Show-MessageAndWriteLogEntry -File $outputFile -Level SUCCESS
+            Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
         }
         catch {
-            $errorMessage = "Execution failed during '$($MyInvocation.MyCommand.Name)'. Error: $($_.Exception.Message)"
-            Show-MessageAndWriteLogEntry -Message $errorMessage -Level ERROR
+            $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
+            Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
         }
     }
 
 
     function Get-PrefetchFiles {
         param(
-            [string]$csvOutputFile = "$prefetchFolder\prefetch_files.csv"
+            [string]$csv_output_file = "$prefetch_folder\prefetch_files.csv"
         )
         $command =  { Get-ChildItem -Path "C:\Windows\Prefetch\*.pf" |
                         Select-Object -Property *
                     }
         $data = &($command)
-        Write-OutputToCsv -Data $data -OutputFile $csvOutputFile
+        Write-OutputToCsv -Data $data -OutputFile $csv_output_file
     }
 
 
     function Get-RecentExecutions {
         param(
-            [string]$outputFile = "$prefetchFolder\recent_executions.txt"
+            [string]$output_file = "$prefetch_folder\recent_executions.txt"
         )
-        $foldersToCheck = @(
+        $folders_to_check = @(
             "$env:TEMP",
             "$env:USERPROFILE\AppData\Roaming",
             "$env:USERPROFILE\AppData\Local\Temp"
         )
-        $command = { foreach ($folder in $foldersToCheck) {
+        $command = { foreach ($folder in $folders_to_check) {
                         Get-ChildItem -Path $folder -Recurse |
                         Select-Object -Property * |
                         Sort-Object LastAccessTime -Descending
-                    } }
+                    }
+                    }
         $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
+        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
     }
 
 
@@ -58,7 +59,7 @@ function Get-TriagePrefetchData {
     # Run the functions from the module
     # ----------------------------------
 
-    $workFlow = [ordered]@{
+    $prefetch_work_flow = [ordered]@{
         { Get-PrefetchFiles } = (
             "Getting Prefetch File Information...",
             "prefetch_files.csv"
@@ -69,7 +70,7 @@ function Get-TriagePrefetchData {
         )
     }
 
-    foreach ($task in $workFlow.GetEnumerator())
+    foreach ($task in $prefetch_work_flow.GetEnumerator())
     {
         Invoke-ScriptBlock -Action $task.key -functionMsg $task.value[0] -OutputFile $task.value[1]
     }

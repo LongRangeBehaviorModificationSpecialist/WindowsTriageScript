@@ -1,58 +1,58 @@
 function Get-TriageEventLogData {
     [CmdletBinding()]
     param(
-        [string]$eventLogFolder
+        [string]$event_log_folder
     )
 
 
     function Invoke-ScriptBlock {
         param(
-            [scriptblock]$eventLogName,
+            [scriptblock]$event_log_name,
             [string]$message,
-            [string]$outputFile = "$eventLogFolder\$outputFile"
+            [string]$output_file = "$event_log_folder\$output_file"
         )
         try {
-            Show-MessageAndWriteLogEntry -Message $message -Level INFO
-            $eventLogPath = "C:\Windows\System32\winevt\Logs"
-            if (Test-Path -Path (Join-Path -Path $eventLogPath -ChildPath (($eventLogName -replace "[/]", "%4") + ".evtx"))) {
-                $command = { Get-WinEvent -FilterHashtable @{ Logname = $eventLogName } | Select-Object -Property * | Sort-Object -Property @{ Expression = "TimeCreated"; Descending = $true } }
+            Show-MessageAndWriteLogEntry -Msg $message -Level INFO
+            $event_log_path = "C:\Windows\System32\winevt\Logs"
+            if (Test-Path -Path (Join-Path -Path $event_log_path -ChildPath (($event_log_name -replace "[/]", "%4") + ".evtx"))) {
+                $command = { Get-WinEvent -FilterHashtable @{ Logname = $event_log_name } | Select-Object -Property * | Sort-Object -Property @{ Expression = "TimeCreated"; Descending = $true } }
                 $data = &($command)
-                Write-OutputToCsv -Data $data -OutputFile $outputFile
-                Show-MessageAndWriteLogEntry -File $outputFile -Level SUCCESS
+                Write-OutputToCsv -Data $data -OutputFile $output_file
+                Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
             }
             else {
-                $fileNotFoundMsg = "Event Log '$eventLogName' was not found in '$eventLogPath'"
-                Show-MessageAndWriteLogEntry -Message $fileNotFoundMsg -Level WARNING
+                $file_not_found_msg = "Event Log `"$event_log_name`" was not found in `"$event_log_path`""
+                Show-MessageAndWriteLogEntry -Msg $file_not_found_msg -Level WARNING
                 continue
             }
         }
         catch {
-            $errorMessage = "Execution failed during '$($MyInvocation.MyCommand.Name)'. Error: $($_.Exception.Message)"
-            Show-MessageAndWriteLogEntry -Message $errorMessage -Level ERROR
+            $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
+            Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
         }
     }
 
 
     function Get-AvailableLogFiles {
         param(
-            [string]$outputFile = "$eventLogFolder\available_log_files.txt"
+            [string]$output_file = "$event_log_folder\available_log_files.txt"
         )
-        $beginMsg = "Gathering list of available Event Log files..."
-        Show-MessageAndWriteLogEntry -Message $beginMsg -Level INFO
+        $begin_msg = "Gathering list of available Event Log files..."
+        Show-MessageAndWriteLogEntry -Msg $begin_msg -Level INFO
         $command =  { Get-WinEvent -ListLog * |
                         Where-Object { $_.IsEnabled } |
                         Select-Object LogName, RecordCount, FileSize, LogMode, LogFilePath, LastWriteTime |
                         Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true }
                     }
         $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $outputFile
-        Show-MessageAndWriteLogEntry -File $outputFile -Level SUCCESS
+        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
     }
 
 
     function Get-AllEventLogs {
         param()
-        $logList = [ordered]@{
+        $event_log_list = [ordered]@{
             "Application" = (
                 "Getting 'Application' Log...",
                 "application_log.csv"
@@ -119,8 +119,8 @@ function Get-TriageEventLogData {
             )
         }
 
-        foreach ($log in $logList.GetEnumerator()) {
-            Invoke-ScriptBlock -EventLogName $log.key -Message $task.value[0] -OutputFile $task.value[1]
+        foreach ($log in $event_log_list.GetEnumerator()) {
+            Invoke-ScriptBlock -EventLogName $log.key -Msg $task.value[0] -OutputFile $task.value[1]
         }
     }
 

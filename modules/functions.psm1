@@ -1,16 +1,14 @@
-# $ModuleName = Split-Path -Path $PSCommandPath
-
 # Date Last Updated
-$dlu = "27-May-2026"
+$dlu = "18-Jun-2026"
 
 # List of file types to use in some commands
-$executableFileTypes = @(
+$executable_file_types = @(
     "*.BAT", "*.BIN", "*.CGI", "*.CMD", "*.COM", "*.DLL", "*.EXE", "*.JAR",
     "*.JOB", "*.JSE", "*.MSI", "*.PAF", "*.PS1", "*.SCR", "*.SCRIPT",
     "*.VB", "*.VBE", "*.VBS", "*.VBSCRIPT", "*.WS", "*.WSF"
 )
 
-$startTime = Get-Date
+$start_time = Get-Date
 
 $binaries = @{
     "MagnetRamCapture"     = ".\bin\MagnetRAMCapture.exe"
@@ -20,20 +18,20 @@ $binaries = @{
     "EDD"                  = ".\bin\EDDv310.exe"
 }
 
-$runDate = Get-Date -Format yyyyMMdd_HHmmss
-$computerName = $env:computername
-$ipv4 = (Test-Connection $computerName -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
+$run_date = Get-Date -Format yyyyMMdd_HHmmss
+$computer_name = $env:computername
+$ipv4 = (Test-Connection $computer_name -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
 
-$mergedName = $runDate + "_" + $ipv4 + "_" + $computerName
+$merged_name = $run_date + "_" + $ipv4 + "_" + $computer_name
 
-$resultsFolder = Join-Path -Path $(Get-Location) -ChildPath "$($runDate + "_" + $ipv4 + "_" + $computerName)"
-$null = New-Item -ItemType Directory -Path $resultsFolder -Force
+$results_folder = Join-Path -Path $(Get-Location) -ChildPath "$($run_date + "_" + $ipv4 + "_" + $computer_name)"
+$null = New-Item -ItemType Directory -Path $results_folder -Force
 
-$logFolder = Join-Path -Path $resultsFolder -ChildPath "Logs"
-$null = New-Item -ItemType Directory -Path $logFolder -Force
+$log_folder = Join-Path -Path $results_folder -ChildPath "Logs"
+$null = New-Item -ItemType Directory -Path $log_folder -Force
 
-$logFile = Join-Path -Path $logFolder -ChildPath "$($mergedName)_Script.log"
-$null = New-Item -ItemType File -Path $logFile -Force
+$log_file = Join-Path -Path $log_folder -ChildPath "$($merged_name)_Script.log"
+$null = New-Item -ItemType File -Path $log_file -Force
 
 
 # =============================
@@ -46,13 +44,13 @@ function Invoke-TriageTranscript {
 
     try {
         # Start transcript to record all of the screen output
-        $transcriptBeginMessage = "Powershell Transcript started..."
-        Start-Transcript -OutputDirectory $logFolder -IncludeInvocationHeader -NoClobber
-        Show-MessageAndWriteLogEntry -Message $transcriptBeginMessage -Level INFO
+        $transcript_begin_msg = "Powershell Transcript started..."
+        Start-Transcript -OutputDirectory $log_folder -IncludeInvocationHeader -NoClobber
+        Show-MessageAndWriteLogEntry -Msg $transcript_begin_msg -Level INFO
     }
     catch {
-        $errorMessage = "Failed to start Powershell Transcript: $($_.Exception.Message)"
-        Show-MessageAndWriteLogEntry -Message $errorMessage -Level ERROR
+        $error_msg = "Failed to start Powershell Transcript: $($_.Exception.Message)"
+        Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
     }
 }
 
@@ -63,30 +61,30 @@ function Write-OutputToCsv {
         [object]$data,
 
         [Parameter(Mandatory = $true)]
-        [string]$outputFile
+        [string]$output_file
     )
 
     process {
-        $data | Export-Csv -Path $outputFile -NoTypeInformation -Encoding UTF8
+        $data | Export-Csv -Path $output_file -NoTypeInformation -Encoding UTF8
     }
 }
 
 function Show-IsAdmin {
 
     try {
-        $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-        if ($isAdmin) {
-            $isAdminMessage = "DFIR Session starting as Administrator..."
-            Show-MessageAndWriteLogEntry -Message $isAdminMessage -Level INFO
+        $is_admin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        if ($is_admin) {
+            $is_admin_msg = "DFIR Session starting as Administrator..."
+            Show-MessageAndWriteLogEntry -Msg $is_admin_msg -Level INFO
         }
         else {
-            $nonAdminMessage = "No Administrator session detected. For the best performance run as Administrator. Not all items can be collected. DFIR Session starting..."
-            Show-MessageAndWriteLogEntry -Message $nonAdminMessage -Level INFO
+            $non_admin_msg = "No Administrator session detected. For the best performance run as Administrator. Not all items can be collected. DFIR Session starting..."
+            Show-MessageAndWriteLogEntry -Msg $non_admin_msg -Level INFO
         }
     }
     catch {
-        $errorMessage = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-        Show-MessageAndWriteLogEntry -Message $errorMessage -Level ERROR
+        $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
+        Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
     }
 }
 
@@ -95,24 +93,24 @@ function Show-Message {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $false)]
-        [string]$message,
+        [string]$msg,
 
         [Parameter(Mandatory = $false)]
-        [System.ConsoleColor]$textColor,
+        [System.ConsoleColor]$text_color,
 
-        [switch]$noTime
+        [switch]$no_time
     )
 
     # Generate timestamp if -NoTime is not provided
-    $timestamp = if (-not $noTime) { $(Get-Date -Format "[yyyy-MM-dd HH:mm:ss.fff] ") } else { "" }
+    $timestamp = if (-not $no_time) { $(Get-Date -Format "[yyyy-MM-dd HH:mm:ss.fff] ") } else { "" }
 
-    $hostArgs = @{ Object = "$timestamp$message" }
+    $host_args = @{ Object = "$timestamp$msg" }
 
     if ($PSBoundParameters.ContainsKey("TextColor")) {
-        $hostArgs["ForegroundColor"] = $textColor
+        $host_args["ForegroundColor"] = $text_color
     }
 
-    Write-Host @hostArgs
+    Write-Host @host_args
 }
 
 
@@ -120,14 +118,14 @@ function Show-MessageAndWriteLogEntry {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $false)]
-        [string]$message,
+        [string]$msg,
 
         [Parameter(Mandatory = $false)]
         [ValidateSet("INFO","WARNING","ERROR","SUCCESS")]
         [string]$level = "INFO",
 
         [Parameter(Mandatory = $false)]
-        [string]$executionTime,
+        [string]$execution_time,
 
         [Parameter(Mandatory = $false)]
         [string]$file
@@ -137,27 +135,27 @@ function Show-MessageAndWriteLogEntry {
         $timestamp = $(Get-Date -Format "[yyyy-MM-dd HH:mm:ss.fff]")
 
         # Format of the line to write to the log file
-        $entryPrefix = "$timestamp [$level] "
+        $entry_prefix = "$timestamp [$level] "
     }
     process {
         try {
             if ($level -eq "SUCCESS") {
-                $message = "Process completed successfully. Output saved to -> `"$([System.IO.Path]::GetFileName($file))`""
-                if ($executionTime) {
-                    $message += " (completed in $($executionTime))."
+                $msg = "Process completed successfully. Output saved to -> `"$([System.IO.Path]::GetFileName($file))`""
+                if ($execution_time) {
+                    $msg += " (completed in $($execution_time))."
                 }
             }
 
-            $fullMessage = "$entryPrefix$message"
+            $full_message = "$entry_prefix$msg"
 
             switch ($level) {
-                "SUCCESS" { Write-Host "$($fullMessage)" -ForegroundColor Green }
-                "WARNING" { Write-Host "$($fullMessage)" -ForegroundColor Yellow }
-                "ERROR"   { Write-Error "$($fullMessage)" -ErrorAction Continue }
-                default   { Write-Host "$($fullMessage)" -ForegroundColor White }
+                "SUCCESS" { Write-Host "$($full_message)" -ForegroundColor Green }
+                "WARNING" { Write-Host "$($full_message)" -ForegroundColor Yellow }
+                "ERROR"   { Write-Error "$($full_message)" -ErrorAction Continue }
+                default   { Write-Host "$($full_message)" -ForegroundColor White }
             }
 
-            "$fullMessage" | Out-File -FilePath $logFile -Append -Encoding utf8 -NoClobber
+            "$full_message" | Out-File -FilePath $log_file -Append -Encoding utf8 -NoClobber
         }
         catch {
             # If writing to the USB log fails, we MUST flash it to the screen so the examiner knows.
@@ -170,22 +168,22 @@ function Write-LogMessage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string]$message
+        [string]$msg
     )
 
     process {
-        if (-not $message) {
-            Write-Error -Message "The `"-message`" parameter cannot be empty."
+        if (-not $msg) {
+            Write-Error -Msg "The `"-message`" parameter cannot be empty."
             return
         }
 
         $timestamp = $(Get-Date -Format "[yyyy-MM-dd HH:mm:ss.fff] ")
-        "$timestamp$message" | Out-File -FilePath $logFile -Append -Encoding UTF8
+        "$timestamp$msg" | Out-File -FilePath $log_file -Append -Encoding UTF8
     }
 }
 
 function Write-OutputToFile {
-    # Writes the results of the commands to the $outputFile
+    # Writes the results of the commands to the $output_file
 
     param(
         [Parameter(Mandatory = $false)]
@@ -195,57 +193,57 @@ function Write-OutputToFile {
         [System.Object]$data,
 
         [Parameter(Mandatory = $true)]
-        [string]$outputFile,
+        [string]$output_file,
 
         [switch]$append
     )
 
     begin {
-        $commandString = "Command: $($command.ToString())`n`n"
+        $command_string = "Command: $($command.ToString())`n`n"
     }
     process {
         if (-not $data) {
-            "$($commandString) No data found when running this function." | Out-File -FilePath $outputFile
+            "$($command_string) No data found when running this function." | Out-File -FilePath $output_file
         }
         else {
             if (-not $append) {
-                $commandString | Out-File -FilePath $outputFile -Encoding utf8
+                $command_string | Out-File -FilePath $output_file -Encoding utf8
             }
             else {
-                $commandString | Out-File -FilePath $outputFile -Encoding utf8 -Append
+                $command_string | Out-File -FilePath $output_file -Encoding utf8 -Append
             }
-            $data | Out-File -FilePath $outputFile -Encoding utf8 -Append
+            $data | Out-File -FilePath $output_file -Encoding utf8 -Append
         }
     }
 }
 
 function Test-IfExists {
     param(
-        [string]$folderName,
-        [string]$fileName,
+        [string]$folder_name,
+        [string]$file_name,
         [ValidateSet("FOLDER","FILE")]
         [string]$type
     )
 
     if ($type -eq "FOLDER") {
-        $folderNameText = $(Split-Path -Path $folderName -Leaf)
-        if (Test-Path $folderName) {
-            $folderCreatedMsg = "---- `"$($folderNameText)`" ---- sub-directory created successfully."
-            Show-MessageAndWriteLogEntry -Message $folderCreatedMsg -Level INFO
+        $folder_name_text = $(Split-Path -Path $folder_name -Leaf)
+        if (Test-Path $folder_name) {
+            $folder_created_msg = "---- `"$($folder_name_text)`" ---- sub-directory created successfully."
+            Show-MessageAndWriteLogEntry -Msg $folder_created_msg -Level INFO
         }
         else {
-            Show-MessageAndWriteLogEntry -Message "The necessary sub-directory does not exist or could not be created -> `"$($folderNameText)`"" -Level ERROR
+            Show-MessageAndWriteLogEntry -Msg "The necessary sub-directory does not exist or could not be created -> `"$($folder_name_text)`"" -Level ERROR
             return
         }
     }
     if ($type -eq "FILE") {
-        $fileNameText = $(Split-Path -Path $fileName -Leaf)
-        if (Test-Path $fileName) {
-            $fileCreatedMsg = "The `"$($fileNameText)`" file was created successfully."
-            Show-MessageAndWriteLogEntry -Message $fileCreatedMsg -Level INFO
+        $file_name_text = $(Split-Path -Path $file_name -Leaf)
+        if (Test-Path $file_name) {
+            $file_created_msg = "The `"$($file_name_text)`" file was created successfully."
+            Show-MessageAndWriteLogEntry -Msg $file_created_msg -Level INFO
         }
         else {
-            Show-MessageAndWriteLogEntry -Message "There was an error creating the `"$($fileNameText)`" file." -Level ERROR
+            Show-MessageAndWriteLogEntry -Msg "There was an error creating the `"$($file_name_text)`" file." -Level ERROR
             return
         }
     }

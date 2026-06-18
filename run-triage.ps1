@@ -14,48 +14,48 @@ param(
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Continue
 
 # Dynamically find the USB drive root directory (avoids hardcoding drive letters)
-$usbDirectory = $PSScriptRoot
+$usb_directory = $PSScriptRoot
 
 
 # FORCE the path to convert to an absolute path string (Resolves any .\ or broken slashes)
-$manifestPath = [System.IO.Path]::GetFullPath($(Join-Path -Path $usbDirectory -ChildPath "modules\triage.psd1"))
+$manifest_path = [System.IO.Path]::GetFullPath($(Join-Path -Path $usb_directory -ChildPath "modules\triage.psd1"))
 
 # Import the Master Manifest Module
-if (Test-Path -Path $manifestPath) {
+if (Test-Path -Path $manifest_path) {
     Write-Host "`n[-] Loading forensic modules..." -ForegroundColor Cyan
-    Import-Module -Name $manifestPath -Force
-    Write-Host "[+] Module file: '$(Split-Path $manifestPath -Leaf)' was imported successfully." -ForegroundColor Green
+    Import-Module -Name $manifest_path -Force
+    Write-Host "[+] Module file: `"$(Split-Path $manifest_path -Leaf)`" was imported successfully." -ForegroundColor Green
     Write-Host "[+] Triage Suite loaded successfully!`n" -ForegroundColor Green
 }
 else {
-    Write-Error "[!] CRITICAL FILE ERROR: Cannot find the triage manifest at '$manifestPath'."
+    Write-Error "[!] CRITICAL FILE ERROR: Cannot find the triage manifest at `"$($manifest_path)`"."
     Exit
 }
 
 # Check for Administrator Rights
 # Volatile collection (Network, RAM, Handles) will fail silently without this.
-$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$is_admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-if (-not $isAdmin) {
+if (-not $is_admin) {
     Write-Error "[!] CRITICAL ACCESS ERROR: This triage tool must be run as Administrator."
     Write-Host "[!] Please close this window, open PowerShell as Administrator, and try again." -ForegroundColor Yellow
     Exit
 }
 
-$runDate      = Get-Date -Format yyyyMMdd_HHmmss
-$computerName = $env:computername
-$ipv4         = (Test-Connection $computerName -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
+$run_date      = Get-Date -Format yyyyMMdd_HHmmss
+$computer_name = $env:computername
+$ipv4          = (Test-Connection $computer_name -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
 
-$mergedName = $runDate + "_" + $ipv4 + "_" + $computerName
+$merged_name = $run_date + "_" + $ipv4 + "_" + $computer_name
 
-$resultsFolder = Join-Path -Path $usbDirectory -ChildPath $mergedName
-$null          = New-Item -ItemType Directory -Path $resultsFolder -Force
+$results_folder = Join-Path -Path $usb_directory -ChildPath $merged_name
+$null           = New-Item -ItemType Directory -Path $results_folder -Force
 
-$logFolder = Join-Path -Path $resultsFolder -ChildPath "Logs"
-$null      = New-Item -ItemType Directory -Path $logFolder -Force
+$log_folder = Join-Path -Path $results_folder -ChildPath "Logs"
+$null       = New-Item -ItemType Directory -Path $log_folder -Force
 
-$logFile = Join-Path -Path $logFolder -ChildPath "${mergedName}_Script.log"
-$null    = New-Item -ItemType File -Path $logFile -Force
+$log_file = Join-Path -Path $log_folder -ChildPath "$($merged_name)_Script.log"
+$null     = New-Item -ItemType File -Path $log_file -Force
 
 
 # Stops the script until the user presses the ENTER key so the script does not begin before the user is ready
@@ -66,5 +66,5 @@ if ($gui) {
     Get-Gui
 }
 else {
-    Invoke-DfirTriageScan -ResultsFolder $resultsFolder
+    Invoke-DfirTriageScan -ResultsFolder $results_folder
 }
