@@ -1,43 +1,43 @@
 function Get-TriageDeviceData {
     [CmdletBinding()]
-    param(
-        [string]$device_folder
+    param (
+        [string]$DeviceFolder
     )
 
 
     function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$action,
-            [string]$function_msg,
-            [string]$output_file
+        param (
+            [scriptblock]$Action,
+            [string]$FunctionMsg,
+            [string]$OutputFile
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $function_msg -Level INFO
+            Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
             & $action
-            Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
+            Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
         }
         catch {
-            $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-            Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+            $ErrorMsg = "Execution failed during `"$( $MyInvocation.MyCommand.Name )`". Error: $( $_.Exception.Message )"
+            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
         }
     }
 
 
     function Get-MiscDeviceData {
-        param(
-            [string]$output_file = "$device_folder\device_info.txt"
+        param (
+            [string]$OutputFile = "$DeviceFolder\device_info.txt"
         )
-        $command =  { Get-ComputerDetails }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Command =  { Get-ComputerDetails }
+        $Data = &($command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-SystemProcesses {
         param(
-            [string]$output_file = "$device_folder\PS_info.txt"
+            [string]$OutputFile = "$DeviceFolder\PS_info.txt"
         )
-        & $binaries["PSInfo"] -accepteula -s -h -d > $output_file 2>&1
+        & $binaries["PSInfo"] -accepteula -s -h -d > $OutputFile 2>&1
     }
 
 
