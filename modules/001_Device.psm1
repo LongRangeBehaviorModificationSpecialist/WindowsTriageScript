@@ -237,7 +237,7 @@ function Get-TriageDeviceData {
         )
     }
 
-    foreach ($task in $device_work_flow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $task.key -functionMsg $task.value[0] -OutputFile $task.value[1]
+    foreach ($Task in $DeviceWorkFlow.GetEnumerator()) {
+        Invoke-ScriptBlock -Action $Task.key -functionMsg $Task.value[0] -OutputFile $Task.value[1]
     }
 }
