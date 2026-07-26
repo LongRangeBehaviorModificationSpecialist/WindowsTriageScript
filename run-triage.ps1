@@ -18,13 +18,13 @@ $UsbDirectory = $PSScriptRoot
 
 
 # FORCE the path to convert to an absolute path string (Resolves any .\ or broken slashes)
-$ManifestPath = [System.IO.Path]::GetFullPath($(Join-Path -Path $usb_directory -ChildPath "modules\triage.psd1"))
+$ManifestPath = [System.IO.Path]::GetFullPath($(Join-Path -Path $UsbDirectory -ChildPath "modules\triage.psd1"))
 
 # Import the Master Manifest Module
 if (Test-Path -Path $ManifestPath) {
     Write-Host "`n[-] Loading forensic modules..." -ForegroundColor Cyan
     Import-Module -Name $ManifestPath -Force
-    Write-Host "[+] Module file: `"$(Split-Path $ManifestPath -Leaf)`" was imported successfully." -ForegroundColor Green
+    Write-Host "[+] Module file: `"$( Split-Path $ManifestPath -Leaf )`" was imported successfully." -ForegroundColor Green
     Write-Host "[+] Triage Suite loaded successfully!`n" -ForegroundColor Green
 }
 else {
