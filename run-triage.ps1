@@ -1,9 +1,9 @@
 <#
-    File:        Run-Triage.ps1
-    Purpose:     Automated launcher for the Forensic Triage Suite.
-    Usage:       Run from an Elevated PowerShell prompt on the target machine.
-    Compiled by: mikespon
-    DLU:         31-May-2026
+    File         :  Run-Triage.ps1
+    Purpose      :  Automated launcher for the Forensic Triage Suite.
+    Usage        :  Run from an Elevated PowerShell prompt on the target machine.
+    Compiled by  :  mikespon
+    DLU          :  31-May-2026
 #>
 
 [CmdletBinding()]
@@ -42,20 +42,20 @@ if (-not $IsAdmin) {
     Exit
 }
 
-$RunDate      = Get-Date -Format yyyyMMdd_HHmmss
-$ComputerName = $env:computername
-$Ipv4          = (Test-Connection $ComputerName -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
+$RunDate        = Get-Date -Format yyyyMMdd_HHmmss
+$ComputerName   = $env:computername
+$Ipv4           = (Test-Connection $ComputerName -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
 
-$MergedName = $RunDate + "_" + $Ipv4 + "_" + $ComputerName
+$MergedName     = $RunDate + "_" + $Ipv4 + "_" + $ComputerName
 
-$ResultsFolder = Join-Path -Path $UsbDirectory -ChildPath $MergeNname
+$ResultsFolder  = Join-Path -Path $UsbDirectory -ChildPath $MergeNname
 $null           = New-Item -ItemType Directory -Path $ResultsFolder -Force
 
-$LogFolder = Join-Path -Path $ResultsFolder -ChildPath "Logs"
-$null       = New-Item -ItemType Directory -Path $LogFolder -Force
+$LogFolder      = Join-Path -Path $ResultsFolder -ChildPath "Logs"
+$null           = New-Item -ItemType Directory -Path $LogFolder -Force
 
-$LogFile = Join-Path -Path $LogFolder -ChildPath "$( $MergedName )_Script.log"
-$null     = New-Item -ItemType File -Path $LogFile -Force
+$LogFile        = Join-Path -Path $LogFolder -ChildPath "$( $MergedName )_Script.log"
+$null           = New-Item -ItemType File -Path $LogFile -Force
 
 
 # Stops the script until the user presses the ENTER key so the script does not begin before the user is ready
