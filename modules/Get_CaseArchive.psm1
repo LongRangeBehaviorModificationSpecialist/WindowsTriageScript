@@ -23,21 +23,21 @@ function Get-CaseArchive {
 
                 $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-                Show-MessageAndWriteLogEntry -File $ArchiveFile ame -ExecutionTime "$($ExecutionTime) seconds" -Level SUCCESS
+                Show-MessageAndWriteLogEntry -File $ArchiveFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS
 
                 $Stopwatch.Stop()
             }
             catch {
-                $ErrorMsg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
+                $ErrorMsg = "Execution failed during `"$( $MyInvocation.MyCommand.Name )`". Error: $( $_.Exception.Message )"
                 Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
             }
         }
         elseif ($MakeArchive -eq "n") {
-            $DeclineMsg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
+            $DeclineMsg = "`"$( $MyInvocation.MyCommand.Name )`" DECLINED by the user."
             Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
         }
         else {
-            $NoValidOptionMsg = "No valid option entered by the user, skipping `"$($MyInvocation.MyCommand.Name)`"."
+            $NoValidOptionMsg = "No valid option entered by the user, skipping `"$( $MyInvocation.MyCommand.Name )`"."
             Show-MessageAndWriteLogEntry -Msg $NoValidOptionMsg -Level WARNING
         }
     }
