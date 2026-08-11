@@ -6,44 +6,44 @@ function Get-CaseArchive {
     )
 
     begin {
-        $stopwatch   = [System.Diagnostics.Stopwatch]::StartNew()
-        $make_archive = Read-Host -Prompt "`n[?] Do you want to package the results into a .zip file? (y/n)"
+        $Stopwatch   = [System.Diagnostics.Stopwatch]::StartNew()
+        $MakeArchive = Read-Host -Prompt "`n[?] Do you want to package the results into a .zip file? (y/n)"
     }
     process {
-        if ($make_archive -eq "y") {
+        if ($MakeArchive -eq "y") {
             try {
-                $createArchiveMsg = "Creating Case Archive file -> `"$(Split-Path $results_folder -Leaf).zip`""
-                Show-MessageAndWriteLogEntry -Msg $createArchiveMsg -Level INFO
+                $CreateArchiveMsg = "Creating Case Archive file -> `"$(Split-Path $ResultsFolder -Leaf).zip`""
+                Show-MessageAndWriteLogEntry -Msg $CreateArchiveMsg -Level INFO
 
-                $results_folder_parent = Split-Path -Path $results_folder -Parent
-                $results_folder_title  = (Get-Item -Path $results_folder).Name
-                $archive_file_name     = "$results_folder_title.zip"
+                $ResultsFolderParent = Split-Path -Path $ResultsFolder -Parent
+                $ResultsFolderTitle  = (Get-Item -Path $ResultsFolder).Name
+                $ArchiveFileName     = "$ResultsFolderTitle.zip"
 
-                Compress-Archive -Path $results_folder -DestinationPath "$results_folder_parent\$archive_file_name" -Force
+                Compress-Archive -Path $ResultsFolder -DestinationPath "$ResultsFolderParent\$ArchiveFileName" -Force
 
-                $execution_time = $stopwatch.Elapsed.TotalSeconds
+                $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-                Show-MessageAndWriteLogEntry -File $archive_file_name -ExecutionTime "$($execution_time) seconds" -Level SUCCESS
+                Show-MessageAndWriteLogEntry -File $ArchiveFile ame -ExecutionTime "$($ExecutionTime) seconds" -Level SUCCESS
 
-                $stopwatch.Stop()
+                $Stopwatch.Stop()
             }
             catch {
-                $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-                Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+                $ErrorMsg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
+                Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
             }
         }
-        elseif ($make_archive -eq "n") {
-            $decline_msg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
-            Show-MessageAndWriteLogEntry -Msg $decline_msg -Level WARNING
+        elseif ($MakeArchive -eq "n") {
+            $Decline sg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
+            Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
         }
         else {
-            $no_valid_option_msg = "No valid option entered by the user, skipping `"$($MyInvocation.MyCommand.Name)`"."
-            Show-MessageAndWriteLogEntry -Msg $no_valid_option_msg -Level WARNING
+            $NoValidOptionMsg = "No valid option entered by the user, skipping `"$($MyInvocation.MyCommand.Name)`"."
+            Show-MessageAndWriteLogEntry -Msg $NoValidOptionMsg -Level WARNING
         }
     }
     end {
-        if ($stopwatch.IsRunning) {
-            $stopwatch.Stop()
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
         }
     }
 }
