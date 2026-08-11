@@ -2,57 +2,59 @@ function Get-RunningProcesses {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$results_folder
+        [string]$ResultsFolder
     )
 
     begin {
-        $stopwatch           = [System.Diagnostics.Stopwatch]::StartNew()
-        $computer_name       = $env:computername
-        $run_process_capture = Read-Host -Prompt "`n[?] Do you want to run MAGNET ProcessCapture? (y/n)"
+        $Stopwatch         = [System.Diagnostics.Stopwatch]::StartNew()
+        $ComputerName      = $env:computername
+        $RunProcessCapture = Read-Host -Prompt "`n[?] Do you want to run MAGNET ProcessCapture? (y/n)"
     }
     process {
-        if ($run_process_capture -eq "y") {
+        if ($RunProcessCapture -eq "y") {
             try {
-                $begin_msg = "Starting Process Capture from computer: $($computer_name). Please wait..."
-                Show-MessageAndWriteLogEntry -Msg $begin_msg -Level INFO
+                $BeginMsg = "Starting Process Capture from computer: $( $ComputerName ). Please wait..."
+                Show-MessageAndWriteLogEntry -Msg $BeginMsg -Level INFO
 
                 # Make new directory to store the process .dmp files
-                $process_capture_folder = Join-Path -Path $results_folder -ChildPath "Process_Capture"
-                $null                   = New-Item -ItemType Directory -Path $process_capture_folder -Force
+                $ProcessCaptureFolder = Join-Path -Path $ResultsFolder -ChildPath "Process_Capture"
+                $null                 = New-Item -ItemType Directory -Path $ProcessCaptureFolder -Force
 
-                Test-IfExists -FolderName $process_capture_folder -Type FOLDER
+                Test-IfExists -FolderName $ProcessCaptureFolder -Type FOLDER
 
-                # Run MAGNETProcessCapture.exe from the \bin directory and save the output to the results folder.
-                # The program will create its own directory to save the results with the following naming convention:
-                # 'MagnetProcessCapture-YYYYMMDD-HHMMSS'
-                Start-Process -NoNewWindow -FilePath $binaries["MagnetProcessCapture"] -ArgumentList "/saveall '$process_capture_folder'" -Wait
+                <#
+                Run MAGNETProcessCapture.exe from the \bin directory and save the output to the results folder.
+                The program will create its own directory to save the results with the following naming convention:
+                'MagnetProcessCapture-YYYYMMDD-HHMMSS'
+                #>
+                Start-Process -NoNewWindow -FilePath $Binaries["MagnetProcessCapture"] -ArgumentList "/saveall '$ProcessCaptureFolder'" -Wait
 
-                $execution_time = $stopwatch.Elapsed.TotalSeconds
+                $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-                $success_msg = "Process Capture completed successfully from computer: $($computer_name)"
-                Show-MessageAndWriteLogEntry -Msg $success_msg -Level SUCCESS
+                $SuccessMsg = "Process Capture completed successfully from computer: $( $ComputerName )"
+                Show-MessageAndWriteLogEntry -Msg $SuccessMsg -Level SUCCESS
 
-                Show-MessageAndWriteLogEntry -File $(Split-Path -Path $process_capture_folder -Leaf) -ExecutionTime "$($execution_time) seconds" -Level SUCCESS
+                Show-MessageAndWriteLogEntry -File $(Split-Path -Path $ProcessCaptureFolder -Leaf) -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS
 
-                $stopwatch.Stop()
+                $Stopwatch.Stop()
             }
             catch {
-                $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-                Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+                $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+                Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
             }
         }
-        elseif ($run_process_capture -eq "n") {
-            $decline_msg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
-            Show-MessageAndWriteLogEntry -Msg $decline_msg -Level WARNING
+        elseif ($RunProcessCapture -eq "n") {
+            $DeclineMsg = "'$( $MyInvocation.MyCommand.Name )' DECLINED by the user."
+            Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
         }
         else {
-            $no_valid_option_msg = "No valid option entered by the user, skipping the `"$($MyInvocation.MyCommand.Name)`" function."
-            Show-MessageAndWriteLogEntry -Msg $no_valid_option_msg -Level WARNING
+            $NoValidOptionMsg = "No valid option entered by the user, skipping the '$( $MyInvocation.MyCommand.Name )' function."
+            Show-MessageAndWriteLogEntry -Msg $NoValidOptionMsg -Level WARNING
         }
     }
     end {
-        if ($stopwatch.IsRunning) {
-            $stopwatch.Stop()
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
         }
     }
 }

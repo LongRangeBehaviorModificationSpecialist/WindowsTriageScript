@@ -24,11 +24,11 @@ $ManifestPath = [System.IO.Path]::GetFullPath($(Join-Path -Path $UsbDirectory -C
 if (Test-Path -Path $ManifestPath) {
     Write-Host "`n[-] Loading forensic modules..." -ForegroundColor Cyan
     Import-Module -Name $ManifestPath -Force
-    Write-Host "[+] Module file: `"$( Split-Path $ManifestPath -Leaf )`" was imported successfully." -ForegroundColor Green
+    Write-Host "[+] Module file: '$( Split-Path $ManifestPath -Leaf )' was imported successfully." -ForegroundColor Green
     Write-Host "[+] Triage Suite loaded successfully!`n" -ForegroundColor Green
 }
 else {
-    Write-Error "[!] CRITICAL FILE ERROR: Cannot find the triage manifest at `"$( $ManifestPath )`"."
+    Write-Error "[!] CRITICAL FILE ERROR: Cannot find the triage manifest at '$ManifestPath'."
     Exit
 }
 
@@ -54,7 +54,7 @@ $null           = New-Item -ItemType Directory -Path $ResultsFolder -Force
 $LogFolder      = Join-Path -Path $ResultsFolder -ChildPath "Logs"
 $null           = New-Item -ItemType Directory -Path $LogFolder -Force
 
-$LogFile        = Join-Path -Path $LogFolder -ChildPath "$( $MergedName )_Script.log"
+$LogFile        = Join-Path -Path $LogFolder -ChildPath "$($MergedName)_Script.log"
 $null           = New-Item -ItemType File -Path $LogFile -Force
 
 
@@ -62,7 +62,7 @@ $null           = New-Item -ItemType File -Path $LogFile -Force
 Read-Host -Prompt "`nPress [ENTER] to begin Volatile and System Data collection"
 
 
-if ($gui) {
+if ($Gui) {
     Get-Gui
 }
 else {

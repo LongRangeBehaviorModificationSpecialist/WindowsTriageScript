@@ -1,67 +1,67 @@
 function Get-TriageFirewallData {
     [CmdletBinding()]
     param(
-        [string]$firewall_folder
+        [string]$FirewallFolder
     )
 
 
     function Invoke-ScriptBlock {
         param(
-            [scriptblock]$action,
-            [string]$function_msg,
-            [string]$output_file
+            [scriptblock]$Action,
+            [string]$FunctionMsg,
+            [string]$OutputFile
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $function_msg -Level INFO
-            & $action
-            Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
+            Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
+            & $Action
+            Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
         }
         catch {
-            $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-            Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
         }
     }
 
 
     function Get-FirewallRules {
         param(
-            [string]$output_file = "$firewall_folder\firewall_rules.txt"
+            [string]$OutputFile = "$FirewallFolder\firewall_rules.txt"
         )
-        $command =  { netsh advfirewall firewall show rule name=all verbose }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Command =  { netsh advfirewall firewall show rule name=all verbose }
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-DefenderExclusions {
         param(
-            [string]$output_file = "$firewall_folder\defender_preferences.txt"
+            [string]$OutputFile = "$FirewallFolder\defender_preferences.txt"
         )
-        $command =  { Get-MpPreference |
+        $Command =  { Get-MpPreference |
                         Select-Object -Property *
                     }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Copy-DefenderLogs {
         param(
-            [string]$output_file = "$firewall_folder\defender_log_file_list.txt"
+            [string]$OutputFile = "$FirewallFolder\defender_log_file_list.txt"
         )
         Show-MessageAndWriteLogEntry -Msg "Copying Windows Defender Log Files..." -Level INFO
 
-        $mp_output_folder = Join-Path -Path $firewall_folder -ChildPath "Defender_Log_Files"
-        $null             = New-Item -ItemType Directory -Name $mp_output_folder -Force
+        $MpOutputFolder = Join-Path -Path $FirewallFolder -ChildPath "Defender_Log_Files"
+        $null           = New-Item -ItemType Directory -Name $MpOutputFolder -Force
 
-        $mp_log_location = "C:\ProgramData\Microsoft\Windows Defender\Support"
-        $mp_log_files    = Get-ChildItem -Path $mp_log_location -Name "*.log"
+        $MpLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support"
+        $MpLogFiles    = Get-ChildItem -Path $MpLogLocation -Name "*.log"
 
-        foreach ($file in $mp_log_files) {
-            Copy-Item -Path $file -Destination $mp_output_folder
-            Add-Content -Path $output_file -Value "$($file.Name)" -Encoding UTF8 -Force
+        foreach ($File in $MpLogFiles) {
+            Copy-Item -Path $File -Destination $MpOutputFolder
+            Add-Content -Path $OutputFile -Value "$($File.Name)" -Encoding UTF8 -Force
         }
 
-        Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
+        Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
     }
 
 
@@ -69,7 +69,7 @@ function Get-TriageFirewallData {
     # Run the functions from the module
     # ----------------------------------
 
-    $firewall_work_flow = [ordered]@{
+    $firewallWorkFlow = [ordered]@{
         { Get-FirewallRules } = (
             "Getting Device Firewall Configuration...",
             "firewall_rules.txt"
@@ -84,8 +84,8 @@ function Get-TriageFirewallData {
         # )
     }
 
-    foreach ($task in $firewall_work_flow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $task.key -functionMsg $task.value[0] -OutputFile $task.value[1]
+    foreach ($Task in $firewallWorkFlow.GetEnumerator()) {
+        Invoke-ScriptBlock -Action $Task.key -functionMsg $Task.value[0] -OutputFile $Task.value[1]
     }
 
     Copy-DefenderLogs

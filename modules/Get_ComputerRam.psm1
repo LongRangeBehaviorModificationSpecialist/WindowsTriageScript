@@ -27,7 +27,7 @@ function Get-ComputerRam {
                 # Once the RAM has been acquired, move the file to the 'RAM' folder
                 Move-Item -Path .\bin\*.raw -Destination $RamCaptureFolder -Force
 
-                $RamCaptureFilName = (Get-ChildItem -Path $RamCaptureFolder -Filter "*.raw").Name
+                $RamCaptureFileName = (Get-ChildItem -Path $RamCaptureFolder -Filter "*.raw").Name
                 $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
                 $SuccessMsg = "RAM capture completed successfully from computer: $( $ComputerName )"

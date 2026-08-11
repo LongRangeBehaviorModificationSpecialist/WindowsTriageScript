@@ -13,11 +13,11 @@ function Get-TriageDeviceData {
         )
         try {
             Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
-            & $action
+            & $Action
             Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
         }
         catch {
-            $ErrorMsg = "Execution failed during `"$( $MyInvocation.MyCommand.Name )`". Error: $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
             Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
         }
     }
@@ -28,7 +28,7 @@ function Get-TriageDeviceData {
             [string]$OutputFile = "$DeviceFolder\device_info.txt"
         )
         $Command =  { Get-ComputerDetails }
-        $Data = &($command)
+        $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
@@ -37,148 +37,148 @@ function Get-TriageDeviceData {
         param(
             [string]$OutputFile = "$DeviceFolder\PS_info.txt"
         )
-        & $binaries["PSInfo"] -accepteula -s -h -d > $OutputFile 2>&1
+        & $Binaries["PSInfo"] -accepteula -s -h -d > $OutputFile 2>&1
     }
 
 
     function Get-FullFileList {
         param(
-            [string]$output_file = "$device_folder\full_dir_list.txt"
+            [string]$OutputFile = "$DeviceFolder\full_dir_list.txt"
         )
-        $command =  { cmd.exe /c "dir C:\ /A:H /Q /R /S /X" }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Command =  { cmd.exe /c "dir C:\ /A:H /Q /R /S /X" }
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-CurrentComputerInfo {
         param(
-            [string]$output_file = "$device_folder\computer_info.txt"
+            [string]$OutputFile = "$DeviceFolder\computer_info.txt"
         )
-        $command =  { Get-ComputerInfo }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Command =  { Get-ComputerInfo }
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-SystemInfo {
         param(
-            [string]$output_file = "$device_folder\system_info.txt"
+            [string]$OutputFile = "$DeviceFolder\system_info.txt"
         )
-        $command1 = { systeminfo /FO LIST }
-        $data1 = &($command1)
-        Write-OutputToFile -Command $command1 -Data $data1 -OutputFile $output_file
+        $Command1 = { systeminfo /FO LIST }
+        $Data1 = &($Command1)
+        Write-OutputToFile -Command $Command1 -Data $Data1 -OutputFile $OutputFile
 
-        $command2 = { Get-CimInstance -ClassName Win32_ComputerSystem |
+        $Command2 = { Get-CimInstance -ClassName Win32_ComputerSystem |
                         Select-Object -Property *
                     }
-        $data2 = &($command2)
-        Write-OutputToFile -Command $command2 -Data $data2 -OutputFile $output_file -Append
+        $Data2 = &($Command2)
+        Write-OutputToFile -Command $Command2 -Data $Data2 -OutputFile $OutputFile -Append
     }
 
 
     function Get-PhysicalMemory {
         param(
-            [string]$output_file = "$device_folder\physical_memory.txt"
+            [string]$OutputFile = "$DeviceFolder\physical_memory.txt"
         )
-        $command =  { Get-CimInstance -ClassName Win32_PhysicalMemory |
+        $Command =  { Get-CimInstance -ClassName Win32_PhysicalMemory |
                         Select-Object -Property *
                     }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-EnvVars {
         param(
-            [string]$output_file = "$device_folder\env_vars.txt"
+            [string]$OutputFile = "$DeviceFolder\env_vars.txt"
         )
-        $command =  { Get-ChildItem -Path env: |
+        $Command =  { Get-ChildItem -Path env: |
                         Format-List
                     }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-DiskPart {
         param(
-            [string]$output_file = "$device_folder\disk_partitions.csv"
+            [string]$OutputFile = "$DeviceFolder\disk_partitions.csv"
         )
-        $command =  { Get-CimInstance -ClassName Win32_DiskPartition |
+        $Command =  { Get-CimInstance -ClassName Win32_DiskPartition |
                         Select-Object -Property *
                     }
-        $data = &($command)
-        Write-OutputToCsv -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToCsv -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-UserAccounts {
         param(
-            [string]$output_file = "$device_folder\user_accounts.txt"
+            [string]$OutputFile = "$DeviceFolder\user_accounts.txt"
         )
-        $command =  { Get-CimInstance -ClassName Win32_UserProfile |
+        $Command =  { Get-CimInstance -ClassName Win32_UserProfile |
                         Select-Object LocalPath, SID, @{ N = "last used"; E = { $_.lastusetime } }
                     }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-LogonSessions {
         param(
-            [string]$output_file = "$device_folder\logon_sessions.txt"
+            [string]$OutputFile = "$DeviceFolder\logon_sessions.txt"
         )
-        $command =  { Get-CimInstance -ClassName Win32_LogonSession |
+        $Command =  { Get-CimInstance -ClassName Win32_LogonSession |
                         Select-Object -Property *
                     }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-StartUpApps {
         param(
-        [string]$output_file     = "$device_folder\start_up_apps.txt",
-        [string]$csv_output_file = "$device_folder\start_up_apps.csv"
+        [string]$OutputFile    = "$DeviceFolder\start_up_apps.txt",
+        [string]$CsvOutputFile = "$DeviceFolder\start_up_apps.csv"
         )
-        $command =  { Get-CimInstance -ClassName Win32_StartupCommand |
+        $Command =  { Get-CimInstance -ClassName Win32_StartupCommand |
                         Select-Object -Property * |
                         Sort-Object Caption
                     }
-        $data = &($command)
-        Write-OutputToCsv -Data $data -OutputFile $csv_output_file
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
 
-        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`n" | Out-File -FilePath $output_file -Append
-        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $output_file -Append
+        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`n" | Out-File -FilePath $OutputFile -Append
+        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
 
-        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run`n" | Out-File -FilePath $output_file -Append
-        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $output_file -Append
+        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run`n" | Out-File -FilePath $OutputFile -Append
+        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
 
-        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce`n" | Out-File -FilePath $output_file -Append
-        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $output_file -Append
+        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce`n" | Out-File -FilePath $OutputFile -Append
+        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
 
-        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`n" | Out-File -FilePath $output_file -Append
-        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $output_file -Append
+        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`n" | Out-File -FilePath $OutputFile -Append
+        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
 
-        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run`n" | Out-File -FilePath $output_file -Append
-        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $output_file -Append
+        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run`n" | Out-File -FilePath $OutputFile -Append
+        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
 
-        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce`n" | Out-File -FilePath $output_file -Append
-        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $output_file -Append
+        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce`n" | Out-File -FilePath $OutputFile -Append
+        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
     }
 
 
     function Get-MotherboardInfo {
         param(
-            [string]$output_file = "$device_folder\motherboard.txt"
+            [string]$OutputFile = "$DeviceFolder\motherboard.txt"
         )
-        $command =  { Get-CimInstance -ClassName Win32_BaseBoard |
+        $Command =  { Get-CimInstance -ClassName Win32_BaseBoard |
                         Select-Object -Property *
                     }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
@@ -186,7 +186,7 @@ function Get-TriageDeviceData {
     # Run the functions from the module
     # ----------------------------------
 
-    $device_work_flow = [ordered]@{
+    $DeviceWorkFlow = [ordered]@{
         { Get-MiscDeviceData } = (
             "Gathering Overall Device Information...",
             "device_info.txt"

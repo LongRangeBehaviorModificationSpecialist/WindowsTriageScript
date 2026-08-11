@@ -9,7 +9,7 @@
 function Get-LinkFiles {
 
     param(
-        [string]$output_file = "$system_folder\link_files.txt"
+        [string]$OutputFile = "$SystemFolder\link_files.txt"
     )
 
     try {
@@ -19,14 +19,14 @@ function Get-LinkFiles {
         Show-Message -Msg $Msg
 
         $Command = { Get-CimInstance -ClassName Win32_ShortcutFile | Select-Object FileName, Caption, @{N = "CreationDate"; E = { $_.ConvertToDateTime($_.CreationDate) } }, @{N = "LastAccessed"; E = { $_.ConvertToDateTime($_.LastAccessed) } }, @{N = "LastModified"; E = { $_.ConvertToDateTime($_.LastModified) } }, Target | Where-Object { $_.lastModified -gt ((Get-Date).AddDays(-20)) } | Sort-Object LastModified -Descending }
-        $data = &($command)
+        $Data = &($Command)
 
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $output_file
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
 
-        Show-OutputSavedMsgAndWriteLogEntry -File $output_file -FuncName $FuncName -LineNumber $(Get-LineNum)
+        Show-OutputSavedMsgAndWriteLogEntry -File $OutputFile -FuncName $FuncName -LineNumber $(Get-LineNum)
     }
     catch {
-        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $($_.Exception.Message)" -ErrorMsg
+        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $( $_.Exception.Message )" -ErrorMsg
     }
 }
 
@@ -34,7 +34,7 @@ function Get-LinkFiles {
 function Get-CompressedFiles {
 
     param(
-        [string]$output_file = "$system_folder\compressed_files.txt"
+        [string]$OutputFile = "$SystemFolder\compressed_files.txt"
     )
 
     try {
@@ -43,15 +43,15 @@ function Get-CompressedFiles {
 
         Show-Message -Msg $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -Include $executable_file_types | Where-Object { $_.Attributes -band [IO.FileAttributes]::Compressed } }
-        $data = &($command)
+        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -Include $ExecutableFileTypes | Where-Object { $_.Attributes -band [IO.FileAttributes]::Compressed } }
+        $Data = &($Command)
 
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $output_file
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
 
-        Show-OutputSavedMsgAndWriteLogEntry -File $output_file -FuncName $FuncName -LineNumber $(Get-LineNum)
+        Show-OutputSavedMsgAndWriteLogEntry -File $OutputFile -FuncName $FuncName -LineNumber $(Get-LineNum)
     }
     catch {
-        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $($_.Exception.Message)" -ErrorMsg
+        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $( $_.Exception.Message )" -ErrorMsg
     }
 }
 
@@ -59,7 +59,7 @@ function Get-CompressedFiles {
 function Get-EncryptedFiles {
 
     param(
-        [string]$output_file = "$system_folder\encrypted_files.txt"
+        [string]$OutputFile = "$SystemFolder\encrypted_files.txt"
     )
 
     try {
@@ -68,15 +68,15 @@ function Get-EncryptedFiles {
 
         Show-Message -Msg $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -Include $executable_file_types | Where-Object { $_.Attributes -band [IO.FileAttributes]::Encrypted } }
-        $data = &($command)
+        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -Include $ExecutableFileTypes | Where-Object { $_.Attributes -band [IO.FileAttributes]::Encrypted } }
+        $Data = &($Command)
 
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $output_file
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
 
-        Show-OutputSavedMsgAndWriteLogEntry -File $output_file -FuncName $FuncName -LineNumber $(Get-LineNum)
+        Show-OutputSavedMsgAndWriteLogEntry -File $OutputFile -FuncName $FuncName -LineNumber $(Get-LineNum)
     }
     catch {
-        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $($_.Exception.Message)" -ErrorMsg
+        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $( $_.Exception.Message )" -ErrorMsg
     }
 }
 
@@ -84,7 +84,7 @@ function Get-EncryptedFiles {
 function Get-TimelineOfExecutables {
 
     param(
-        [string]$output_file = "$system_folder\timeline_of_executables.txt"
+        [string]$OutputFile = "$SystemFolder\timeline_of_executables.txt"
     )
 
     try {
@@ -93,15 +93,15 @@ function Get-TimelineOfExecutables {
 
         Show-Message -Msg $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -include $executable_file_types | Where-Object { -Not $_.PSIsContainer -and $_.LastWriteTime -gt ((Get-Date).AddDays(-10)) } | Select-Object FullName, LastWriteTime, @{N = "Owner"; E = { ($_ | Get-ACL).Owner } } | Sort-Object LastWriteTime -Desc }
-        $data = &($command)
+        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -include $ExecutableFileTypes | Where-Object { -Not $_.PSIsContainer -and $_.LastWriteTime -gt ((Get-Date).AddDays(-10)) } | Select-Object FullName, LastWriteTime, @{N = "Owner"; E = { ($_ | Get-ACL).Owner } } | Sort-Object LastWriteTime -Desc }
+        $Data = &($Command)
 
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $output_file
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
 
-        Show-OutputSavedMsgAndWriteLogEntry -File $output_file -FuncName $FuncName -LineNumber $(Get-LineNum)
+        Show-OutputSavedMsgAndWriteLogEntry -File $OutputFile -FuncName $FuncName -LineNumber $(Get-LineNum)
     }
     catch {
-        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $($_.Exception.Message)" -ErrorMsg
+        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $( $_.Exception.Message )" -ErrorMsg
     }
 }
 
@@ -109,7 +109,7 @@ function Get-TimelineOfExecutables {
 function Get-DownloadedExecutables {
 
     param(
-        [string]$output_file = "$system_folder\downloaded_executables.txt"
+        [string]$OutputFile = "$SystemFolder\downloaded_executables.txt"
     )
 
     try {
@@ -118,14 +118,14 @@ function Get-DownloadedExecutables {
 
         Show-Message -Msg $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -include $executable_file_types | ForEach-Object { $P = $_.FullName; Get-Item $P -Stream * } | Where-Object { $_.Stream -match "Zone.Identifier" } | Select-Object filename, stream, @{ N = "LastWriteTime"; E = { (Get-ChildItem $P).LastWriteTime } } }
-        $data = &($command)
+        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -include $ExecutableFileTypes | ForEach-Object { $P = $_.FullName; Get-Item $P -Stream * } | Where-Object { $_.Stream -match "Zone.Identifier" } | Select-Object filename, stream, @{ N = "LastWriteTime"; E = { (Get-ChildItem $P).LastWriteTime } } }
+        $Data = &($Command)
 
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $output_file
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
 
-        Show-OutputSavedMsgAndWriteLogEntry -File $output_file -FuncName $FuncName -LineNumber $(Get-LineNum)
+        Show-OutputSavedMsgAndWriteLogEntry -File $OutputFile -FuncName $FuncName -LineNumber $(Get-LineNum)
     }
     catch {
-        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $($_.Exception.Message)" -ErrorMsg
+        Show-WarningMsgAndWriteLogEntry -FuncName $FuncName -LineNumber $(Get-LineNum) -Msg "An error occured while running this function: $( $_.Exception.Message )" -ErrorMsg
     }
 }

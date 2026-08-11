@@ -1,135 +1,135 @@
 function Get-TriageProcessData {
     [CmdletBinding()]
     param(
-        [string]$process_folder
+        [string]$ProcessFolder
     )
 
 
     function Invoke-ScriptBlock {
         param(
-            [scriptblock]$action,
-            [string]$function_msg,
-            [string]$output_file
+            [scriptblock]$Action,
+            [string]$FunctionMsg,
+            [string]$OutputFile
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $function_msg -Level INFO
-            & $action
-            Show-MessageAndWriteLogEntry -File $output_file -Level SUCCESS
+            Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
+            & $Action
+            Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
         }
         catch {
-            $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-            Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
         }
     }
 
 
     function Get-RunningProcessList {
         param(
-            [string]$output_file                = "$process_folder\running_processes.txt",
-            [string]$csv_output_file            = "$process_folder\running_processes.csv",
-            [string]$unique_process_hash_output = "$process_folder\unique_process_hashes.csv",
-            [string]$process_list_output        = "$process_folder\process_list.csv"
+            [string]$OutputFile              = "$ProcessFolder\running_processes.txt",
+            [string]$CsvOutputFile           = "$ProcessFolder\running_processes.csv",
+            [string]$UniqueProcessHashOutput = "$ProcessFolder\unique_process_hashes.csv",
+            [string]$ProcessListOutput       = "$ProcessFolder\process_list.csv"
         )
-        $command =  { Get-CimInstance -ClassName Win32_Process |
+        $Command =  { Get-CimInstance -ClassName Win32_Process |
                         Select-Object -Property * |
                         Sort-Object ParentProcessId -Descending
                     }
-        $data = &($command)
-        Write-OutputToCsv -Data $data -OutputFile $csv_output_file
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
-        $processes_list = @()
+        $Data = &($Command)
+        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        $ProcessList = @()
 
-        foreach ($process in (Get-CimInstance -ClassName Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId)) {
-            $process_obj = New-Object PSCustomObject
-            if ($null -ne $process.ExecutablePath) {
-                $hash = (Get-FileHash -Algorithm SHA256 -Path $process.ExecutablePath).Hash
-                $process_obj | Add-Member -NotePropertyName Proc_Hash -NotePropertyValue $hash
-                $process_obj | Add-Member -NotePropertyName Proc_Name -NotePropertyValue $process.Name
-                $process_obj | Add-Member -NotePropertyName Proc_Path -NotePropertyValue $process.ExecutablePath
-                $process_obj | Add-Member -NotePropertyName Proc_CommandLine -NotePropertyValue $process.CommandLine
-                $process_obj | Add-Member -NotePropertyName Proc_ParentProcessId -NotePropertyValue $process.ParentProcessId
-                $process_obj | Add-Member -NotePropertyName Proc_ProcessId -NotePropertyValue $process.ProcessId
-                $processes_list += $process_obj
+        foreach ($Process in (Get-CimInstance -ClassName Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId)) {
+            $ProcessObject = New-Object PSCustomObject
+            if ($null -ne $Process.ExecutablePath) {
+                $Hash = (Get-FileHash -Algorithm SHA256 -Path $Process.ExecutablePath).Hash
+                $ProcessObject | Add-Member -NotePropertyName Proc_Hash -NotePropertyValue $Hash
+                $ProcessObject | Add-Member -NotePropertyName Proc_Name -NotePropertyValue $Process.Name
+                $ProcessObject | Add-Member -NotePropertyName Proc_Path -NotePropertyValue $Process.ExecutablePath
+                $ProcessObject | Add-Member -NotePropertyName Proc_CommandLine -NotePropertyValue $Process.CommandLine
+                $ProcessObject | Add-Member -NotePropertyName Proc_ParentProcessId -NotePropertyValue $Process.ParentProcessId
+                $ProcessObject | Add-Member -NotePropertyName Proc_ProcessId -NotePropertyValue $Process.ProcessId
+                $ProcessList += $ProcessObject
             }
         }
-        ($processes_list | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $unique_process_hash_output
-        ($processes_list | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $process_list_output
+        ($ProcessList | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
+        ($ProcessList | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput
     }
 
 
     function Get-SvcHostsAndProcess {
         param(
-            [string]$output_file = "$process_folder\svc_host_and_processes.txt"
+            [string]$OutputFile = "$ProcessFolder\svc_host_and_processes.txt"
         )
-        $command =  { Get-CimInstance -ClassName Win32_Process |
+        $Command =  { Get-CimInstance -ClassName Win32_Process |
                         Where-Object { $_.name -eq "svchost.exe" } |
                         Select-Object ProcessId |
-                        ForEach-Object { $p = $_.ProcessID; Get-CimInstance -ClassName Win32_Service |
+                        ForEach-Object { $P = $_.ProcessID; Get-CimInstance -ClassName Win32_Service |
                             Where-Object {
-                                $_.processId -eq $p } |
+                                $_.processId -eq $P } |
                                 Select-Object ProcessID, Name, DisplayName, State, ServiceType, StartMode, PathName, Status }
                     }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-RunningServices {
         param(
-            [string]$output_file     = "$process_folder\running_services.txt",
-            [string]$csv_output_file = "$process_folder\running_services.csv"
+            [string]$OutputFile    = "$ProcessFolder\running_services.txt",
+            [string]$CsvOutputFile = "$ProcessFolder\running_services.csv"
         )
-        $command =  { Get-CimInstance -ClassName Win32_Service |
+        $Command =  { Get-CimInstance -ClassName Win32_Service |
                         Where-Object State -eq "Running" |
                         Select-Object -Property * |
                         Sort-Object -Property Name
                     }
-        $data = &($command)
-        Write-OutputToCsv -Data $data -OutputFile $csv_output_file
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
-        $result_count = ($command).Count
-        Show-MessageAndWriteLogEntry -Msg "There were $($result_count) results returned for this function."
+        $Data = &($Command)
+        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        $ResultCount = ($Command).Count
+        Show-MessageAndWriteLogEntry -Msg "There were $ResultCount results returned for this function."
     }
 
 
     function Get-RunningDriverInfo {
         param(
-            [string]$output_file = "$process_folder\driver_query.csv"
+            [string]$OutputFile = "$ProcessFolder\driver_query.csv"
         )
-        $command =  { driverquery.exe /v /FO CSV }
-        $data = &($command)
-        Write-OutputToFile -Command $command -Data $data -OutputFile $output_file
-        $result_count = ($command).Count
-        Show-MessageAndWriteLogEntry -Msg "There were $($result_count) results returned for this function."
+        $Command =  { driverquery.exe /v /FO CSV }
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        $ResultCount = ($Command).Count
+        Show-MessageAndWriteLogEntry -Msg "There were $ResultCount results returned for this function."
     }
 
 
     function Get-SystemDrivers {
         param(
-            [string]$csv_output_file = "$process_folder\system_drivers.csv"
+            [string]$CsvOutputFile = "$ProcessFolder\system_drivers.csv"
         )
-        $command =  { Get-CimInstance -ClassName Win32_SystemDriver |
+        $Command =  { Get-CimInstance -ClassName Win32_SystemDriver |
                         Select-Object -Property *
                     }
-        $data = &($command)
-        Write-OutputToCsv -Data $data -OutputFile $csv_output_file
-        $result_count = ($command).Count
-        Show-MessageAndWriteLogEntry -Msg "There were $($result_count) results returned for this function."
+        $Data = &($Command)
+        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
+        $ResultCount = ($Command).Count
+        Show-MessageAndWriteLogEntry -Msg "There were $ResultCount results returned for this function."
 
     }
 
 
     function Get-PnPSignedDrivers {
         param(
-            [string]$output_file = "$connected_devices_folder\pnp_signed_drivers.csv"
+            [string]$OutputFile = "$ConnectedDevicesFolder\pnp_signed_drivers.csv"
         )
-        $command =  { Get-CimInstance -ClassName Win32_PnPSignedDriver |
+        $Command =  { Get-CimInstance -ClassName Win32_PnPSignedDriver |
                         Select-Object -Property *
         }
-        $data = &($command)
-        Write-OutputToCsv -Data $data -OutputFile $output_file
-        $result_count = ($command).Count
-        Show-MessageAndWriteLogEntry -Msg "There were $($result_count) results returned for this function."
+        $Data = &($Command)
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+        $ResultCount = ($Command).Count
+        Show-MessageAndWriteLogEntry -Msg "There were $ResultCount results returned for this function."
     }
 
 
@@ -137,7 +137,7 @@ function Get-TriageProcessData {
     # Run the functions from the module
     # ----------------------------------
 
-    $process_work_flow = [ordered]@{
+    $ProcessWorkFlow = [ordered]@{
         { Get-RunningProcessList } = (
             "Getting Running Processes...",
             "[running_processes.txt, running_processes.csv, unique_process_hashes.csv, process_list.csv]"
@@ -164,7 +164,7 @@ function Get-TriageProcessData {
         )
     }
 
-    foreach ($task in $process_work_flow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $task.key -functionMsg $task.value[0] -OutputFile $task.value[1]
+    foreach ($Task in $ProcessWorkFlow.GetEnumerator()) {
+        Invoke-ScriptBlock -Action $Task.key -functionMsg $Task.value[0] -OutputFile $Task.value[1]
     }
 }

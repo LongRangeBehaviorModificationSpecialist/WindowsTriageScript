@@ -22,74 +22,74 @@ function Get-ComputerDetails {
     }
 
     try {
-        $win32_operating_system     = Get-CimInstance -ClassName Win32_OperatingSystem
-        $win32_computer_system      = Get-CimInstance -ClassName Win32_ComputerSystem
-        $win32_bios                 = Get-CimInstance -ClassName Win32_BIOS
-        $win32_processor            = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
-        $software_licensing_product = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" | Where-Object { $_.PartialProductKey }
+        $Win32OperatingSystem     = Get-CimInstance -ClassName Win32_OperatingSystem
+        $Win32ComputerSystem      = Get-CimInstance -ClassName Win32_ComputerSystem
+        $Win32Bios                = Get-CimInstance -ClassName Win32_BIOS
+        $Win32Processor           = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
+        $SoftwareLicensingProduct = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" | Where-Object { $_.PartialProductKey }
 
-        $data_props = [ordered]@{
+        $DataProps = [ordered]@{
             Host        = $env:COMPUTERNAME
             DateScanned = (Get-Date)
         }
 
-        $merge_properties = {
-            param($source_instance)
+        $MergeProperties = {
+            param($SourceInstance)
 
-            if ($source_instance) {
+            if ($SourceInstance) {
 
-                foreach ($prop in $source_instance.CimInstanceProperties) {
+                foreach ($Prop in $SourceInstance.CimInstanceProperties) {
 
-                    if (-not $data_props.Contains($prop.Name)) {
-                        $data_props[$prop.Name] = $prop.Value
+                    if (-not $DataProps.Contains($Prop.Name)) {
+                        $DataProps[$Prop.Name] = $Prop.Value
                     }
                 }
             }
         }
 
-        & $merge_properties $win32_operating_system
-        & $merge_properties $win32_computer_system
-        & $merge_properties $win32_processor
-        & $merge_properties $win32_bios
+        & $MergeProperties $Win32OperatingSystem
+        & $MergeProperties $Win32ComputerSystem
+        & $MergeProperties $Win32Processor
+        & $MergeProperties $Win32Bios
 
-        if ($data_props.CurrentTimeZone) {
-            $data_props.CurrentTimeZone = $data_props.CurrentTimeZone / 60
+        if ($DataProps.CurrentTimeZone) {
+            $DataProps.CurrentTimeZone = $DataProps.CurrentTimeZone / 60
         }
 
-        if ($null -ne $data_props.DomainRole) {
-            $data_props.DomainRole = ([DomainRole]$data_props.DomainRole).ToString()
+        if ($null -ne $DataProps.DomainRole) {
+            $DataProps.DomainRole = ([DomainRole]$DataProps.DomainRole).ToString()
         }
 
-        if ($data_props.BiosVersion) {
-            $data_props.BiosVersion = $data_props.BiosVersion -join " | "
+        if ($DataProps.BiosVersion) {
+            $DataProps.BiosVersion = $DataProps.BiosVersion -join " | "
         }
 
-        $up_time = (Get-Date) - $win32_operating_system.LastBootUpTime
-        $data_props["UpTime"] = "{0}:{1}:{2}:{3}" -f $up_time.Days, $up_time.Hours, $up_time.Minutes, $up_time.Seconds
+        $UpTime = (Get-Date) - $Win32OperatingSystem.LastBootUpTime
+        $DataProps["UpTime"] = "{0}:{1}:{2}:{3}" -f $UpTime.Days, $UpTime.Hours, $UpTime.Minutes, $UpTime.Seconds
 
-        $net_accounts_line = net accounts | Select-String -Pattern "Minimum password length"
-        $data_props["MinimumPasswordLength"] = if ($net_accounts_line) { $net_accounts_line.ToString().Split()[-1] } else { $null }
+        $NetAccountsLine = net accounts | Select-String -Pattern "Minimum password length"
+        $DataProps["MinimumPasswordLength"] = if ($NetAccountsLine) { $NetAccountsLine.ToString().Split()[-1] } else { $null }
 
-        $usb_stor = Get-ItemProperty -Path "HKLM:SYSTEM\CurrentControlSet\Services\USBStor" -Name "Start" -ErrorAction SilentlyContinue
-        $data_props["USBStorageLock"] = if ($usb_stor) { $usb_stor.Start } else { $null }
+        $UsbStor = Get-ItemProperty -Path "HKLM:SYSTEM\CurrentControlSet\Services\USBStor" -Name "Start" -ErrorAction SilentlyContinue
+        $DataProps["USBStorageLock"] = if ($UsbStor) { $UsbStor.Start } else { $null }
 
-        if ($software_licensing_product) {
-            $data_props["LicenseType"]   = ($software_licensing_product.Description).Split(",")[1].Trim()
-            $data_props["LicenseStatus"] = ([LicenseStatus]$software_licensing_product.LicenseStatus).ToString()
+        if ($SoftwareLicensingProduct) {
+            $DataProps["LicenseType"]   = ($SoftwareLicensingProduct.Description).Split(",")[1].Trim()
+            $DataProps["LicenseStatus"] = ([LicenseStatus]$SoftwareLicensingProduct.LicenseStatus).ToString()
         }
         else {
-            $data_props["LicenseType"]   = $null
-            $data_props["LicenseStatus"] = $null
+            $DataProps["LicenseType"]   = $null
+            $DataProps["LicenseStatus"] = $null
         }
 
-        $data_props["BIOSInstallDate"]  = $win32_bios.InstallDate
-        $data_props["BIOSManufacturer"] = $win32_bios.Manufacturer
-        $data_props["BIOSSerialNumber"] = $win32_bios.SerialNumber
+        $DataProps["BIOSInstallDate"]  = $Win32Bios.InstallDate
+        $DataProps["BIOSManufacturer"] = $Win32Bios.Manufacturer
+        $DataProps["BIOSSerialNumber"] = $Win32Bios.SerialNumber
 
-        [PSCustomObject]$data_props | Select-Object Host, DateScanned, CurrentTimeZone, InstallDate, LastBootUpTime, UpTime, LocalDateTime, BootDevice, BootROMSupported, BootupState, ChassisBootupState, DataExecutionPrevention_32BitApplications, DataExecutionPrevention_Available, DataExecutionPrevention_Drivers, DataExecutionPrevention_SupportPolicy, MinimumPasswordLength, USBStorageLock, Debug, EncryptionLevel, AdminPasswordStatus, Description, Distributed, OSArchitecture, OSProductSuite, OSType, OperatingSystemSKU, Organization, OtherTypeDescription, PortableOperatingSystem, ProductType, RegisteredUser, ServicePackMajorVersion, ServicePackMinorVersion, Status, SuiteMask, BuildNumber, Caption, LicenseType, LicenseStatus, SystemDevice, SystemDirectory, SystemDrive, MUILanguages, Version, WindowsDirectory, DNSHostName, DaylightInEffect, Domain, DomainRole, EnableDaylightSavingsTime, PrimaryOwnerContact, PrimaryOwnerName, SupportContactDescription, UserName, Manufacturer, Model, NetworkServerModeEnabled, HypervisorPresent, SystemSKUNumber, ThermalState, BIOSVersion, BIOSInstallDate, BIOSManufacturer, PrimaryBIOS, BIOSReleaseDate, SMBIOSBIOSVersion, SMBIOSMajorVersion, SMBIOSMinorVersion, SMBIOSPresent, BIOSSerialNumber, SystemBiosMajorVersion, SystemBiosMinorVersion, VirtualizationFirmwareEnabled
+        [PSCustomObject]$DataProps | Select-Object Host, DateScanned, CurrentTimeZone, InstallDate, LastBootUpTime, UpTime, LocalDateTime, BootDevice, BootROMSupported, BootupState, ChassisBootupState, DataExecutionPrevention_32BitApplications, DataExecutionPrevention_Available, DataExecutionPrevention_Drivers, DataExecutionPrevention_SupportPolicy, MinimumPasswordLength, USBStorageLock, Debug, EncryptionLevel, AdminPasswordStatus, Description, Distributed, OSArchitecture, OSProductSuite, OSType, OperatingSystemSKU, Organization, OtherTypeDescription, PortableOperatingSystem, ProductType, RegisteredUser, ServicePackMajorVersion, ServicePackMinorVersion, Status, SuiteMask, BuildNumber, Caption, LicenseType, LicenseStatus, SystemDevice, SystemDirectory, SystemDrive, MUILanguages, Version, WindowsDirectory, DNSHostName, DaylightInEffect, Domain, DomainRole, EnableDaylightSavingsTime, PrimaryOwnerContact, PrimaryOwnerName, SupportContactDescription, UserName, Manufacturer, Model, NetworkServerModeEnabled, HypervisorPresent, SystemSKUNumber, ThermalState, BIOSVersion, BIOSInstallDate, BIOSManufacturer, PrimaryBIOS, BIOSReleaseDate, SMBIOSBIOSVersion, SMBIOSMajorVersion, SMBIOSMinorVersion, SMBIOSPresent, BIOSSerialNumber, SystemBiosMajorVersion, SystemBiosMinorVersion, VirtualizationFirmwareEnabled
     }
     catch {
-        $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-        Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+        $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+        Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
     }
 }

@@ -2,25 +2,25 @@ function Invoke-DfirTriageScan {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string]$results_folder
+        [string]$ResultsFolder
     )
 
     begin {
-        $module_name = Split-Path -Path $PSCommandPath
+        $ModuleName = Split-Path -Path $PSCommandPath
 
         # Date Last Updated
-        $dlu = "29-May-2026"
+        $Dlu = "29-May-2026"
 
         # List of file types to use in some commands
-        $executable_file_types = @(
+        $ExecutableFileTypes = @(
             "*.BAT", "*.BIN", "*.CGI", "*.CMD", "*.COM", "*.DLL", "*.EXE",
             "*.JAR", "*.JOB", "*.JSE", "*.MSI", "*.PAF", "*.PS1", "*.SCR",
             "*.SCRIPT", "*.VB", "*.VBE", "*.VBS", "*.VBSCRIPT", "*.WS", "*.WSF"
         )
 
-        $start_time = Get-Date
+        $StartTime = Get-Date
 
-        $global:binaries = @{
+        $global:Binaries = @{
             "MagnetRamCapture"     = ".\bin\MagnetRAMCapture.exe"
             "MagnetProcessCapture" = ".\bin\MagnetProcessCapture.exe"
             "PSInfo"               = ".\bin\PsInfo.exe"
@@ -29,19 +29,19 @@ function Invoke-DfirTriageScan {
         }
 
         # Write the data to the log file and display start time message on the screen
-        $header = "Script Log for VECTOR DFIR Script Usage"
-        Write-LogMessage -Msg $header
+        $Header = "Script Log for VECTOR DFIR Script Usage"
+        Write-LogMessage -Msg $Header
 
-        $start_msg = "'$($MyInvocation.MyCommand.Name)' execution started."
-        Write-LogMessage -Msg $start_msg
+        $StartMsg = "'$( $MyInvocation.MyCommand.Name )' execution started."
+        Write-LogMessage -Msg $StartMsg
 
         # Display the DFIR banner and instructions to the user
-        $intro_banner = @"
+        $IntroBanner = @"
 +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 |                                     |
 |   VECTOR Triage Script              |
 |   Compiled by: Michael Sponheimer   |
-|   Last Updated: $dlu         |
+|   Last Updated: $Dlu         |
 |                                     |
 +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
@@ -60,13 +60,13 @@ INSTRUCTIONS
     MACHINE. MOVE THE COLLECTION DEVICE TO A FORENSIC MACHINE BEFORE
     OPENING ANY FILES!
 [E] DO NOT close any pop-up windows that may appear.
-[F] To get help for this script, run `"Get-Help .\PowerShell_DFIR_Script.ps1`"
+[F] To get help for this script, run 'Get-Help .\PowerShell_DFIR_Script.ps1'
     command from a PowerShell CLI prompt.
 
 [G] To exit this script at anytime, press [Ctrl + C].
 "@
 
-        Show-Message -Msg $intro_banner -NoTime -TextColor Blue
+        Show-Message -Msg $IntroBanner -NoTime -TextColor Blue
 
         # Show-Message -Msg "`n--> Please read the instructions before executing the script! <--" -NoTime -TextColor Yellow
 
@@ -76,8 +76,8 @@ INSTRUCTIONS
         #  Wait and loop until ONLY the Enter key is pressed
         do {
             # 'IncludeKeyDown' ensures we catch the press, 'NoEcho' prevents the key from printing to the screen
-            $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        } while ($key.VirtualKeyCode -ne 13) # 13 is the virtual key code for the Enter key
+            $Key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        } while ($Key.VirtualKeyCode -ne 13) # 13 is the virtual key code for the Enter key
 
         # Move to the next line once [ENTER] is pressed
         Write-Host ""
@@ -90,94 +90,94 @@ INSTRUCTIONS
             # Gather some basic operator information to add to the log file.
             param()
 
-            $user     = Read-Host -Prompt "`n[-] Enter your name for the report"
-            $user_msg = "Operator Name entered as: $($user)"
-            Show-MessageAndWriteLogEntry -Msg $user_msg -Level INFO
+            $User     = Read-Host -Prompt "`n[-] Enter your name for the report"
+            $UserMsg  = "Operator Name entered as: $User"
+            Show-MessageAndWriteLogEntry -Msg $UserMsg -Level INFO
 
-            $agency     = Read-Host -Prompt "`n[-] Enter Agency Name"
-            $agency_msg = "Agency Name entered as: $($agency)"
-            Show-MessageAndWriteLogEntry -Msg $agency_msg -Level INFO
+            $Agency    = Read-Host -Prompt "`n[-] Enter Agency Name"
+            $AgencyMsg = "Agency Name entered as: $Agency"
+            Show-MessageAndWriteLogEntry -Msg $AgencyMsg -Level INFO
 
-            $case_number     = Read-Host -Prompt "`n[-] Enter Case Number"
-            $case_number_msg = "Case Number entered as: $($case_number)"
-            Show-MessageAndWriteLogEntry -Msg $case_number_msg -Level INFO
+            $CaseNumber     = Read-Host -Prompt "`n[-] Enter Case Number"
+            $CaseNumberMsg  = "Case Number entered as: $CaseNumber"
+            Show-MessageAndWriteLogEntry -Msg $CaseNumberMsg -Level INFO
         }
 
         Get-OperatorInfo
 
 
-        Invoke-EncryptedDiskDetector -ResultsFolder $results_folder
+        Invoke-EncryptedDiskDetector -ResultsFolder $ResultsFolder
 
 
-        Get-RunningProcesses -ResultsFolder $results_folder
+        Get-RunningProcesses -ResultsFolder $ResultsFolder
 
 
-        Get-ComputerRam -ResultsFolder $results_folder
+        Get-ComputerRam -ResultsFolder $ResultsFolder
 
 
         function Initialize-TriageScan {
             [CmdletBinding()]
             param(
-                [string]$results_folder
+                [string]$ResultsFolder
             )
 
             function Invoke-TriageScan {
                 param(
-                    [string]$folder_name,
-                    [scriptblock]$action
+                    [string]$FolderName,
+                    [scriptblock]$Action
                 )
                 try {
-                    $sub_folder_path_name = Join-Path -Path $results_folder -ChildPath $folder_name
-                    $null                 = New-Item -ItemType Directory -Path $sub_folder_path_name -Force
-                    Test-IfExists -FolderName $sub_folder_path_name -Type FOLDER
-                    & $action
+                    $SubFolderPathName = Join-Path -Path $ResultsFolder -ChildPath $FolderName
+                    $null              = New-Item -ItemType Directory -Path $SubFolderPathName -Force
+                    Test-IfExists -FolderName $SubFolderPathName -Type FOLDER
+                    & $Action
                 }
                 catch {
-                    $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-                    Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+                    $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+                    Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
                 }
             }
 
 
-            $dfir_scan_workflow = [ordered]@{
-                "001_Device"     = { Get-TriageDeviceData -DeviceFolder $sub_folder_path_name }
-                "002_Users"      = { Get-TriageUserData -UserFolder $sub_folder_path_name }
-                "003_Network"    = { Get-TriageNetworkData -NetworkFolder $sub_folder_path_name }
-                "004_Process"    = { Get-TriageProcessData -ProcessFolder $sub_folder_path_name }
-                "005_System"     = { Get-TriageSystemData -SystemFolder $sub_folder_path_name }
-                "006_Prefetch"   = { Get-TriagePrefetchData -PrefetchFolder $sub_folder_path_name }
-                "007_Event_Logs" = { Get-TriageEventLogData -EventLogFolder $sub_folder_path_name }
-                "008_Firewall"   = { Get-TriageFirewallData -FirewallFolder $sub_folder_path_name }
-                "009_Encryption" = { Get-TriageEncryptionData -EncryptionFolder $sub_folder_path_name }
-                "010_Internet"   = { Invoke-GetInternetInfo -InternetFolder $sub_folder_path_name }
+            $DfirScanWorkflow = [ordered]@{
+                "001_Device"     = { Get-TriageDeviceData -DeviceFolder $SubFolderPathName }
+                "002_Users"      = { Get-TriageUserData -UserFolder $SubFolderPathName }
+                "003_Network"    = { Get-TriageNetworkData -NetworkFolder $SubFolderPathName }
+                "004_Process"    = { Get-TriageProcessData -ProcessFolder $SubFolderPathName }
+                "005_System"     = { Get-TriageSystemData -SystemFolder $SubFolderPathName }
+                "006_Prefetch"   = { Get-TriagePrefetchData -PrefetchFolder $SubFolderPathName }
+                "007_Event_Logs" = { Get-TriageEventLogData -EventLogFolder $SubFolderPathName }
+                "008_Firewall"   = { Get-TriageFirewallData -FirewallFolder $SubFolderPathName }
+                "009_Encryption" = { Get-TriageEncryptionData -EncryptionFolder $SubFolderPathName }
+                "010_Internet"   = { Invoke-GetInternetInfo -InternetFolder $SubFolderPathName }
             }
 
-            foreach ($entry in $dfir_scan_workflow.GetEnumerator()) {
-                Invoke-TriageScan -FolderName $entry.key -Action $entry.value
+            foreach ($Entry in $DfirScanWorkflow.GetEnumerator()) {
+                Invoke-TriageScan -FolderName $Entry.key -Action $Entry.value
             }
         }
 
 
-        Initialize-TriageScan -ResultsFolder $results_folder
+        Initialize-TriageScan -ResultsFolder $ResultsFolder
 
 
-        Get-FileHashes -ResultsFolder $results_folder
+        Get-FileHashes -ResultsFolder $ResultsFolder
 
 
-        Get-CaseArchive -ResultsFolder $results_folder
+        Get-CaseArchive -ResultsFolder $ResultsFolder
 
 
-        $end_time = Get-Date
-        $duration = $end_time - $start_time
+        $EndTime = Get-Date
+        $Duration = $EndTime - $StartTime
 
-        $duration_format = "{0} days, {1} hour(s), {2} minutes, {3} seconds" -f `
-        $duration.Days,
-        $duration.Hours,
-        $duration.Minutes,
-        $duration.Seconds
+        $DurationFormat = "{0} days, {1} hour(s), {2} minutes, {3} seconds" -f `
+        $Duration.Days,
+        $Duration.Hours,
+        $Duration.Minutes,
+        $Duration.Seconds
 
-        Write-Host "`nScript execution completed in $duration_format."
-        Write-Host "`nThe results are available in the '$results_folder' directory"
+        Write-Host "`nScript execution completed in $DurationFormat."
+        Write-Host "`nThe results are available in the '$ResultsFolder' directory"
     }
     end {
         # Force the .NET Garbage Collector to immediately purge the freed memory slots

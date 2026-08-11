@@ -1,16 +1,16 @@
 # Date Last Updated
-$dlu = "18-Jun-2026"
+$Dlu = "18-Jun-2026"
 
 # List of file types to use in some commands
-$executable_file_types = @(
+$ExecutableFileTypes = @(
     "*.BAT", "*.BIN", "*.CGI", "*.CMD", "*.COM", "*.DLL", "*.EXE", "*.JAR",
     "*.JOB", "*.JSE", "*.MSI", "*.PAF", "*.PS1", "*.SCR", "*.SCRIPT",
     "*.VB", "*.VBE", "*.VBS", "*.VBSCRIPT", "*.WS", "*.WSF"
 )
 
-$start_time = Get-Date
+$StartTime = Get-Date
 
-$binaries = @{
+$Binaries = @{
     "MagnetRamCapture"     = ".\bin\MagnetRAMCapture.exe"
     "MagnetProcessCapture" = ".\bin\MagnetProcessCapture.exe"
     "PSInfo"               = ".\bin\PsInfo.exe"
@@ -19,19 +19,19 @@ $binaries = @{
 }
 
 $run_date = Get-Date -Format yyyyMMdd_HHmmss
-$computer_name = $env:computername
-$ipv4 = (Test-Connection $computer_name -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
+$ComputerName = $env:computername
+$ipv4 = (Test-Connection $ComputerName -TimeToLive 2 -Count 1).ipv4address | Select-Object -ExpandProperty IPAddressToString
 
-$merged_name = $run_date + "_" + $ipv4 + "_" + $computer_name
+$merged_name = $run_date + "_" + $ipv4 + "_" + $ComputerName
 
-$results_folder = Join-Path -Path $(Get-Location) -ChildPath "$($run_date + "_" + $ipv4 + "_" + $computer_name)"
-$null = New-Item -ItemType Directory -Path $results_folder -Force
+$ResultsFolder = Join-Path -Path $(Get-Location) -ChildPath "$($run_date + "_" + $ipv4 + "_" + $ComputerName)"
+$null = New-Item -ItemType Directory -Path $ResultsFolder -Force
 
-$log_folder = Join-Path -Path $results_folder -ChildPath "Logs"
-$null = New-Item -ItemType Directory -Path $log_folder -Force
+$LogFolder = Join-Path -Path $ResultsFolder -ChildPath "Logs"
+$null = New-Item -ItemType Directory -Path $LogFolder -Force
 
-$log_file = Join-Path -Path $log_folder -ChildPath "$($merged_name)_Script.log"
-$null = New-Item -ItemType File -Path $log_file -Force
+$Log_file = Join-Path -Path $LogFolder -ChildPath "$($merged_name)_Script.log"
+$null = New-Item -ItemType File -Path $Log_file -Force
 
 
 # =============================
@@ -45,12 +45,12 @@ function Invoke-TriageTranscript {
     try {
         # Start transcript to record all of the screen output
         $transcript_begin_msg = "Powershell Transcript started..."
-        Start-Transcript -OutputDirectory $log_folder -IncludeInvocationHeader -NoClobber
+        Start-Transcript -OutputDirectory $LogFolder -IncludeInvocationHeader -NoClobber
         Show-MessageAndWriteLogEntry -Msg $transcript_begin_msg -Level INFO
     }
     catch {
-        $error_msg = "Failed to start Powershell Transcript: $($_.Exception.Message)"
-        Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+        $ErrorMsg = "Failed to start Powershell Transcript: $( $_.Exception.Message )"
+        Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
     }
 }
 
@@ -58,14 +58,14 @@ function Invoke-TriageTranscript {
 function Write-OutputToCsv {
     param(
         [Parameter(Mandatory)]
-        [object]$data,
+        [object]$Data,
 
         [Parameter(Mandatory = $true)]
-        [string]$output_file
+        [string]$OutputFile
     )
 
     process {
-        $data | Export-Csv -Path $output_file -NoTypeInformation -Encoding UTF8
+        $Data | Export-Csv -Path $OutputFile -NoTypeInformation -Encoding UTF8
     }
 }
 
@@ -83,8 +83,8 @@ function Show-IsAdmin {
         }
     }
     catch {
-        $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-        Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+        $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+        Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
     }
 }
 
@@ -125,28 +125,28 @@ function Show-MessageAndWriteLogEntry {
         [string]$level = "INFO",
 
         [Parameter(Mandatory = $false)]
-        [string]$execution_time,
+        [string]$ExecutionTime,
 
         [Parameter(Mandatory = $false)]
-        [string]$file
+        [string]$File
     )
 
     begin {
         $timestamp = $(Get-Date -Format "[yyyy-MM-dd HH:mm:ss.fff]")
 
         # Format of the line to write to the log file
-        $entry_prefix = "$timestamp [$level] "
+        $Entry_prefix = "$timestamp [$level] "
     }
     process {
         try {
             if ($level -eq "SUCCESS") {
-                $msg = "Process completed successfully. Output saved to -> `"$([System.IO.Path]::GetFileName($file))`""
-                if ($execution_time) {
-                    $msg += " (completed in $($execution_time))."
+                $msg = "Process completed successfully. Output saved to -> `"$([System.IO.Path]::GetFileName($File))`""
+                if ($ExecutionTime) {
+                    $msg += " (completed in $($ExecutionTime))."
                 }
             }
 
-            $full_message = "$entry_prefix$msg"
+            $full_message = "$Entry_prefix$msg"
 
             switch ($level) {
                 "SUCCESS" { Write-Host "$($full_message)" -ForegroundColor Green }
@@ -155,11 +155,11 @@ function Show-MessageAndWriteLogEntry {
                 default   { Write-Host "$($full_message)" -ForegroundColor White }
             }
 
-            "$full_message" | Out-File -FilePath $log_file -Append -Encoding utf8 -NoClobber
+            "$full_message" | Out-File -FilePath $Log_file -Append -Encoding utf8 -NoClobber
         }
         catch {
             # If writing to the USB log fails, we MUST flash it to the screen so the examiner knows.
-            Write-Host "CRITICAL: Unable to write to triage log file! Error: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "CRITICAL: Unable to write to triage log file! Error: $( $_.Exception.Message )" -ForegroundColor Red
         }
     }
 }
@@ -178,72 +178,72 @@ function Write-LogMessage {
         }
 
         $timestamp = $(Get-Date -Format "[yyyy-MM-dd HH:mm:ss.fff] ")
-        "$timestamp$msg" | Out-File -FilePath $log_file -Append -Encoding UTF8
+        "$timestamp$msg" | Out-File -FilePath $Log_file -Append -Encoding UTF8
     }
 }
 
 function Write-OutputToFile {
-    # Writes the results of the commands to the $output_file
+    # Writes the results of the commands to the $OutputFile
 
     param(
         [Parameter(Mandatory = $false)]
-        [string]$command,
+        [string]$Command,
 
         [Parameter(Mandatory = $false)]
-        [System.Object]$data,
+        [System.Object]$Data,
 
         [Parameter(Mandatory = $true)]
-        [string]$output_file,
+        [string]$OutputFile,
 
-        [switch]$append
+        [switch]$Append
     )
 
     begin {
-        $command_string = "Command: $($command.ToString())`n`n"
+        $Command_string = "Command: $($Command.ToString())`n`n"
     }
     process {
-        if (-not $data) {
-            "$($command_string) No data found when running this function." | Out-File -FilePath $output_file
+        if (-not $Data) {
+            "$($Command_string) No data found when running this function." | Out-File -FilePath $OutputFile
         }
         else {
-            if (-not $append) {
-                $command_string | Out-File -FilePath $output_file -Encoding utf8
+            if (-not $Append) {
+                $Command_string | Out-File -FilePath $OutputFile -Encoding utf8
             }
             else {
-                $command_string | Out-File -FilePath $output_file -Encoding utf8 -Append
+                $Command_string | Out-File -FilePath $OutputFile -Encoding utf8 -Append
             }
-            $data | Out-File -FilePath $output_file -Encoding utf8 -Append
+            $Data | Out-File -FilePath $OutputFile -Encoding utf8 -Append
         }
     }
 }
 
 function Test-IfExists {
     param(
-        [string]$folder_name,
-        [string]$file_name,
+        [string]$FolderName,
+        [string]$File_name,
         [ValidateSet("FOLDER","FILE")]
         [string]$type
     )
 
     if ($type -eq "FOLDER") {
-        $folder_name_text = $(Split-Path -Path $folder_name -Leaf)
-        if (Test-Path $folder_name) {
-            $folder_created_msg = "---- `"$($folder_name_text)`" ---- sub-directory created successfully."
-            Show-MessageAndWriteLogEntry -Msg $folder_created_msg -Level INFO
+        $FolderName_text = $(Split-Path -Path $FolderName -Leaf)
+        if (Test-Path $FolderName) {
+            $Folder_created_msg = "---- `"$($FolderName_text)`" ---- sub-directory created successfully."
+            Show-MessageAndWriteLogEntry -Msg $Folder_created_msg -Level INFO
         }
         else {
-            Show-MessageAndWriteLogEntry -Msg "The necessary sub-directory does not exist or could not be created -> `"$($folder_name_text)`"" -Level ERROR
+            Show-MessageAndWriteLogEntry -Msg "The necessary sub-directory does not exist or could not be created -> `"$($FolderName_text)`"" -Level ERROR
             return
         }
     }
     if ($type -eq "FILE") {
-        $file_name_text = $(Split-Path -Path $file_name -Leaf)
-        if (Test-Path $file_name) {
-            $file_created_msg = "The `"$($file_name_text)`" file was created successfully."
-            Show-MessageAndWriteLogEntry -Msg $file_created_msg -Level INFO
+        $File_name_text = $(Split-Path -Path $File_name -Leaf)
+        if (Test-Path $File_name) {
+            $File_created_msg = "The `"$($File_name_text)`" file was created successfully."
+            Show-MessageAndWriteLogEntry -Msg $File_created_msg -Level INFO
         }
         else {
-            Show-MessageAndWriteLogEntry -Msg "There was an error creating the `"$($file_name_text)`" file." -Level ERROR
+            Show-MessageAndWriteLogEntry -Msg "There was an error creating the `"$($File_name_text)`" file." -Level ERROR
             return
         }
     }

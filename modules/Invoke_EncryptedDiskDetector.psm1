@@ -2,62 +2,62 @@ function Invoke-EncryptedDiskDetector {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$results_folder
+        [string]$ResultsFolder
     )
 
     begin {
-        $stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
-        $computer_name = $env:computername
-        $run_edd       = Read-Host -Prompt "`n[?] Do you want to run Encrypted Disk Detector on $computer_name? (y/n)"
+        $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
+        $ComputerName = $env:computername
+        $RunEdd       = Read-Host -Prompt "`n[?] Do you want to run Encrypted Disk Detector on $ComputerName? (y/n)"
     }
     process {
-        if ($run_edd -eq "y") {
+        if ($RunEdd  -eq "y") {
             try {
-                $begin_msg = "Starting Encrypted Disk Detector on: $($computer_name)"
-                Show-MessageAndWriteLogEntry -Msg $begin_msg -Level INFO
+                $BeginMsg = "Starting Encrypted Disk Detector on: $( $ComputerName )"
+                Show-MessageAndWriteLogEntry -Msg $BeginMsg -Level INFO
 
-                $edd_results_folder = Join-Path -Path $results_folder -ChildPath "Encrypted_Disk_Detector"
-                $null             = New-Item -ItemType Directory -Path $edd_results_folder -Force
+                $EddResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "Encrypted_Disk_Detector"
+                $null             = New-Item -ItemType Directory -Path $EddResultsFolder -Force
 
-                Test-IfExists -FolderName $edd_results_folder -Type FOLDER
+                Test-IfExists -FolderName $EddResultsFolder -Type FOLDER
 
                 # Name the file to which the scan results will be saved
-                $edd_results_file_path = Join-Path -Path $edd_results_folder -ChildPath "encrypted_disk_detector_results.txt"
-                $null                  = New-Item -ItemType File -Path $edd_results_file_path -Force
-                $edd_results_file_name = [System.IO.Path]::GetFileName($edd_results_file_path)
+                $EddResultsFilePath = Join-Path -Path $EddResultsFolder -ChildPath "encrypted_disk_detector_results.txt"
+                $null               = New-Item -ItemType File -Path $EddResultsFilePath -Force
+                $EddResultsFileName = [System.IO.Path]::GetFileName($EddResultsFilePath)
 
-                Test-IfExists -FileName $edd_results_file_path -Type FILE
+                Test-IfExists -FileName $EddResultsFilePath -Type FILE
 
                 # Start the encrypted disk detector executable
-                Start-Process -NoNewWindow -FilePath $binaries["EDD"] -ArgumentList "/batch" -Wait -RedirectStandardOutput $edd_results_file_path
+                Start-Process -NoNewWindow -FilePath $Binaries["EDD"] -ArgumentList "/batch" -Wait -RedirectStandardOutput $EddResultsFilePath
 
-                $execution_time = $stopwatch.Elapsed.TotalSeconds
+                $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-                $success_msg = "Encrypted Disk Detector was run successfully on computer: $($computer_name)"
-                Show-MessageAndWriteLogEntry -Msg $success_msg -File $edd_results_file_name -ExecutionTime "$($execution_time) seconds" -Level SUCCESS
+                $SuccessMsg = "Encrypted Disk Detector was run successfully on computer: $( $ComputerName )"
+                Show-MessageAndWriteLogEntry -Msg $SuccessMsg -File $EddResultsFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS
 
-                $stopwatch.Stop()
+                $Stopwatch.Stop()
 
                 # Read the contents of the EDD text file and show the results on the screen
-                Get-Content -Path $edd_results_file_path -Force
+                Get-Content -Path $EddResultsFilePath -Force
             }
             catch {
-                $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-                Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+                $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+                Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
             }
         }
-        elseif ($run_edd -eq "n") {
-            $decline_msg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
-            Show-MessageAndWriteLogEntry -Msg $decline_msg -Level WARNING
+        elseif ($RunEdd  -eq "n") {
+            $DeclineMsg = "'$( $MyInvocation.MyCommand.Name )' DECLINED by the user."
+            Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
         }
         else {
-            $no_valid_option_msg = "No valid option entered by the user, skipping the `"$($MyInvocation.MyCommand.Name)`" function."
-            Show-MessageAndWriteLogEntry -Msg $no_valid_option_msg -Level WARNING
+            $NoValidOptionMsg = "No valid option entered by the user, skipping the '$( $MyInvocation.MyCommand.Name )' function."
+            Show-MessageAndWriteLogEntry -Msg $NoValidOptionMsg -Level WARNING
         }
     }
     end {
-        if ($stopwatch.IsRunning) {
-            $stopwatch.Stop()
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
         }
     }
 }
