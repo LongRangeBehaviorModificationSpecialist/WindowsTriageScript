@@ -63,7 +63,7 @@ function Get-FileHashes {
                 $ProgressMsg = "Hashing file: '$( $_.Name )'"
                 Show-MessageAndWriteLogEntry -Msg $ProgressMsg -Level INFO
 
-                $HashFileMsg = "Completed hashing file: '$( $_.Name )' [SHA256: $( $FileHashValue)]"
+                $HashFileMsg = "Completed hashing file: '$( $_.Name )' [SHA256: $( $FileHashValue )]"
                 Show-MessageAndWriteLogEntry -Msg $HashFileMsg -Level INFO
             }
 
