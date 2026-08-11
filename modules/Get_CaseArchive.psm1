@@ -33,7 +33,7 @@ function Get-CaseArchive {
             }
         }
         elseif ($MakeArchive -eq "n") {
-            $Decline sg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
+            $DeclineMsg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
             Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
         }
         else {
