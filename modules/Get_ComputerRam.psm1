@@ -2,58 +2,58 @@ function Get-ComputerRam {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$results_folder
+        [string]$ResultsFolder
     )
 
     begin {
-        $stopwatch       = [System.Diagnostics.Stopwatch]::StartNew()
-        $computer_name   = $env:computername
-        $run_ram_capture = Read-Host -Prompt "`n[?] Do you want to run MAGNET Ram Capture on $computer_name? (y/n)"
+        $Stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $ComputerName = $env:computername
+        $RunRamCapture = Read-Host -Prompt "`n[?] Do you want to run MAGNET Ram Capture on $ComputerName? (y/n)"
     }
     process {
-        if ($run_ram_capture -eq "y") {
+        if ($RunRamCapture -eq "y") {
             try {
-                $begin_msg = "Starting RAM capture from computer: $($computer_name). Please wait..."
-                Show-MessageAndWriteLogEntry -Msg $begin_msg -Level INFO
+                $BeginMsg = "Starting RAM capture from computer: $( $ComputerName ). Please wait..."
+                Show-MessageAndWriteLogEntry -Msg $BeginMsg -Level INFO
 
-                $ram_capture_folder = Join-Path -Path $results_folder -ChildPath "Ram_Capture"
-                $null               = New-Item -ItemType Directory -Path $ram_capture_folder -Force
+                $RamCaptureFolder = Join-Path -Path $ResultsFolder -ChildPath "Ram_Capture"
+                $null = New-Item -ItemType Directory -Path $RamCaptureFolder -Force
 
-                Test-IfExists -FolderName $ram_capture_folder -Type FOLDER
+                Test-IfExists -FolderName $RamCaptureFolder -Type FOLDER
 
                 # Start the RAM acquisition from the current machine
-                Start-Process -NoNewWindow -FilePath $binaries["MagnetRamCapture"] -ArgumentList "/accepteula /go /silent" -Wait
+                Start-Process -NoNewWindow -FilePath $Binaries["MagnetRamCapture"] -ArgumentList "/accepteula /go /silent" -Wait
 
                 # Once the RAM has been acquired, move the file to the 'RAM' folder
-                Move-Item -Path .\bin\*.raw -Destination $ram_capture_folder -Force
+                Move-Item -Path .\bin\*.raw -Destination $RamCaptureFolder -Force
 
-                $ram_capture_file_name   = (Get-ChildItem -Path $ram_capture_folder -Filter "*.raw").Name
-                $execution_time = $stopwatch.Elapsed.TotalSeconds
+                $RamCaptureFilName = (Get-ChildItem -Path $RamCaptureFolder -Filter "*.raw").Name
+                $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-                $success_msg = "RAM capture completed successfully from computer: $($computer_name)"
-                Show-MessageAndWriteLogEntry -Msg $success_msg -Level SUCCESS
+                $SuccessMsg = "RAM capture completed successfully from computer: $( $ComputerName )"
+                Show-MessageAndWriteLogEntry -Msg $SuccessMsg -Level SUCCESS
 
-                Show-MessageAndWriteLogEntry -File $ram_capture_file_name -ExecutionTime "$($execution_time) seconds" -Level SUCCESS
+                Show-MessageAndWriteLogEntry -File $RamCaptureFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS
 
-                $stopwatch.Stop()
+                $Stopwatch.Stop()
             }
             catch {
-                $error_msg = "Execution failed during `"$($MyInvocation.MyCommand.Name)`". Error: $($_.Exception.Message)"
-                Show-MessageAndWriteLogEntry -Msg $error_msg -Level ERROR
+                $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
+                Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
             }
         }
-        elseif ($run_ram_capture -eq "n") {
-            $decline_msg = "`"$($MyInvocation.MyCommand.Name)`" DECLINED by the user."
-            Show-MessageAndWriteLogEntry -Msg $decline_msg -Level WARNING
+        elseif ($RunRamCapture -eq "n") {
+            $DeclineMsg = "'$( $MyInvocation.MyCommand.Name )' DECLINED by the user."
+            Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
         }
         else {
-            $no_valid_option_msg = "No valid option entered by the user, skipping the `"$($MyInvocation.MyCommand.Name)`" function."
-            Show-MessageAndWriteLogEntry -Msg $no_valid_option_msg -Level WARNING
+            $NoValidOptionMsg = "No valid option entered by the user, skipping the '$( $MyInvocation.MyCommand.Name )' function."
+            Show-MessageAndWriteLogEntry -Msg $NoValidOptionMsg -Level WARNING
         }
     }
     end {
-        if ($stopwatch.IsRunning) {
-            $stopwatch.Stop()
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
         }
     }
 }
