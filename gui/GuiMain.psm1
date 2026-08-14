@@ -48,7 +48,7 @@ function Get-Gui {
     # Define label and text boxes for source and destination directories
     $LblUserName           = New-Object System.Windows.Forms.Label
     $LblUserName.Text      = "User Name:"
-    $LblUserName.Location  = New-Object System.Drawing.Point(10, 15)  # (x, y) position
+    $LblUserName.Location  = New-Object System.Drawing.Point(10, 15)
     $LblUserName.Size      = $DefaultLblSize
     $LblUserName.Font      = $GlobalFont
     $LblUserName.ForeColor = [System.Drawing.Color]::Black
@@ -57,7 +57,7 @@ function Get-Gui {
 
 
     $TxtboxUserName             = New-Object System.Windows.Forms.TextBox
-    $TxtboxUserName.Location    = New-Object System.Drawing.Point(90, 15)  # (x, y) position
+    $TxtboxUserName.Location    = New-Object System.Drawing.Point(90, 15)
     $TxtboxUserName.Width       = $DefaultTxtbxWidth
     $TxtboxUserName.Font        = $TxtboxFontStyle
     $TxtboxUserName.BackColor   = [System.Drawing.Color]::White
@@ -69,7 +69,7 @@ function Get-Gui {
 
     $LblAgency           = New-Object System.Windows.Forms.Label
     $LblAgency.Text      = "Agency:"
-    $LblAgency.Location  = New-Object System.Drawing.Point(10, 50)  # (x, y) position
+    $LblAgency.Location  = New-Object System.Drawing.Point(10, 50)
     $LblAgency.Size      = $DefaultLblSize
     $LblAgency.Font      = $GlobalFont
     $LblAgency.ForeColor = [System.Drawing.Color]::Black
@@ -78,7 +78,7 @@ function Get-Gui {
 
 
     $TxtboxAgency             = New-Object System.Windows.Forms.TextBox
-    $TxtboxAgency.Location    = New-Object System.Drawing.Point(90, 50)  # (x, y) position
+    $TxtboxAgency.Location    = New-Object System.Drawing.Point(90, 50)
     $TxtboxAgency.Width       = $DefaultTxtbxWidth
     $TxtboxAgency.Font        = $TxtboxFontStyle
     $TxtboxAgency.BackColor   = [System.Drawing.Color]::White
@@ -90,7 +90,7 @@ function Get-Gui {
 
     $LblCaseNumber           = New-Object System.Windows.Forms.Label
     $LblCaseNumber.Text      = "Case Number:"
-    $LblCaseNumber.Location  = New-Object System.Drawing.Point(10, 85)  # (x, y) position
+    $LblCaseNumber.Location  = New-Object System.Drawing.Point(10, 85)
     $LblCaseNumber.Size      = $DefaultLblSize
     $LblCaseNumber.Font      = $GlobalFont
     $LblCaseNumber.ForeColor = [System.Drawing.Color]::Black
@@ -156,7 +156,8 @@ function Get-Gui {
         # Initialize Independent CheckBox Control (Column 1)
         $ChkBox      = New-Object System.Windows.Forms.CheckBox
         $ChkBox.Tag  = $Item.Name
-        $ChkBox.Size = New-Object System.Drawing.Size($GroupboxChkBoxWidth, $GroupboxChkBoxHeight) # Strictly constrained to the square box frame asset
+        # Strictly constrained to the square box frame asset
+        $ChkBox.Size = New-Object System.Drawing.Size($GroupboxChkBoxWidth, $GroupboxChkBoxHeight)
 
         $ChkBox.Location   = New-Object System.Drawing.Point($GroupboxCol1XValue, $GroupboxColYStart)
         $ChkBox.CheckAlign = [System.Drawing.ContentAlignment]::MiddleLeft
@@ -186,10 +187,10 @@ function Get-Gui {
     $BtnSelectAllModules.Width                      = $GroupboxBtnWidth
     $BtnSelectAllModules.Height                     = $GroupboxBtnHeight
     $BtnSelectAllModules.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnSelectAllModules.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, $GroupboxSelectAllBtnY)  # (x, y) position
+    $BtnSelectAllModules.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, $GroupboxSelectAllBtnY)
     $BtnSelectAllModules.FlatAppearance.BorderSize  = 1
     $BtnSelectAllModules.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnSelectAllModules.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)  # Soft green accent color
+    $BtnSelectAllModules.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
     $BtnSelectAllModules.Forecolor                  = [System.Drawing.Color]::White
     $BtnSelectAllModules.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
     $BtnSelectAllModules.add_Click({
@@ -255,7 +256,8 @@ function Get-Gui {
         # Initialize independent checkbox control column 1
         $ChkBox            = New-Object System.Windows.Forms.CheckBox
         $ChkBox.Tag        = $Item.Name
-        $ChkBox.Size       = New-Object System.Drawing.Size($GroupboxChkBoxWidth, $GroupboxChkBoxHeight)  # Strictly constrained to the square box frame asset
+        # Strictly constrained to the square box frame asset
+        $ChkBox.Size       = New-Object System.Drawing.Size($GroupboxChkBoxWidth, $GroupboxChkBoxHeight)
         $ChkBox.Location   = New-Object System.Drawing.Point($GroupboxCol1XValue, $GroupboxColYStart)
         $ChkBox.CheckAlign = [System.Drawing.ContentAlignment]::MiddleLeft
         $TextLbl.Location  = New-Object System.Drawing.Point($GroupboxCol2XValue, $GroupboxColYStart)
@@ -284,7 +286,7 @@ function Get-Gui {
     $BtnSelectAllOptions.Width                      = $GroupboxBtnWidth
     $BtnSelectAllOptions.Height                     = $GroupboxBtnHeight
     $BtnSelectAllOptions.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnSelectAllOptions.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, $GroupboxSelectAllBtnY)  # (x, y) position
+    $BtnSelectAllOptions.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, $GroupboxSelectAllBtnY)
     $BtnSelectAllOptions.FlatAppearance.BorderSize  = 1
     $BtnSelectAllOptions.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
     $BtnSelectAllOptions.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)  # Soft green accent color
@@ -327,20 +329,20 @@ function Get-Gui {
     $BtnStartTriage.Height                     = $GroupboxBtnHeight
     $BtnStartTriage.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnStartTriage.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
-    $BtnStartTriage.Location                   = New-Object System.Drawing.Point(360, 410)  # (x, y) position
+    $BtnStartTriage.Location                   = New-Object System.Drawing.Point(360, 410)
     $BtnStartTriage.FlatAppearance.BorderSize  = 1
     $BtnStartTriage.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
     $BtnStartTriage.BackColor                  = "#17a589"
     $BtnStartTriage.Forecolor                  = "#dddddd"
     # $BtnStartTriage.Add_Click({
 
-            # $User = $TxtboxUserName.Text
-            # $Agency = $TxtboxAgency.Text
-            # $CaseNumber = $TxtboxCaseNumber.Text
-            # $DriveList = $tbDrivesList.Text
-            # $KeyWordsDrivesList = $TbKeyWordsDrivesList.Text
+        # $User = $TxtboxUserName.Text
+        # $Agency = $TxtboxAgency.Text
+        # $CaseNumber = $TxtboxCaseNumber.Text
+        # $DriveList = $tbDrivesList.Text
+        # $KeyWordsDrivesList = $TbKeyWordsDrivesList.Text
 
-            # Export-FilesReport -CaseFolderName $caseFolderName -User $User -Agency $Agency -CaseNumber $caseNumber -ComputerName $ComputerName -Ipv4 $ipv4 -Ipv6 $ipv6 -Device $cbOne.Checked -UserData $cbTwo.Checked -Network $cbThree.Checked -Process $cbFour.Checked -System $cbFive.Checked -Prefetch $cbSix.Checked -EventLogs $cbSeven.Checked -Firewall $cbEight.Checked -BitLocker $cbNine.Checked -CaptureProcesses $cbGetProcesses.Checked -GetRam $cbGetRam.Checked -Edd $cbEdd.Checked -Hives $cbRegHives.Checked -CopyPrefetch $cbPrefetch.Checked -GetNTUserDat $cbNTUserDat.Checked -ListFiles $cbListFiles.Checked -DriveList $DriveList -KeyWordSearch $cbKeyWordSearch.Checked -KeyWordsDriveList $KeyWordsDrivesList -CopySrum $cbSruDb.Checked -GetFileHashes $cbHashFiles.Checked -MakeArchive $cbArchive.Checked
+        # Export-FilesReport -CaseFolderName $CaseFolderName -User $User -Agency $Agency -CaseNumber $CaseNumber -ComputerName $ComputerName -Ipv4 $Ipv4 -Ipv6 $Ipv6 -Device $CbOne.Checked -UserData $CbTwo.Checked -Network $CbThree.Checked -Process $CbFour.Checked -System $CbFive.Checked -Prefetch $CbSix.Checked -EventLogs $CbSeven.Checked -Firewall $CbEight.Checked -BitLocker $CbNine.Checked -CaptureProcesses $CbGetProcesses.Checked -GetRam $CbGetRam.Checked -Edd $CbEdd.Checked -Hives $CbRegHives.Checked -CopyPrefetch $CbPrefetch.Checked -GetNTUserDat $CbNTUserDat.Checked -ListFiles $CbListFiles.Checked -DriveList $DriveList -KeyWordSearch $CbKeyWordSearch.Checked -KeyWordsDriveList $KeyWordsDrivesList -CopySrum $CbSruDb.Checked -GetFileHashes $CbHashFiles.Checked -MakeArchive $CbArchive.Checked
 
         #     $Form.Close()
         #     return
@@ -357,15 +359,15 @@ function Get-Gui {
     $BtnQuit.Height                     = $GroupboxBtnHeight
     $BtnQuit.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnQuit.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
-    $BtnQuit.Location                   = New-Object System.Drawing.Point(360, 450)  # (x, y) position
+    $BtnQuit.Location                   = New-Object System.Drawing.Point(360, 450)
     $BtnQuit.FlatAppearance.BorderSize  = 1
     $BtnQuit.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
     $BtnQuit.BackColor                  = "#c0392b"
     $BtnQuit.Forecolor                  = "#dddddd"
     $BtnQuit.Add_Click({
-            $MainForm.Close()
-            return
-        })
+        $MainForm.Close()
+        return
+    })
 
     $MainForm.Controls.Add($BtnQuit)
 
