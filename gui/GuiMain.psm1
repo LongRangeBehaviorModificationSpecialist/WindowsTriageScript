@@ -20,7 +20,7 @@ function Get-Gui {
     $GroupboxBtnWidth         = 150
     $GroupboxBtnHeight        = 30
     $GlobalFont               = New-Object System.Drawing.Font($DefaultFontFace, 8.5)
-    $TxtboxFontStyle           = New-Object System.Drawing.Font($DefaultFontFace, 9)
+    $TxtboxFontStyle          = New-Object System.Drawing.Font($DefaultFontFace, 9)
     $DefaultLblSize           = New-Object System.Drawing.Size($DefaultLblWidth, $DefaultLblHeight)
 
 
@@ -37,7 +37,8 @@ function Get-Gui {
     # Form Base Shell
     $MainForm                 = New-Object System.Windows.Forms.Form
     $MainForm.Text            = "PowerShell Triage Interface"
-    $MainForm.Size            = New-Object System.Drawing.Size(700, 575)  # width x height (original value: `950, 750`)
+    # width x height (original value: `950, 750`)
+    $MainForm.Size            = New-Object System.Drawing.Size(700, 575)  
     $MainForm.StartPosition   = "CenterScreen"
     $MainForm.FormBorderStyle = "Sizable"
     $MainForm.MaximizeBox     = $false
@@ -110,15 +111,15 @@ function Get-Gui {
 
     $GroupboxModules          = New-Object System.Windows.Forms.GroupBox
     $GroupboxModules.Text     = "SELECT MODULES TO RUN"
-    $GroupboxModules.Location = New-Object System.Drawing.Point(10, 120)  # (x, y) position (original value: `10, 125`)
-    $GroupboxModules.Size     = New-Object System.Drawing.Size(330, 395)  # width x height (original value: `410, 395`)
+    $GroupboxModules.Location = New-Object System.Drawing.Point(10, 120)  # (x, y) position (original value: 10, 125)
+    $GroupboxModules.Size     = New-Object System.Drawing.Size(330, 395)  # width x height (original value: 410, 395)
     $MainForm.Controls.Add($GroupboxModules)
 
 
     $GroupboxOptions          = New-Object System.Windows.Forms.GroupBox
     $GroupboxOptions.Text     = "OTHER OPTIONS"
-    $GroupboxOptions.Location = New-Object System.Drawing.Point(360, 10)  # (x, y) position (original value: `440, 10`)
-    $GroupboxOptions.Size     = New-Object System.Drawing.Size(275, 370)  # width x height (original value: `410, 370`)
+    $GroupboxOptions.Location = New-Object System.Drawing.Point(360, 10)  # (x, y) position (original value: 440, 10)
+    $GroupboxOptions.Size     = New-Object System.Drawing.Size(275, 370)  # width x height (original value: 410, 370)
     $MainForm.Controls.Add($GroupboxOptions)
 
 
