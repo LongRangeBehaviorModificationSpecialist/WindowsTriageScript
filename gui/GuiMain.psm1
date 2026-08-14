@@ -170,10 +170,10 @@ function Get-Gui {
         $GroupboxColYStart += $CalculatedHeight + $GroupboxControlsPadding
 
         $TextLbl.add_Click({
-                param($Sender, $e)
-                $AssociatedBox = $ModulesChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
-                if ($AssociatedBox) { $AssociatedBox.Checked = !$AssociatedBox.Checked }
-            })
+            param($Sender, $e)
+            $AssociatedBox = $ModulesChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
+            if ($AssociatedBox) { $AssociatedBox.Checked = !$AssociatedBox.Checked }
+        })
         $TextLbl.Tag = $Item.Name  # Store key mapping reference link
         $ModulesChkBoxes.Add($ChkBox)
     }
@@ -268,10 +268,10 @@ function Get-Gui {
         $GroupboxColYStart += $CalculatedHeight + $GroupboxControlsPadding
 
         $TextLbl.add_Click({
-                param($Sender, $e)
-                $AssociatedBox = $OptionsChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
-                if ($AssociatedBox) { $AssociatedBox.Checked = !$AssociatedBox.Checked }
-            })
+            param($Sender, $e)
+            $AssociatedBox = $OptionsChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
+            if ($AssociatedBox) { $AssociatedBox.Checked = !$AssociatedBox.Checked }
+        })
         $TextLbl.Tag = $Item.Name  # Store key mapping reference link
         $OptionsChkBoxes.Add($ChkBox)
     }
@@ -304,7 +304,7 @@ function Get-Gui {
     $BtnClearAllOptions.Width                      = $GroupboxBtnWidth
     $BtnClearAllOptions.Height                     = $GroupboxBtnHeight
     $BtnClearAllOptions.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnClearAllOptions.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, ($GroupboxSelectAllBtnY + $GroupboxBtnHeight + 10))
+    $BtnClearAllOptions.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, ( $GroupboxSelectAllBtnY + $GroupboxBtnHeight + 10 ))
     $BtnClearAllOptions.FlatAppearance.BorderSize  = 1
     $BtnClearAllOptions.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
     $BtnClearAllOptions.BackColor                  = [System.Drawing.Color]::White
