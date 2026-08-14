@@ -79,9 +79,7 @@ function Get-TriageDeviceData {
 
     function Get-EnvVars {
         param ( [string]$OutputFile = "$DeviceFolder\env_vars.txt" )
-        $Command =  { Get-ChildItem -Path env: |
-                    Format-List
-                    }
+        $Command =  { Get-ChildItem -Path env: | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
@@ -123,8 +121,8 @@ function Get-TriageDeviceData {
             [string]$CsvOutputFile = "$DeviceFolder\start_up_apps.csv"
         )
         $Command =  { Get-CimInstance -ClassName Win32_StartupCommand |
-                        Select-Object -Property * |
-                        Sort-Object Caption
+                    Select-Object -Property * |
+                    Sort-Object Caption
                     }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
