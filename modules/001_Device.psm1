@@ -52,49 +52,42 @@ function Get-TriageDeviceData {
         $Data1 = &($Command1)
         Write-OutputToFile -Command $Command1 -Data $Data1 -OutputFile $OutputFile
 
-        $Command2 = { Get-CimInstance -ClassName Win32_ComputerSystem |
-                        Select-Object -Property * }
+        $Command2 = { Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -Property * }
         $Data2 = &($Command2)
         Write-OutputToFile -Command $Command2 -Data $Data2 -OutputFile $OutputFile -Append
     }
 
     function Get-PhysicalMemory {
         param([string]$OutputFile = "$DeviceFolder\physical_memory.txt")
-        $Command = { Get-CimInstance -ClassName Win32_PhysicalMemory |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_PhysicalMemory | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-EnvVars {
         param([string]$OutputFile = "$DeviceFolder\env_vars.txt")
-        $Command = { Get-ChildItem -Path env: |
-                        Format-List }
+        $Command = { Get-ChildItem -Path env: | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-DiskPart {
         param([string]$OutputFile = "$DeviceFolder\disk_partitions.csv")
-        $Command = { Get-CimInstance -ClassName Win32_DiskPartition |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_DiskPartition | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-UserAccounts {
         param([string]$OutputFile = "$DeviceFolder\user_accounts.txt")
-        $Command = { Get-CimInstance -ClassName Win32_UserProfile |
-                        Select-Object LocalPath, SID, @{
-                            N = "last used"; E = { $_.lastusetime } } }
+        $Command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object LocalPath, SID, @{ N = "last used"; E = { $_.lastusetime } } }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-LogonSessions {
         param([string]$OutputFile = "$DeviceFolder\logon_sessions.txt")
-        $Command = { Get-CimInstance -ClassName Win32_LogonSession |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
@@ -104,9 +97,7 @@ function Get-TriageDeviceData {
             [string]$OutputFile    = "$DeviceFolder\start_up_apps.txt",
             [string]$CsvOutputFile = "$DeviceFolder\start_up_apps.csv"
         )
-        $Command = { Get-CimInstance -ClassName Win32_StartupCommand |
-                        Select-Object -Property * |
-                        Sort-Object Caption }
+        $Command = { Get-CimInstance -ClassName Win32_StartupCommand | Select-Object -Property * | Sort-Object Caption }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -132,8 +123,7 @@ function Get-TriageDeviceData {
 
     function Get-MotherboardInfo {
         param([string]$OutputFile = "$DeviceFolder\motherboard.txt")
-        $Command = { Get-CimInstance -ClassName Win32_BaseBoard |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_BaseBoard | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
@@ -143,6 +133,7 @@ function Get-TriageDeviceData {
     # ----------------------------------
 
     $DeviceWorkFlow = [ordered]@{
+
         { Get-MiscDeviceData } = (
             "Gathering Overall Device Information...",
             "device_info.txt"

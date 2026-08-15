@@ -22,8 +22,7 @@ function Get-TriageNetworkData {
 
     function Get-LocalIpInfoAsTxt {
         param([string]$OutputFile     = "$NetworkFolder\local_ip_info.txt")
-        $NetIpCommand = { Get-NetIPAddress |
-                            Select-Object -Property * }
+        $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
         $NetIpData = &$NetIpCommand
         Write-OutputToFile -Command $NetIpCommand -Data $NetIpData -OutputFile $OutputFile
 
@@ -34,18 +33,14 @@ function Get-TriageNetworkData {
 
     function Get-LocalIpInfoAsCsv {
         param([string]$OutputFile  = "$NetworkFolder\local_ip_info.csv")
-        $NetIpCommand = { Get-NetIPAddress |
-                            Select-Object -Property * }
+        $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
         $NetIpData = &$NetIpCommand
         Write-OutputToCsv -Data $NetIpData -OutputFile $CsvOutputFile
     }
 
     function Get-NetworkConfig {
         param([string]$OutputFile = "$NetworkFolder\network_config.txt")
-        $Command = { Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration |
-                        Where-Object { $_.IPEnabled -eq "True" } |
-                        Select-Object -Property * |
-                        Format-List }
+        $Command = { Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq "True" } | Select-Object -Property * | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
@@ -83,9 +78,7 @@ function Get-TriageNetworkData {
             [string]$OutputFile    = "$NetworkFolder\net_tcp_connections.txt",
             [string]$CsvOutputFile = "$NetworkFolder\net_tcp_connections.csv"
         )
-        $AllCommand = { Get-NetTCPConnection |
-                            Select-Object -Property * |
-                            Sort-Object LocalAddress -Desc }
+        $AllCommand = { Get-NetTCPConnection | Select-Object -Property * | Sort-Object LocalAddress -Desc }
         $AllData = &($AllCommand)
         Write-OutputToFile -Command $AllCommand -Data $AllData -OutputFile $OutputFile
         Write-OutputToCsv -Data $AllData -OutputFile $CsvOutputFile
@@ -100,17 +93,14 @@ function Get-TriageNetworkData {
 
     function Get-DnsCacheByRecordName {
         param([string]$OutputFile = "$NetworkFolder\dns_cache_by_record_name.txt")
-        $Command = { ipconfig /displaydns |
-                        Select-String "Record Name" |
-                        Sort-Object }
+        $Command = { ipconfig /displaydns | Select-String "Record Name" | Sort-Object }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-NetworkShares {
         param([string]$OutputFile = "$NetworkFolder\network_shares.txt")
-        $Command = { Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2" |
-                        Select-Object * -ExcludeProperty PS* }
+        $Command = { Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2" | Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }

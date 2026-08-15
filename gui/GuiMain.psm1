@@ -338,13 +338,13 @@ function Get-Gui {
     $BtnStartTriage.Forecolor                  = "#dddddd"
     # $BtnStartTriage.Add_Click({
 
-            # $User = $TxtboxUserName.Text
-            # $Agency = $TxtboxAgency.Text
-            # $CaseNumber = $TxtboxCaseNumber.Text
-            # $DriveList = $tbDrivesList.Text
-            # $KeyWordsDrivesList = $TbKeyWordsDrivesList.Text
+        # $User = $TxtboxUserName.Text
+        # $Agency = $TxtboxAgency.Text
+        # $CaseNumber = $TxtboxCaseNumber.Text
+        # $DriveList = $tbDrivesList.Text
+        # $KeyWordsDrivesList = $TbKeyWordsDrivesList.Text
 
-            # Export-FilesReport -CaseFolderName $caseFolderName -User $User -Agency $Agency -CaseNumber $caseNumber -ComputerName $ComputerName -Ipv4 $ipv4 -Ipv6 $ipv6 -Device $cbOne.Checked -UserData $cbTwo.Checked -Network $cbThree.Checked -Process $cbFour.Checked -System $cbFive.Checked -Prefetch $cbSix.Checked -EventLogs $cbSeven.Checked -Firewall $cbEight.Checked -BitLocker $cbNine.Checked -CaptureProcesses $cbGetProcesses.Checked -GetRam $cbGetRam.Checked -Edd $cbEdd.Checked -Hives $cbRegHives.Checked -CopyPrefetch $cbPrefetch.Checked -GetNTUserDat $cbNTUserDat.Checked -ListFiles $cbListFiles.Checked -DriveList $DriveList -KeyWordSearch $cbKeyWordSearch.Checked -KeyWordsDriveList $KeyWordsDrivesList -CopySrum $cbSruDb.Checked -GetFileHashes $cbHashFiles.Checked -MakeArchive $cbArchive.Checked
+        # Export-FilesReport -CaseFolderName $CaseFolderName -User $User -Agency $Agency -CaseNumber $CaseNumber -ComputerName $ComputerName -Ipv4 $Ipv4 -Ipv6 $Ipv6 -Device $CbOne.Checked -UserData $CbTwo.Checked -Network $CbThree.Checked -Process $CbFour.Checked -System $CbFive.Checked -Prefetch $CbSix.Checked -EventLogs $CbSeven.Checked -Firewall $CbEight.Checked -BitLocker $CbNine.Checked -CaptureProcesses $CbGetProcesses.Checked -GetRam $CbGetRam.Checked -Edd $CbEdd.Checked -Hives $CbRegHives.Checked -CopyPrefetch $CbPrefetch.Checked -GetNTUserDat $CbNTUserDat.Checked -ListFiles $CbListFiles.Checked -DriveList $DriveList -KeyWordSearch $CbKeyWordSearch.Checked -KeyWordsDriveList $KeyWordsDrivesList -CopySrum $CbSruDb.Checked -GetFileHashes $CbHashFiles.Checked -MakeArchive $CbArchive.Checked
 
         #     $Form.Close()
         #     return
@@ -367,9 +367,9 @@ function Get-Gui {
     $BtnQuit.BackColor                  = "#c0392b"
     $BtnQuit.Forecolor                  = "#dddddd"
     $BtnQuit.Add_Click({
-            $MainForm.Close()
-            return
-        })
+        $MainForm.Close()
+        return
+    })
 
     $MainForm.Controls.Add($BtnQuit)
 

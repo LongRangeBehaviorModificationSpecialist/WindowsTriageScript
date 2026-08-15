@@ -29,41 +29,35 @@ function Get-TriageUserData {
 
     function Get-Win32UserProfile {
         param([string]$OutputFile = "$UserFolder\win32_user_profile.txt")
-        $Command = { Get-CimInstance -ClassName Win32_UserProfile |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-LocalUserData {
         param([string]$OutputFile = "$UserFolder\local_users.txt")
-        $Command = { Get-LocalUser |
-                        Select-Object -Property * |
-                        Format-List }
+        $Command = { Get-LocalUser | Select-Object -Property * | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-UserGroups {
         param([string]$OutputFile = "$UserFolder\user_groups.csv")
-        $Command = { Get-CimInstance -ClassName Win32_Group |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_Group | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
     function Get-Win32LocalLogons {
         param([string]$OutputFile = "$UserFolder\win32_local_logons.txt")
-        $Command = { Get-CimInstance -ClassName Win32_LogonSession |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-Win32UserAccount {
         param([string]$OutputFile = "$UserFolder\win32_user_account.txt")
-        $Command = { Get-CimInstance -ClassName Win32_UserAccount |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
