@@ -22,14 +22,12 @@ function Get-TriageProcessData {
 
     function Get-RunningProcessList {
         param(
-            [string]$OutputFile              = "$ProcessFolder\running_processes.txt",
-            [string]$CsvOutputFile           = "$ProcessFolder\running_processes.csv",
+            [string]$OutputFile = "$ProcessFolder\running_processes.txt",
+            [string]$CsvOutputFile = "$ProcessFolder\running_processes.csv",
             [string]$UniqueProcessHashOutput = "$ProcessFolder\unique_process_hashes.csv",
-            [string]$ProcessListOutput       = "$ProcessFolder\process_list.csv"
+            [string]$ProcessListOutput = "$ProcessFolder\process_list.csv"
         )
-        $Command = { Get-CimInstance -ClassName Win32_Process |
-                        Select-Object -Property * |
-                        Sort-Object ParentProcessId -Descending }
+        $Command = { Get-CimInstance -ClassName Win32_Process | Select-Object -Property * | Sort-Object ParentProcessId -Descending }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -58,9 +56,8 @@ function Get-TriageProcessData {
                         Where-Object { $_.name -eq "svchost.exe" } |
                         Select-Object ProcessId |
                         ForEach-Object { $P = $_.ProcessID; Get-CimInstance -ClassName Win32_Service |
-                            Where-Object {
-                                $_.processId -eq $P } |
-                                Select-Object ProcessID, Name, DisplayName, State, ServiceType, StartMode, PathName, Status } }
+                        Where-Object { $_.processId -eq $P } |
+                        Select-Object ProcessID, Name, DisplayName, State, ServiceType, StartMode, PathName, Status } }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
@@ -70,10 +67,7 @@ function Get-TriageProcessData {
             [string]$OutputFile    = "$ProcessFolder\running_services.txt",
             [string]$CsvOutputFile = "$ProcessFolder\running_services.csv"
         )
-        $Command = { Get-CimInstance -ClassName Win32_Service |
-                        Where-Object State -eq "Running" |
-                        Select-Object -Property * |
-                        Sort-Object -Property Name }
+        $Command = { Get-CimInstance -ClassName Win32_Service | Where-Object State -eq "Running" | Select-Object -Property * | Sort-Object -Property Name }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -92,8 +86,7 @@ function Get-TriageProcessData {
 
     function Get-SystemDrivers {
         param([string]$CsvOutputFile = "$ProcessFolder\system_drivers.csv")
-        $Command = { Get-CimInstance -ClassName Win32_SystemDriver |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_SystemDriver | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
         $ResultCount = ($Data).Count
@@ -104,8 +97,7 @@ function Get-TriageProcessData {
 
     function Get-PnPSignedDrivers {
         param([string]$OutputFile = "$ConnectedDevicesFolder\pnp_signed_drivers.csv")
-        $Command = { Get-CimInstance -ClassName Win32_PnPSignedDriver |
-                        Select-Object -Property * }
+        $Command = { Get-CimInstance -ClassName Win32_PnPSignedDriver | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
         $ResultCount = ($Data).Count

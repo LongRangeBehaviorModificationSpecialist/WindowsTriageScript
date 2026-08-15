@@ -21,7 +21,7 @@ function Get-TriageNetworkData {
     }
 
     function Get-LocalIpInfoAsTxt {
-        param([string]$OutputFile     = "$NetworkFolder\local_ip_info.txt")
+        param([string]$OutputFile = "$NetworkFolder\local_ip_info.txt")
         $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
         $NetIpData = &$NetIpCommand
         Write-OutputToFile -Command $NetIpCommand -Data $NetIpData -OutputFile $OutputFile
@@ -32,7 +32,7 @@ function Get-TriageNetworkData {
     }
 
     function Get-LocalIpInfoAsCsv {
-        param([string]$OutputFile  = "$NetworkFolder\local_ip_info.csv")
+        param([string]$OutputFile = "$NetworkFolder\local_ip_info.csv")
         $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
         $NetIpData = &$NetIpCommand
         Write-OutputToCsv -Data $NetIpData -OutputFile $CsvOutputFile
@@ -75,7 +75,7 @@ function Get-TriageNetworkData {
 
     function Get-NetTcpConnections {
         param(
-            [string]$OutputFile    = "$NetworkFolder\net_tcp_connections.txt",
+            [string]$OutputFile = "$NetworkFolder\net_tcp_connections.txt",
             [string]$CsvOutputFile = "$NetworkFolder\net_tcp_connections.csv"
         )
         $AllCommand = { Get-NetTCPConnection | Select-Object -Property * | Sort-Object LocalAddress -Desc }
