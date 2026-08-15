@@ -1,109 +1,81 @@
 function Get-TriageUserData {
     [CmdletBinding()]
-    param(
-        [string]$UserFolder
-    )
 
+    param([string]$UserFolder)
 
     function Invoke-ScriptBlock {
         param(
             [scriptblock]$Action,
-            [string]$FunctionMsg,
+            [string]$FunctionMessage,
             [string]$OutputFile
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
+            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
             & $Action
-            Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
+            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
 
-
     function Get-WhoAmI {
-        param(
-            [string]$OutputFile = "$UserFolder\who_am_I.txt"
-        )
+        param([string]$OutputFile = "$UserFolder\who_am_I.txt")
         $Command =  { whoami /ALL /FO LIST }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-Win32UserProfile {
-        param(
-            [string]$OutputFile = "$UserFolder\win32_user_profile.txt"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_UserProfile |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$UserFolder\win32_user_profile.txt")
+        $Command = { Get-CimInstance -ClassName Win32_UserProfile |
+                        Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-LocalUserData {
-        param(
-            [string]$OutputFile = "$UserFolder\local_users.txt"
-        )
-        $Command =  { Get-LocalUser |
+        param([string]$OutputFile = "$UserFolder\local_users.txt")
+        $Command = { Get-LocalUser |
                         Select-Object -Property * |
-                        Format-List
-                    }
+                        Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-UserGroups {
-        param(
-            [string]$OutputFile = "$UserFolder\user_groups.csv"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_Group |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$UserFolder\user_groups.csv")
+        $Command = { Get-CimInstance -ClassName Win32_Group |
+                        Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-Win32LocalLogons {
-        param(
-            [string]$OutputFile = "$UserFolder\win32_local_logons.txt"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_LogonSession |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$UserFolder\win32_local_logons.txt")
+        $Command = { Get-CimInstance -ClassName Win32_LogonSession |
+                        Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-Win32UserAccount {
-        param(
-            [string]$OutputFile = "$UserFolder\win32_user_account.txt"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_UserAccount |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$UserFolder\win32_user_account.txt")
+        $Command = { Get-CimInstance -ClassName Win32_UserAccount |
+                        Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-PowershellConsoleHistoryAllUsers {
-        param(
-            [string]$OutputFile = "$UserFolder\powershell_history_all_users.txt"
-        )
+        param([string]$OutputFile = "$UserFolder\powershell_history_all_users.txt")
         $UserDirs = Get-ChildItem -Path "C:\Users" -Directory
 
         foreach ($UserDir in $UserDirs) {
             if ($UserDir.Count -eq 0) {
                 $NoDataFoundMsg = "No data found when running the '$( $MyInvocation.MyCommand.Name )' command."
-                Show-MessageAndWriteLogEntry -Msg $NoDataFoundMsg -Level INFO
+                Show-Message -Message $NoDataFoundMsg -Level INFO -AddToLog
             }
             else {
                 $UserName = "User.$UserDir"
@@ -117,7 +89,6 @@ function Get-TriageUserData {
             }
         }
     }
-
 
     # ----------------------------------
     # Run the functions from the module
@@ -155,6 +126,6 @@ function Get-TriageUserData {
     }
 
     foreach ($Task in $UsersWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.key -functionMsg $Task.value[0] -OutputFile $Task.value[1]
+        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
     }
 }

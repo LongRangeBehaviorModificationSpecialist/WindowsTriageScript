@@ -4,24 +4,24 @@ function Get-Gui {
         Assembles and runs the graphical wrapper managing all worker modules.
     #>
 
-    $DefaultFontFace          = "Segoe UI"
-    $DefaultTxtbxWidth        = 250  # original value = 290
-    $DefaultLblWidth          = 80  # original value = 120
-    $DefaultLblHeight         = 20  # original value = 25
-    $GroupboxLblWidth         = 200
-    $GroupboxChkBoxWidth      = 20
-    $GroupboxChkBoxHeight     = 20
-    $GroupboxTxtbxHeight      = 20
-    $GroupboxControlsPadding  = 0
-    $GroupboxCol1XValue       = 10
-    $GroupboxCol2XValue       = ($GroupboxCol1XValue + $GroupboxChkBoxWidth)
-    $GroupboxColYStart        = 30
-    $GroupboxSelectAllBtnY    = 0
-    $GroupboxBtnWidth         = 150
-    $GroupboxBtnHeight        = 30
-    $GlobalFont               = New-Object System.Drawing.Font($DefaultFontFace, 8.5)
-    $TxtboxFontStyle           = New-Object System.Drawing.Font($DefaultFontFace, 9)
-    $DefaultLblSize           = New-Object System.Drawing.Size($DefaultLblWidth, $DefaultLblHeight)
+    $DefaultFontFace = "Segoe UI"
+    $DefaultTxtbxW   = 250  # original value = 290
+    $DefaultLblW     = 80  # original value = 120
+    $DefaultLblH     = 20  # original value = 25
+    $GpBxLblW        = 200
+    $GpBxChkBoxW     = 20
+    $GpBxChkBoxH     = 20
+    $GpBxTxtbxH      = 20
+    $GpBxControlPad  = 0
+    $GpBxCol1XValue  = 10
+    $GpBxCol2XValue  = ($GpBxCol1XValue + $GpBxChkBoxW)
+    $GpBxColYStart   = 30
+    $GpBxSelAllBtnY  = 0
+    $GpBxBtnW        = 150
+    $GpBxBtnH        = 30
+    $GlobalFont      = New-Object System.Drawing.Font($DefaultFontFace, 8.5)
+    $TxtboxFontStyle = New-Object System.Drawing.Font($DefaultFontFace, 9)
+    $DefaultLblSize  = New-Object System.Drawing.Size($DefaultLblW, $DefaultLblH)
 
 
     # Load required .NET GUI and Interaction assemblies explicitly
@@ -37,17 +37,18 @@ function Get-Gui {
     # Form Base Shell
     $MainForm                 = New-Object System.Windows.Forms.Form
     $MainForm.Text            = "PowerShell Triage Interface"
-    $MainForm.Size            = New-Object System.Drawing.Size(700, 575)  # width x height (original value: `950, 750`)
+    $MainForm.Size            = New-Object System.Drawing.Size(700, 575)
     $MainForm.StartPosition   = "CenterScreen"
     $MainForm.FormBorderStyle = "Sizable"
     $MainForm.MaximizeBox     = $false
     $MainForm.BackColor       = [System.Drawing.Color]::FromArgb(245, 246, 248)
+    $MainForm.TopMost         = $false
 
 
     # Define label and text boxes for source and destination directories
     $LblUserName           = New-Object System.Windows.Forms.Label
     $LblUserName.Text      = "User Name:"
-    $LblUserName.Location  = New-Object System.Drawing.Point(10, 15)  # (x, y) position
+    $LblUserName.Location  = New-Object System.Drawing.Point(10, 15)
     $LblUserName.Size      = $DefaultLblSize
     $LblUserName.Font      = $GlobalFont
     $LblUserName.ForeColor = [System.Drawing.Color]::Black
@@ -56,8 +57,8 @@ function Get-Gui {
 
 
     $TxtboxUserName             = New-Object System.Windows.Forms.TextBox
-    $TxtboxUserName.Location    = New-Object System.Drawing.Point(90, 15)  # (x, y) position
-    $TxtboxUserName.Width       = $DefaultTxtbxWidth
+    $TxtboxUserName.Location    = New-Object System.Drawing.Point(90, 15)
+    $TxtboxUserName.Width       = $DefaultTxtbxW
     $TxtboxUserName.Font        = $TxtboxFontStyle
     $TxtboxUserName.BackColor   = [System.Drawing.Color]::White
     $TxtboxUserName.ForeColor   = [System.Drawing.Color]::Black
@@ -68,7 +69,7 @@ function Get-Gui {
 
     $LblAgency           = New-Object System.Windows.Forms.Label
     $LblAgency.Text      = "Agency:"
-    $LblAgency.Location  = New-Object System.Drawing.Point(10, 50)  # (x, y) position
+    $LblAgency.Location  = New-Object System.Drawing.Point(10, 50)
     $LblAgency.Size      = $DefaultLblSize
     $LblAgency.Font      = $GlobalFont
     $LblAgency.ForeColor = [System.Drawing.Color]::Black
@@ -77,8 +78,8 @@ function Get-Gui {
 
 
     $TxtboxAgency             = New-Object System.Windows.Forms.TextBox
-    $TxtboxAgency.Location    = New-Object System.Drawing.Point(90, 50)  # (x, y) position
-    $TxtboxAgency.Width       = $DefaultTxtbxWidth
+    $TxtboxAgency.Location    = New-Object System.Drawing.Point(90, 50)
+    $TxtboxAgency.Width       = $DefaultTxtbxW
     $TxtboxAgency.Font        = $TxtboxFontStyle
     $TxtboxAgency.BackColor   = [System.Drawing.Color]::White
     $TxtboxAgency.ForeColor   = [System.Drawing.Color]::Black
@@ -89,7 +90,7 @@ function Get-Gui {
 
     $LblCaseNumber           = New-Object System.Windows.Forms.Label
     $LblCaseNumber.Text      = "Case Number:"
-    $LblCaseNumber.Location  = New-Object System.Drawing.Point(10, 85)  # (x, y) position
+    $LblCaseNumber.Location  = New-Object System.Drawing.Point(10, 85)
     $LblCaseNumber.Size      = $DefaultLblSize
     $LblCaseNumber.Font      = $GlobalFont
     $LblCaseNumber.ForeColor = [System.Drawing.Color]::Black
@@ -98,8 +99,8 @@ function Get-Gui {
 
 
     $TxtboxCaseNumber             = New-Object System.Windows.Forms.TextBox
-    $TxtboxCaseNumber.Location    = New-Object System.Drawing.Point(90, 85)  # (x, y) position
-    $TxtboxCaseNumber.Width       = $DefaultTxtbxWidth
+    $TxtboxCaseNumber.Location    = New-Object System.Drawing.Point(90, 85)
+    $TxtboxCaseNumber.Width       = $DefaultTxtbxW
     $TxtboxCaseNumber.Font        = $TxtboxFontStyle
     $TxtboxCaseNumber.BackColor   = [System.Drawing.Color]::White
     $TxtboxCaseNumber.ForeColor   = [System.Drawing.Color]::Black
@@ -108,21 +109,21 @@ function Get-Gui {
     $MainForm.Controls.Add($TxtboxCaseNumber)
 
 
-    $GroupboxModules          = New-Object System.Windows.Forms.GroupBox
-    $GroupboxModules.Text     = "SELECT MODULES TO RUN"
-    $GroupboxModules.Location = New-Object System.Drawing.Point(10, 120)  # (x, y) position (original value: `10, 125`)
-    $GroupboxModules.Size     = New-Object System.Drawing.Size(330, 395)  # width x height (original value: `410, 395`)
-    $MainForm.Controls.Add($GroupboxModules)
+    $GpBxModules          = New-Object System.Windows.Forms.GroupBox
+    $GpBxModules.Text     = "Sel MODULES TO RUN"
+    $GpBxModules.Location = New-Object System.Drawing.Point(10, 120)
+    $GpBxModules.Size     = New-Object System.Drawing.Size(330, 395)
+    $MainForm.Controls.Add($GpBxModules)
 
 
-    $GroupboxOptions          = New-Object System.Windows.Forms.GroupBox
-    $GroupboxOptions.Text     = "OTHER OPTIONS"
-    $GroupboxOptions.Location = New-Object System.Drawing.Point(360, 10)  # (x, y) position (original value: `440, 10`)
-    $GroupboxOptions.Size     = New-Object System.Drawing.Size(275, 370)  # width x height (original value: `410, 370`)
-    $MainForm.Controls.Add($GroupboxOptions)
+    $GpBxOpts          = New-Object System.Windows.Forms.GroupBox
+    $GpBxOpts.Text     = "OTHER Opts"
+    $GpBxOpts.Location = New-Object System.Drawing.Point(360, 10)
+    $GpBxOpts.Size     = New-Object System.Drawing.Size(275, 370)
+    $MainForm.Controls.Add($GpBxOpts)
 
 
-    $ModulesChecklist = @(
+    $ModulesChkLst = @(
         @{ Name = "DeviceData"; Label = "Get Device Data" }
         @{ Name = "UserData"; Label = "Parse User(s) Data" }
         @{ Name = "NetworkData"; Label = "Network Connection Data" }
@@ -137,8 +138,8 @@ function Get-Gui {
 
     $ModulesChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
 
-    for ($I = 0; $I -lt $ModulesChecklist.Count; $I++) {
-        $Item = $ModulesChecklist[$I]
+    for ($I = 0; $I -lt $ModulesChkLst.Count; $I++) {
+        $Item = $ModulesChkLst[$I]
 
         # Initialize Independent Text Label (Columns 2 & 4)
         $TextLbl           = New-Object System.Windows.Forms.Label
@@ -147,65 +148,67 @@ function Get-Gui {
         $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
 
         # Measure out text metrics using raw engine parameters
-        $ProposedSize     = New-Object System.Drawing.Size($GroupboxLblWidth, 0)
-        $MeasuredSize     = [System.Windows.Forms.TextRenderer]::MeasureText($Item.Label, $GlobalFont, $ProposedSize, [System.Windows.Forms.TextFormatFlags]::WordBreak)
-        $CalculatedHeight = [Math]::Max($MeasuredSize.Height, $GroupboxTxtbxHeight)
-        $TextLbl.Size     = New-Object System.Drawing.Size($GroupboxLblWidth, $CalculatedHeight)
+        $ProposedSize = New-Object System.Drawing.Size($GpBxLblW, 0)
+        $MeasuredSize = [System.Windows.Forms.TextRenderer]::MeasureText($Item.Label, $GlobalFont, $ProposedSize, [System.Windows.Forms.TextFormatFlags]::WordBreak)
+        $CalculatedH  = [Math]::Max($MeasuredSize.H, $GpBxTxtbxH)
+        $TextLbl.Size = New-Object System.Drawing.Size($GpBxLblW, $CalculatedH)
 
         # Initialize Independent CheckBox Control (Column 1)
+        # Strictly constrained to the square box frame asset
         $ChkBox      = New-Object System.Windows.Forms.CheckBox
         $ChkBox.Tag  = $Item.Name
-        $ChkBox.Size = New-Object System.Drawing.Size($GroupboxChkBoxWidth, $GroupboxChkBoxHeight) # Strictly constrained to the square box frame asset
+        $ChkBox.Size = New-Object System.Drawing.Size($GpBxChkBoxW, $GpBxChkBoxH)
 
-        $ChkBox.Location   = New-Object System.Drawing.Point($GroupboxCol1XValue, $GroupboxColYStart)
+        $ChkBox.Location   = New-Object System.Drawing.Point($GpBxCol1XValue, $GpBxColYStart)
         $ChkBox.CheckAlign = [System.Drawing.ContentAlignment]::MiddleLeft
-        $TextLbl.Location  = New-Object System.Drawing.Point($GroupboxCol2XValue, $GroupboxColYStart)
+        $TextLbl.Location  = New-Object System.Drawing.Point($GpBxCol2XValue, $GpBxColYStart)
         $TextLbl.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 
-        $GroupboxModules.Controls.Add($ChkBox)
-        $GroupboxModules.Controls.Add($TextLbl)
+        $GpBxModules.Controls.Add($ChkBox)
+        $GpBxModules.Controls.Add($TextLbl)
 
         # Advance Left pipeline coordinate tracker
-        $GroupboxColYStart += $CalculatedHeight + $GroupboxControlsPadding
+        $GpBxColYStart += $CalculatedH + $GpBxControlPad
 
         $TextLbl.add_Click({
                 param($Sender, $e)
                 $AssociatedBox = $ModulesChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
                 if ($AssociatedBox) { $AssociatedBox.Checked = !$AssociatedBox.Checked }
             })
-        $TextLbl.Tag = $Item.Name  # Store key mapping reference link
+        # Store key mapping reference link
+        $TextLbl.Tag = $Item.Name
         $ModulesChkBoxes.Add($ChkBox)
     }
 
-    $GroupboxSelectAllBtnY = ($GroupboxColYStart + $GroupboxControlsPadding + 10)
+    $GpBxSelAllBtnY = ($GpBxColYStart + $GpBxControlPad + 10)
 
-    $BtnSelectAllModules                            = New-Object System.Windows.Forms.Button
-    $BtnSelectAllModules.Text                       = "Select All Modules"
-    $BtnSelectAllModules.Font                       = $GlobalFont
-    $BtnSelectAllModules.Width                      = $GroupboxBtnWidth
-    $BtnSelectAllModules.Height                     = $GroupboxBtnHeight
-    $BtnSelectAllModules.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnSelectAllModules.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, $GroupboxSelectAllBtnY)  # (x, y) position
-    $BtnSelectAllModules.FlatAppearance.BorderSize  = 1
-    $BtnSelectAllModules.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnSelectAllModules.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)  # Soft green accent color
-    $BtnSelectAllModules.Forecolor                  = [System.Drawing.Color]::White
-    $BtnSelectAllModules.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
-    $BtnSelectAllModules.add_Click({
+    $BtnSelAllModules                            = New-Object System.Windows.Forms.Button
+    $BtnSelAllModules.Text                       = "Sel All Modules"
+    $BtnSelAllModules.Font                       = $GlobalFont
+    $BtnSelAllModules.Width                      = $GpBxBtnW
+    $BtnSelAllModules.Height                     = $GpBxBtnH
+    $BtnSelAllModules.Padding                    = New-Object System.Windows.Forms.Padding(3)
+    $BtnSelAllModules.Location                   = New-Object Drawing.Point($GpBxCol1XValue, $GpBxSelAllBtnY)
+    $BtnSelAllModules.FlatAppearance.BorderSize  = 1
+    $BtnSelAllModules.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+    $BtnSelAllModules.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
+    $BtnSelAllModules.Forecolor                  = [System.Drawing.Color]::White
+    $BtnSelAllModules.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
+    $BtnSelAllModules.add_Click({
         foreach ($ChkBox in $ModulesChkBoxes) {
             $ChkBox.Checked = $true
         }
     })
-    $GroupboxModules.Controls.Add($BtnSelectAllModules)
+    $GpBxModules.Controls.Add($BtnSelAllModules)
 
 
     $BtnClearAllModules                            = New-Object System.Windows.Forms.Button
-    $BtnClearAllModules.Text                       = "Deselect All Modules"
+    $BtnClearAllModules.Text                       = "DeSel All Modules"
     $BtnClearAllModules.Font                       = $GlobalFont
-    $BtnClearAllModules.Width                      = $GroupboxBtnWidth
-    $BtnClearAllModules.Height                     = $GroupboxBtnHeight
+    $BtnClearAllModules.Width                      = $GpBxBtnW
+    $BtnClearAllModules.Height                     = $GpBxBtnH
     $BtnClearAllModules.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnClearAllModules.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, ($GroupboxSelectAllBtnY + $GroupboxBtnHeight + 10))
+    $BtnClearAllModules.Location                   = New-Object Drawing.Point($GpBxCol1XValue, ($GpBxSelAllBtnY + $GpBxBtnH + 10))
     $BtnClearAllModules.FlatAppearance.BorderSize  = 1
     $BtnClearAllModules.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
     $BtnClearAllModules.BackColor                  = [System.Drawing.Color]::White
@@ -216,10 +219,10 @@ function Get-Gui {
             $ChkBox.Checked = $false
         }
     })
-    $GroupboxModules.Controls.Add($BtnClearAllModules)
+    $GpBxModules.Controls.Add($BtnClearAllModules)
 
 
-    $OtherOptionsCheckList = @(
+    $OtherOptsChkLst = @(
         @{ Name = "RunEDD"; Label = "Run Encrypted Disk Detector" }
         @{ Name = "CaptureProcesses"; Label = "Collect Running Processes" }
         @{ Name = "CaptureRAM"; Label = "Collect Computer RAM" }
@@ -231,13 +234,13 @@ function Get-Gui {
         @{ Name = "CreateArchive"; Label = "Create Case Archive" }
     )
 
-    $OptionsChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
+    $OptsChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
 
     # Reset the value of this variable.
-    $GroupboxColYStart = 30
+    $GpBxColYStart = 30
 
-    for ($I = 0; $I -lt $OtherOptionsCheckList.Count; $I++) {
-        $Item = $OtherOptionsCheckList[$I]
+    for ($I = 0; $I -lt $OtherOptsChkLst.Count; $I++) {
+        $Item = $OtherOptsChkLst[$I]
 
         # Initialize independent text label for column 2
         $TextLbl           = New-Object System.Windows.Forms.Label
@@ -246,75 +249,77 @@ function Get-Gui {
         $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
 
         # Measure out text metrics using raw engine parameters
-        $ProposedSize     = New-Object System.Drawing.Size($GroupboxLblWidth, 0)
+        $ProposedSize     = New-Object System.Drawing.Size($GpBxLblW, 0)
         $MeasuredSize     = [System.Windows.Forms.TextRenderer]::MeasureText($Item.Label, $GlobalFont, $ProposedSize, [System.Windows.Forms.TextFormatFlags]::WordBreak)
-        $CalculatedHeight = [Math]::Max($MeasuredSize.Height, $GroupboxTxtbxHeight)
-        $TextLbl.Size     = New-Object System.Drawing.Size($GroupboxLblWidth, $CalculatedHeight)
+        $CalculatedH      = [Math]::Max($MeasuredSize.H, $GpBxTxtbxH)
+        $TextLbl.Size     = New-Object System.Drawing.Size($GpBxLblW, $CalculatedH)
 
         # Initialize independent checkbox control column 1
+        # Strictly constrained to the square box frame asset
         $ChkBox            = New-Object System.Windows.Forms.CheckBox
         $ChkBox.Tag        = $Item.Name
-        $ChkBox.Size       = New-Object System.Drawing.Size($GroupboxChkBoxWidth, $GroupboxChkBoxHeight)  # Strictly constrained to the square box frame asset
-        $ChkBox.Location   = New-Object System.Drawing.Point($GroupboxCol1XValue, $GroupboxColYStart)
+        $ChkBox.Size       = New-Object System.Drawing.Size($GpBxChkBoxW, $GpBxChkBoxH)
+        $ChkBox.Location   = New-Object System.Drawing.Point($GpBxCol1XValue, $GpBxColYStart)
         $ChkBox.CheckAlign = [System.Drawing.ContentAlignment]::MiddleLeft
-        $TextLbl.Location  = New-Object System.Drawing.Point($GroupboxCol2XValue, $GroupboxColYStart)
+        $TextLbl.Location  = New-Object System.Drawing.Point($GpBxCol2XValue, $GpBxColYStart)
         $TextLbl.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 
-        $GroupboxOptions.Controls.Add($ChkBox)
-        $GroupboxOptions.Controls.Add($TextLbl)
+        $GpBxOpts.Controls.Add($ChkBox)
+        $GpBxOpts.Controls.Add($TextLbl)
 
         # Advance Left pipeline coordinate tracker
-        $GroupboxColYStart += $CalculatedHeight + $GroupboxControlsPadding
+        $GpBxColYStart += $CalculatedH + $GpBxControlPad
 
         $TextLbl.add_Click({
                 param($Sender, $e)
-                $AssociatedBox = $OptionsChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
+                $AssociatedBox = $OptsChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
                 if ($AssociatedBox) { $AssociatedBox.Checked = !$AssociatedBox.Checked }
             })
-        $TextLbl.Tag = $Item.Name  # Store key mapping reference link
-        $OptionsChkBoxes.Add($ChkBox)
+        # Store key mapping reference link
+        $TextLbl.Tag = $Item.Name
+        $OptsChkBoxes.Add($ChkBox)
     }
 
-    $GroupboxSelectAllBtnY = ($GroupboxColYStart + $GroupboxControlsPadding + 10)
+    $GpBxSelAllBtnY = ($GpBxColYStart + $GpBxControlPad + 10)
 
-    $BtnSelectAllOptions                            = New-Object System.Windows.Forms.Button
-    $BtnSelectAllOptions.Text                       = "Select All Options"
-    $BtnSelectAllOptions.Font                       = $GlobalFont
-    $BtnSelectAllOptions.Width                      = $GroupboxBtnWidth
-    $BtnSelectAllOptions.Height                     = $GroupboxBtnHeight
-    $BtnSelectAllOptions.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnSelectAllOptions.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, $GroupboxSelectAllBtnY)  # (x, y) position
-    $BtnSelectAllOptions.FlatAppearance.BorderSize  = 1
-    $BtnSelectAllOptions.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnSelectAllOptions.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)  # Soft green accent color
-    $BtnSelectAllOptions.Forecolor                  = [System.Drawing.Color]::White
-    $BtnSelectAllOptions.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
-    $BtnSelectAllOptions.add_Click({
-        foreach ($ChkBox in $OptionsChkBoxes) {
+    $BtnSelAllOpts                            = New-Object System.Windows.Forms.Button
+    $BtnSelAllOpts.Text                       = "Sel All Opts"
+    $BtnSelAllOpts.Font                       = $GlobalFont
+    $BtnSelAllOpts.Width                      = $GpBxBtnW
+    $BtnSelAllOpts.Height                     = $GpBxBtnH
+    $BtnSelAllOpts.Padding                    = New-Object System.Windows.Forms.Padding(3)
+    $BtnSelAllOpts.Location                   = New-Object Drawing.Point($GpBxCol1XValue, $GpBxSelAllBtnY)
+    $BtnSelAllOpts.FlatAppearance.BorderSize  = 1
+    $BtnSelAllOpts.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+    $BtnSelAllOpts.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
+    $BtnSelAllOpts.Forecolor                  = [System.Drawing.Color]::White
+    $BtnSelAllOpts.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
+    $BtnSelAllOpts.add_Click({
+        foreach ($ChkBox in $OptsChkBoxes) {
             $ChkBox.Checked = $true
         }
     })
-    $GroupboxOptions.Controls.Add($BtnSelectAllOptions)
+    $GpBxOpts.Controls.Add($BtnSelAllOpts)
 
 
-    $BtnClearAllOptions                            = New-Object System.Windows.Forms.Button
-    $BtnClearAllOptions.Text                       = "Deselect All Options"
-    $BtnClearAllOptions.Font                       = $GlobalFont
-    $BtnClearAllOptions.Width                      = $GroupboxBtnWidth
-    $BtnClearAllOptions.Height                     = $GroupboxBtnHeight
-    $BtnClearAllOptions.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnClearAllOptions.Location                   = New-Object Drawing.Point($GroupboxCol1XValue, ($GroupboxSelectAllBtnY + $GroupboxBtnHeight + 10))
-    $BtnClearAllOptions.FlatAppearance.BorderSize  = 1
-    $BtnClearAllOptions.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnClearAllOptions.BackColor                  = [System.Drawing.Color]::White
-    $BtnClearAllOptions.Forecolor                  = [System.Drawing.Color]::black
-    $BtnClearAllOptions.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
-    $BtnClearAllOptions.add_Click({
-        foreach ($ChkBox in $OptionsChkBoxes) {
+    $BtnClearAllOpts                            = New-Object System.Windows.Forms.Button
+    $BtnClearAllOpts.Text                       = "DeSel All Opts"
+    $BtnClearAllOpts.Font                       = $GlobalFont
+    $BtnClearAllOpts.Width                      = $GpBxBtnW
+    $BtnClearAllOpts.Height                     = $GpBxBtnH
+    $BtnClearAllOpts.Padding                    = New-Object System.Windows.Forms.Padding(3)
+    $BtnClearAllOpts.Location                   = New-Object Drawing.Point($GpBxCol1XValue, ($GpBxSelAllBtnY + $GpBxBtnH + 10))
+    $BtnClearAllOpts.FlatAppearance.BorderSize  = 1
+    $BtnClearAllOpts.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+    $BtnClearAllOpts.BackColor                  = [System.Drawing.Color]::White
+    $BtnClearAllOpts.Forecolor                  = [System.Drawing.Color]::black
+    $BtnClearAllOpts.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
+    $BtnClearAllOpts.add_Click({
+        foreach ($ChkBox in $OptsChkBoxes) {
             $ChkBox.Checked = $false
         }
     })
-    $GroupboxOptions.Controls.Add($BtnClearAllOptions)
+    $GpBxOpts.Controls.Add($BtnClearAllOpts)
 
 
     # Define a button for initiating the files only report
@@ -322,11 +327,11 @@ function Get-Gui {
     $BtnStartTriage.Name                       = "btnFilesReport"
     $BtnStartTriage.Text                       = "Start Triage"
     $BtnStartTriage.Font                       = $GlobalFont
-    $BtnStartTriage.Width                      = $GroupboxBtnWidth
-    $BtnStartTriage.Height                     = $GroupboxBtnHeight
+    $BtnStartTriage.Width                      = $GpBxBtnW
+    $BtnStartTriage.Height                     = $GpBxBtnH
     $BtnStartTriage.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnStartTriage.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
-    $BtnStartTriage.Location                   = New-Object System.Drawing.Point(360, 410)  # (x, y) position
+    $BtnStartTriage.Location                   = New-Object System.Drawing.Point(360, 410)
     $BtnStartTriage.FlatAppearance.BorderSize  = 1
     $BtnStartTriage.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
     $BtnStartTriage.BackColor                  = "#17a589"
@@ -352,11 +357,11 @@ function Get-Gui {
     $BtnQuit                            = New-Object Windows.Forms.Button
     $BtnQuit.Text                       = "Quit"
     $BtnQuit.Font                       = $GlobalFont
-    $BtnQuit.Width                      = $GroupboxBtnWidth
-    $BtnQuit.Height                     = $GroupboxBtnHeight
+    $BtnQuit.Width                      = $GpBxBtnW
+    $BtnQuit.Height                     = $GpBxBtnH
     $BtnQuit.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnQuit.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
-    $BtnQuit.Location                   = New-Object System.Drawing.Point(360, 450)  # (x, y) position
+    $BtnQuit.Location                   = New-Object System.Drawing.Point(360, 450)
     $BtnQuit.FlatAppearance.BorderSize  = 1
     $BtnQuit.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
     $BtnQuit.BackColor                  = "#c0392b"

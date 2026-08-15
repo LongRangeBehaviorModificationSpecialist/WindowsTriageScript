@@ -1,20 +1,21 @@
 function Get-RunningProcesses {
     [CmdletBinding()]
+
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$ResultsFolder
     )
 
     begin {
         $Stopwatch         = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName      = $env:computername
-        $RunProcessCapture = Read-Host -Prompt "`n[?] Do you want to run MAGNET ProcessCapture? (y/n)"
+        $RunProcessCapture = Read-LogHost -Prompt "Do you want to run MAGNET Process Capture on $( $ComputerName )? (y/n): "
     }
     process {
         if ($RunProcessCapture -eq "y") {
             try {
                 $BeginMsg = "Starting Process Capture from computer: $( $ComputerName ). Please wait..."
-                Show-MessageAndWriteLogEntry -Msg $BeginMsg -Level INFO
+                Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
                 # Make new directory to store the process .dmp files
                 $ProcessCaptureFolder = Join-Path -Path $ResultsFolder -ChildPath "Process_Capture"
@@ -32,24 +33,24 @@ function Get-RunningProcesses {
                 $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
                 $SuccessMsg = "Process Capture completed successfully from computer: $( $ComputerName )"
-                Show-MessageAndWriteLogEntry -Msg $SuccessMsg -Level SUCCESS
+                Show-Message -Message $SuccessMsg -Level SUCCESS -AddToLog
 
-                Show-MessageAndWriteLogEntry -File $(Split-Path -Path $ProcessCaptureFolder -Leaf) -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS
+                Show-Message -File $(Split-Path -Path $ProcessCaptureFolder -Leaf) -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS -AddToLog
 
                 $Stopwatch.Stop()
             }
             catch {
-                $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-                Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+                $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ). Error -> $( $_.Exception.Message )"
+                Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
             }
         }
         elseif ($RunProcessCapture -eq "n") {
-            $DeclineMsg = "'$( $MyInvocation.MyCommand.Name )' DECLINED by the user."
-            Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
+            $DeclineMsg = "Executing '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ) was DECLINED by the user."
+            Show-Message -Message $DeclineMsg -Level WARNING -AddToLog
         }
         else {
-            $NoValidOptionMsg = "No valid option entered by the user, skipping the '$( $MyInvocation.MyCommand.Name )' function."
-            Show-MessageAndWriteLogEntry -Msg $NoValidOptionMsg -Level WARNING
+            $NoValidOptionMsg = "No valid option entered by the user, skipping the '$( $MyInvocation.MyCommand.Name )' function for $( $ComputerName )."
+            Show-Message -Message $NoValidOptionMsg -Level WARNING -AddToLog
         }
     }
     end {

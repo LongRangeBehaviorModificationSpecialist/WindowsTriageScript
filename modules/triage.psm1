@@ -1,5 +1,6 @@
 function Invoke-DfirTriageScan {
     [CmdletBinding()]
+
     param(
         [Parameter(Mandatory = $true)]
         [string]$ResultsFolder
@@ -9,7 +10,7 @@ function Invoke-DfirTriageScan {
         $ModuleName = Split-Path -Path $PSCommandPath
 
         # Date Last Updated
-        $Dlu = "29-May-2026"
+        $Dlu = "15-Aug-2026"
 
         # List of file types to use in some commands
         $ExecutableFileTypes = @(
@@ -30,45 +31,40 @@ function Invoke-DfirTriageScan {
 
         # Write the data to the log file and display start time message on the screen
         $Header = "Script Log for VECTOR DFIR Script Usage"
-        Write-LogMessage -Msg $Header
+        Write-LogMessage -Message $Header
 
         $StartMsg = "'$( $MyInvocation.MyCommand.Name )' execution started."
-        Write-LogMessage -Msg $StartMsg
+        Write-LogMessage -Message $StartMsg
 
         # Display the DFIR banner and instructions to the user
         $IntroBanner = @"
 +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 |                                     |
 |   VECTOR Triage Script              |
-|   Compiled by: Michael Sponheimer   |
-|   Last Updated: $Dlu         |
+|   Compiled by : Michael Sponheimer  |
+|   Last Updated : $Dlu        |
 |                                     |
 +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
-=============
-INSTRUCTIONS
-=============
-
-[A] PURPOSE: Gather information from the target machine and
+[1] You are about to run the VECTOR Windows Triage Script.
+[2] PURPOSE: Gather information from the target machine and
     save the data to outside storage device.
-[B] The results will automatically be stored in a directory that
+[3] The results will automatically be stored in a directory that
     is automatically created in the same directory from where this
     script is run.
-[C] There are three (3) prompts that will require user input at the
+[4] There are three (3) prompts that will require user input at the
     start.
-[D] **IMPORTANT** DO NOT VIEW THE RESULTS OF THE SCAN ON THE TARGET
+[5] **IMPORTANT** DO NOT VIEW THE RESULTS OF THE SCAN ON THE TARGET
     MACHINE. MOVE THE COLLECTION DEVICE TO A FORENSIC MACHINE BEFORE
     OPENING ANY FILES!
-[E] DO NOT close any pop-up windows that may appear.
-[F] To get help for this script, run 'Get-Help .\PowerShell_DFIR_Script.ps1'
+[6] DO NOT close any pop-up windows that may appear.
+[7] To get help for this script, run 'Get-Help .\run-triage.ps1'
     command from a PowerShell CLI prompt.
 
-[G] To exit this script at anytime, press [Ctrl + C].
+[8] To exit this script at anytime, press [Ctrl + C].
 "@
 
-        Show-Message -Msg $IntroBanner -NoTime -TextColor Blue
-
-        # Show-Message -Msg "`n--> Please read the instructions before executing the script! <--" -NoTime -TextColor Yellow
+        Show-Message -Message $IntroBanner -NoTime -MessageColor Green
 
         # Stops the script until the user presses the ENTER key so the script does not begin before the user is ready
         Write-Host "`nPress [ENTER] after reading the instructions" -ForegroundColor Yellow
@@ -90,17 +86,17 @@ INSTRUCTIONS
             # Gather some basic operator information to add to the log file.
             param()
 
-            $User     = Read-Host -Prompt "`n[-] Enter your name for the report"
-            $UserMsg  = "Operator Name entered as: $User"
-            Show-MessageAndWriteLogEntry -Msg $UserMsg -Level INFO
+            $User     = Read-LogHost -Prompt "Enter your name for the report: "
+            $UserMsg  = "Operator Name recorded as: $User"
+            Show-Message -Message $UserMsg -Level INFO -AddToLog -MessageColor Green
 
-            $Agency    = Read-Host -Prompt "`n[-] Enter Agency Name"
-            $AgencyMsg = "Agency Name entered as: $Agency"
-            Show-MessageAndWriteLogEntry -Msg $AgencyMsg -Level INFO
+            $Agency    = Read-LogHost -Prompt "Enter Agency Name: "
+            $AgencyMsg = "Agency Name recorded as: $Agency"
+            Show-Message -Message $AgencyMsg -Level INFO -AddToLog -MessageColor Green
 
-            $CaseNumber     = Read-Host -Prompt "`n[-] Enter Case Number"
-            $CaseNumberMsg  = "Case Number entered as: $CaseNumber"
-            Show-MessageAndWriteLogEntry -Msg $CaseNumberMsg -Level INFO
+            $CaseNumber     = Read-LogHost -Prompt "Enter Case Number: "
+            $CaseNumberMsg  = "Case Number recorded  as: $CaseNumber"
+            Show-Message -Message $CaseNumberMsg -Level INFO -AddToLog -MessageColor Green
         }
 
         Get-OperatorInfo
@@ -129,12 +125,13 @@ INSTRUCTIONS
                 try {
                     $SubFolderPathName = Join-Path -Path $ResultsFolder -ChildPath $FolderName
                     $null              = New-Item -ItemType Directory -Path $SubFolderPathName -Force
+
                     Test-IfExists -FolderName $SubFolderPathName -Type FOLDER
                     & $Action
                 }
                 catch {
-                    $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-                    Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+                    $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ). Error -> $( $_.Exception.Message )"
+                    Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
                 }
             }
 
@@ -149,7 +146,7 @@ INSTRUCTIONS
                 "007_Event_Logs" = { Get-TriageEventLogData -EventLogFolder $SubFolderPathName }
                 "008_Firewall"   = { Get-TriageFirewallData -FirewallFolder $SubFolderPathName }
                 "009_Encryption" = { Get-TriageEncryptionData -EncryptionFolder $SubFolderPathName }
-                "010_Internet"   = { Invoke-GetInternetInfo -InternetFolder $SubFolderPathName }
+                "010_Internet"   = { Get-TriageInternetData -InternetFolder $SubFolderPathName }
             }
 
             foreach ($Entry in $DfirScanWorkflow.GetEnumerator()) {
@@ -161,7 +158,7 @@ INSTRUCTIONS
         Initialize-TriageScan -ResultsFolder $ResultsFolder
 
 
-        Get-FileHashes -ResultsFolder $ResultsFolder
+        Get-FileHashes -ResultsFolder $ResultsFolder -LogFile $LogFole
 
 
         Get-CaseArchive -ResultsFolder $ResultsFolder

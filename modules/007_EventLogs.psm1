@@ -1,56 +1,49 @@
 function Get-TriageEventLogData {
     [CmdletBinding()]
-    param(
-        [string]$EventLogFolder
-    )
 
+    param([string]$EventLogFolder)
 
     function Invoke-ScriptBlock {
         param(
-            [scriptblock]$EventLogName,
+            [scriptblock]$LogName,
             [string]$Message,
             [string]$OutputFile = "$EventLogFolder\$OutputFile"
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $Message -Level INFO
+            Show-Message -Message $Message -Level INFO -AddToLog
             $EventLogPath = "C:\Windows\System32\winevt\Logs"
-            if (Test-Path -Path (Join-Path -Path $EventLogPath -ChildPath (($EventLogName -replace "[/]", "%4") + ".evtx"))) {
-                $Command =  { Get-WinEvent -FilterHashtable @{ Logname = $EventLogName } |
+            if (Test-Path -Path (Join-Path -Path $EventLogPath -ChildPath (($LogName -replace "[/]", "%4") + ".evtx"))) {
+                $Command =  { Get-WinEvent -FilterHashtable @{ Logname = $LogName } |
                                 Select-Object -Property * |
                                 Sort-Object -Property @{ Expression = "TimeCreated"; Descending = $true } }
                 $Data = &($Command)
                 Write-OutputToCsv -Data $Data -OutputFile $OutputFile
-                Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
+                Show-Message -File $OutputFile -Level SUCCESS -AddToLog
             }
             else {
-                $FileNotFoundMsg = "Event Log '$EventLogName' was not found in '$EventLogPath'"
-                Show-MessageAndWriteLogEntry -Msg $FileNotFoundMsg -Level WARNING
+                $FileNotFoundMsg = "Event Log '$LogName' was not found in '$EventLogPath'"
+                Show-Message -Message $FileNotFoundMsg -Level WARNING -AddToLog
                 continue
             }
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
 
-
     function Get-AvailableLogFiles {
-        param(
-            [string]$OutputFile = "$EventLogFolder\available_log_files.txt"
-        )
+        param([string]$OutputFile = "$EventLogFolder\available_log_files.txt")
         $BeginMsg = "Gathering list of available Event Log files..."
-        Show-MessageAndWriteLogEntry -Msg $BeginMsg -Level INFO
-        $Command =  { Get-WinEvent -ListLog * |
+        Show-Message -Message $BeginMsg -Level INFO -AddToLog
+        $Command = { Get-WinEvent -ListLog * |
                         Where-Object { $_.IsEnabled } |
                         Select-Object LogName, RecordCount, FileSize, LogMode, LogFilePath, LastWriteTime |
-                        Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true }
-                    }
+                        Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true } }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-        Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
+        Show-Message -File $OutputFile -Level SUCCESS -AddToLog
     }
-
 
     function Get-AllEventLogs {
         param()
@@ -122,10 +115,9 @@ function Get-TriageEventLogData {
         }
 
         foreach ($Log in $EventLogList.GetEnumerator()) {
-            Invoke-ScriptBlock -EventLogName $Log.key -Msg $Task.value[0] -OutputFile $Task.value[1]
+            Invoke-ScriptBlock -EventLogName $Log.key -Message $Log.value[0] -OutputFile $Log.value[1]
         }
     }
-
 
     # ----------------------------------
     # Run the functions from the module

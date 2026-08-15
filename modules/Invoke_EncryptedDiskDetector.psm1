@@ -1,20 +1,21 @@
 function Invoke-EncryptedDiskDetector {
     [CmdletBinding()]
+
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$ResultsFolder
     )
 
     begin {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:computername
-        $RunEdd       = Read-Host -Prompt "`n[?] Do you want to run Encrypted Disk Detector on $ComputerName? (y/n)"
+        $RunEdd       = Read-LogHost -Prompt "Do you want to run Encrypted Disk Detector on $( $ComputerName )? (y/n): "
     }
     process {
         if ($RunEdd  -eq "y") {
             try {
                 $BeginMsg = "Starting Encrypted Disk Detector on: $( $ComputerName )"
-                Show-MessageAndWriteLogEntry -Msg $BeginMsg -Level INFO
+                Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
                 $EddResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "Encrypted_Disk_Detector"
                 $null             = New-Item -ItemType Directory -Path $EddResultsFolder -Force
@@ -33,26 +34,27 @@ function Invoke-EncryptedDiskDetector {
 
                 $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-                $SuccessMsg = "Encrypted Disk Detector was run successfully on computer: $( $ComputerName )"
-                Show-MessageAndWriteLogEntry -Msg $SuccessMsg -File $EddResultsFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS
-
                 $Stopwatch.Stop()
 
                 # Read the contents of the EDD text file and show the results on the screen
-                Get-Content -Path $EddResultsFilePath -Force
+                $EddResults = Get-Content -Path $EddResultsFilePath -Force
+                Write-LogMessage -Message $EddResults
+
+                $SuccessMsg = "Encrypted Disk Detector was run successfully on computer: '$( $ComputerName )'"
+                Show-Message -Message $SuccessMsg -File $EddResultsFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS -AddToLog
             }
             catch {
-                $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-                Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+                $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ). Error -> $( $_.Exception.Message )"
+                Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
             }
         }
         elseif ($RunEdd  -eq "n") {
-            $DeclineMsg = "'$( $MyInvocation.MyCommand.Name )' DECLINED by the user."
-            Show-MessageAndWriteLogEntry -Msg $DeclineMsg -Level WARNING
+            $DeclineMsg = "Executing '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ) was DECLINED by the user."
+            Show-Message -Message $DeclineMsg -Level WARNING -AddToLog
         }
         else {
-            $NoValidOptionMsg = "No valid option entered by the user, skipping the '$( $MyInvocation.MyCommand.Name )' function."
-            Show-MessageAndWriteLogEntry -Msg $NoValidOptionMsg -Level WARNING
+            $NoValidOptionMsg = "No valid option entered by the user, skipping the '$( $MyInvocation.MyCommand.Name )' function for $( $ComputerName )."
+            Show-Message -Message $NoValidOptionMsg -Level WARNING -AddToLog
         }
     }
     end {

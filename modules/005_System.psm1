@@ -1,115 +1,89 @@
 function Get-TriageSystemData {
     [CmdletBinding()]
-    param(
-        [string]$SystemFolder
-    )
 
+    param([string]$SystemFolder)
 
     $ConnectedDevicesFolder = Join-Path -Path $SystemFolder -ChildPath "Connected_Devices"
     $null = New-Item -ItemType Directory -Path $ConnectedDevicesFolder -Force
 
-
     function Invoke-ScriptBlock {
         param(
             [scriptblock]$Action,
-            [string]$FunctionMsg,
+            [string]$FunctionMessage,
             [string]$OutputFile
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
+            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
             & $Action
-            Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
+            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
 
-
     function Get-Last50Dlls {
-        param(
-            [string]$OutputFile = "$SystemFolder\last_50_dll_files.txt"
-        )
+        param([string]$OutputFile = "$SystemFolder\last_50_dll_files.txt")
         try {
             # Set up the .NET directory enumeration rules
             $Options = [System.IO.EnumerationOptions]::new()
             $Options.RecurseSubdirectories = $true
             $Options.AttributesToSkip = [System.IO.FileAttributes]::None
             $Options.IgnoreInaccessible = $true
-            $Command =  { [System.IO.Directory]::EnumerateFiles("C:\", "*.dll", $Options) |
+            $Command = { [System.IO.Directory]::EnumerateFiles("C:\", "*.dll", $Options) |
                             Get-Item |
                             Select-Object -Property Name, CreationTime, LastAccessTime, Directory |
                             Sort-Object -Property CreationTime -Descending |
-                            Select-Object -First 50
-                        }
+                            Select-Object -First 50 }
             $Data = &($Command)
             Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
         }
         catch [System.IO.IOException] {
-            $ErrorMsg = "Caught an IO Exception while running '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+            $ErrorMsg = "Caught an IO Exception while running '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
 
-
     function Get-OpenFilesList {
-        param(
-            [string]$OutputFile = "$SystemFolder\list_of_open_files.txt"
-        )
+        param([string]$OutputFile = "$SystemFolder\list_of_open_files.txt")
         $Command = { openfiles /query }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-OpenShares {
-        param(
-            [string]$OutputFile = "$SystemFolder\open_shares.txt"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_Share |
+        param([string]$OutputFile = "$SystemFolder\open_shares.txt")
+        $Command = { Get-CimInstance -ClassName Win32_Share |
                         Select-Object -Property * |
-                        Sort-Object -Property Path
-                    }
+                        Sort-Object -Property Path }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-LogicalDisks {
-        param(
-            [string]$CsvOutputFile = "$SystemFolder\logical_disks.csv"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_LogicalDisk |
-                        Select-Object -Property *
-                    }
+        param([string]$CsvOutputFile = "$SystemFolder\logical_disks.csv")
+        $Command = { Get-CimInstance -ClassName Win32_LogicalDisk |
+                        Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
     }
 
-
     function Get-MappedLogicalDisks {
-        param(
-            [string]$OutputFile = "$SystemFolder\logical_disks_mapped.txt"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_MappedLogicalDisk |
+        param([string]$OutputFile = "$SystemFolder\logical_disks_mapped.txt")
+        $Command = { Get-CimInstance -ClassName Win32_MappedLogicalDisk |
                         Select-Object -Property * |
-                        Format-List
-                    }
+                        Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $CsvOutputFile
     }
 
-
     function Get-ScheduledJobs {
-        param(
-            [string]$OutputFile = "$SystemFolder\scheduled_jobs.txt"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_ScheduledJob }
+        param([string]$OutputFile = "$SystemFolder\scheduled_jobs.txt")
+        $Command = { Get-CimInstance -ClassName Win32_ScheduledJob }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ScheduledTasks {
         param(
@@ -119,44 +93,48 @@ function Get-TriageSystemData {
         $Command1 = { Get-ScheduledTask |
                         Select-Object -Property * |
                         Where-Object { $_.State -ne "Disabled" } |
-                        Format-List
-                    }
+                        Format-List }
         $Command2 = { Get-ScheduledTask |
                         Where-Object { $_.State -ne "Disabled" } |
-                        Get-ScheduledTaskInfo
-                    }
+                        Get-ScheduledTaskInfo }
         $Data1 = &$Command1
         $Data2 = &$Command2
         Write-OutputToFile -Command $Command1 -Data $Data1 -OutputFile $OutputFile
         Write-OutputToFile -Command $Command2 -Data $Data2 -OutputFile $InfoOutputFile
     }
 
-
     function Get-HotFixes {
-        param(
-            [string]$OutputFile = "$SystemFolder\hot_fixes.csv"
-        )
-        $Command =  { Get-HotFix |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$SystemFolder\hot_fixes.csv")
+        $Command = { Get-HotFix | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-InstalledApps {
         param(
-            [string]$InstalledAppsFile       = "C:\Users\mikes\Desktop\query\installedApps_list.csv",
-            [string]$InstalledAppsProps      = "C:\Users\mikes\Desktop\query\installedAppsProps.csv",
-            [string]$InstalledAppsWow64      = "C:\Users\mikes\Desktop\query\installedApps_list_wow64.csv",
-            [string]$InstalledAppsWow64Props = "C:\Users\mikes\Desktop\query\installedAppsProps_wow64.csv"
+            [string]$InstalledAppsFile       = "$SystemFolder\installedApps_list.csv",
+            [string]$InstalledAppsProps      = "$SystemFolder\installedAppsProps.csv",
+            [string]$InstalledAppsWow64      = "$SystemFolder\installedApps_list_wow64.csv",
+            [string]$InstalledAppsWow64Props = "$SystemFolder\installedAppsProps_wow64.csv"
         )
 
         $Props = [ordered]@{
-            "a" = ( { Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" | Select-Object -Property * | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $InstalledAppsFile }, $InstalledAppsFile)
-            "b" = ( { Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" | Select-Object -Property * | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $InstalledAppsProps }, $InstalledAppsProps)
-            "c" = ( { Get-ChildItem "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" | Select-Object -Property * | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $InstalledAppsWow64 }, $InstalledAppsWow64)
-            "d" = ( { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" | Select-Object -Property * | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $InstalledAppsWow64Props }, $InstalledAppsWow64Props)
+            "a" = ( { Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" |
+                Select-Object -Property * |
+                ConvertTo-Csv -NoTypeInformation |
+                Out-File -FilePath $InstalledAppsFile }, $InstalledAppsFile)
+            "b" = ( { Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" |
+                Select-Object -Property * |
+                ConvertTo-Csv -NoTypeInformation |
+                Out-File -FilePath $InstalledAppsProps }, $InstalledAppsProps)
+            "c" = ( { Get-ChildItem "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" |
+                Select-Object -Property * |
+                ConvertTo-Csv -NoTypeInformation |
+                Out-File -FilePath $InstalledAppsWow64 }, $InstalledAppsWow64)
+            "d" = ( { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" |
+                Select-Object -Property * |
+                ConvertTo-Csv -NoTypeInformation |
+                Out-File -FilePath $InstalledAppsWow64Props }, $InstalledAppsWow64Props)
         }
         foreach ($X in $Props.GetEnumerator()) {
             $Command = $X.value[0]
@@ -164,360 +142,253 @@ function Get-TriageSystemData {
         }
     }
 
-
     function Get-VolumeShadowCopies {
-        param(
-            [string]$OutputFile = "$SystemFolder\volume_shadow_copies.csv"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_ShadowCopy |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$SystemFolder\volume_shadow_copies.csv")
+        $Command = { Get-CimInstance -ClassName Win32_ShadowCopy |
+                        Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputAsCsv -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-AppInitDllKey {
-        param(
-            [string]$OutputFile = "$SystemFolder\appinit_dll_key.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" |
-                        Select-Object AppInit_DLLs
-                    }
+        param([string]$OutputFile = "$SystemFolder\appinit_dll_key.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" |
+                        Select-Object AppInit_DLLs }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-UacGroupPolicy {
-        param(
-            [string]$OutputFile = "$SystemFolder\uac_group_policy.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" |
-                        Select-Object * -ExcludeProperty PS*
-                    }
+        param([string]$OutputFile = "$SystemFolder\uac_group_policy.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" |
+                        Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ActiveSetupInstalls {
-        param(
-            [string]$OutputFile = "$SystemFolder\active_setup_installs.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" |
+        param([string]$OutputFile = "$SystemFolder\active_setup_installs.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" |
                         Select-Object ComponentID, Version, "(Default)", StubPath |
-                        Format-List
-                    }
+                        Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-AppPathRegKeys {
-        param(
-            [string]$OutputFile = "$SystemFolder\app_path_reg_keys.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\*" |
+        param([string]$OutputFile = "$SystemFolder\app_path_reg_keys.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\*" |
                         Select-Object PSChildName, "(Default)" |
-                        Format-List
-                    }
+                        Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-DllsLoadedByExplorerShell {
-        param(
-            [string]$OutputFile = "$SystemFolder\dlls_loaded_by_explorer_shell.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" |
-                        Select-Object "(Default)", DllName
-                    }
+        param([string]$OutputFile = "$SystemFolder\dlls_loaded_by_explorer_shell.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" |
+                        Select-Object "(Default)", DllName }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ShellAndUserInitValues {
-        param(
-            [string]$OutputFile = "$SystemFolder\shell_and_user_init_values.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" |
-                        Select-Object * -ExcludeProperty PS*
-                    }
+        param([string]$OutputFile = "$SystemFolder\shell_and_user_init_values.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" |
+                        Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-SvcValues {
-        param(
-            [string]$OutputFile = "$SystemFolder\svc_values.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" |
-                        Select-Object * -ExcludeProperty PS*
-                    }
+        param([string]$OutputFile = "$SystemFolder\svc_values.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" |
+                        Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-DesktopAddressBar {
-        param(
-            [string]$OutputFile = "$SystemFolder\desktop_address_bar.txt"
-        )
-        $Command =  { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths" |
-                        Select-Object * -ExcludeProperty PS*
-                    }
+        param([string]$OutputFile = "$SystemFolder\desktop_address_bar.txt")
+        $Command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths" |
+                        Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-RunMruKeyInfo {
-        param(
-            [string]$OutputFile = "$SystemFolder\run_mru_key_info.txt"
-        )
-        $Command =  { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RunMRU" |
-                        Select-Object * -ExcludeProperty PS*
-                    }
+        param([string]$OutputFile = "$SystemFolder\run_mru_key_info.txt")
+        $Command = { Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RunMRU" |
+                        Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-StartMenuData {
-        param(
-            [string]$OutputFile = "$SystemFolder\start_menu_data.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartMenu" |
+        param([string]$OutputFile = "$SystemFolder\start_menu_data.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartMenu" |
                         Select-Object * -ExcludeProperty PS* |
-                        Format-List
-                    }
+                        Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ProgExeBySessionManager {
-        param(
-            [string]$OutputFile = "$SystemFolder\prog_exe_by_session_manager.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" |
-                        Select-Object * -ExcludeProperty PS*
-                    }
+        param([string]$OutputFile = "$SystemFolder\prog_exe_by_session_manager.txt")
+        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" |
+                        Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ShellFolderInfo {
-        param(
-            [string]$OutputFile = "$SystemFolder\shell_foldes.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" }
+        param([string]$OutputFile = "$SystemFolder\shell_foldes.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ApprovedShellExts {
-        param(
-            [string]$OutputFile = "$SystemFolder\approved_shell_exts.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" }
+        param([string]$OutputFile = "$SystemFolder\approved_shell_exts.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-AppCertDlls {
-        param(
-            [string]$OutputFile = "$SystemFolder\app_cert_dlls.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" }
+        param([string]$OutputFile = "$SystemFolder\app_cert_dlls.txt")
+        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ExeFileShellCommands {
-        param(
-            [string]$OutputFile = "$SystemFolder\exe_file_shell_commands.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Classes\exefile\shell\open\command" }
+        param([string]$OutputFile = "$SystemFolder\exe_file_shell_commands.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\exefile\shell\open\command" }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-ShellCommands {
-        param(
-            [string]$OutputFile = "$SystemFolder\shell_commands.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Classes\http\shell\open\command" |
-                        Select-Object "(Default)"
-                    }
+        param([string]$OutputFile = "$SystemFolder\shell_commands.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\http\shell\open\command" |
+                        Select-Object "(Default)" }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-BcdRelatedData {
-        param(
-            [string]$OutputFile = "$SystemFolder\bcd_related_data.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\BCD00000000\*\*\*\*" |
+        param([string]$OutputFile = "$SystemFolder\bcd_related_data.txt")
+        $Command = { Get-ItemProperty "HKLM:\BCD00000000\*\*\*\*" |
                         Select-Object Element |
                         Select-String "exe" |
-                        Select-Object Line
-                    }
+                        Select-Object Line }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-LoadedLsaPackages {
-        param(
-            [string]$OutputFile = "$SystemFolder\loaded_lsa_packages.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$SystemFolder\loaded_lsa_packages.txt")
+        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" |
+                        Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-BrowserHelperObjects {
-        param(
-            [string]$OutputFile = "$SystemFolder\browser_helper_objects.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
-                        Select-Object "(Default)"
-                    }
+        param([string]$OutputFile = "$SystemFolder\browser_helper_objects.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
+                        Select-Object "(Default)" }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-BrowserHelperObjectsX64 {
-        param(
-            [string]$OutputFile = "$SystemFolder\browser_helper_objects_x64.txt"
-        )
-        $Command =  { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
-                        Select-Object "(Default)"
-                    }
+        param([string]$OutputFile = "$SystemFolder\browser_helper_objects_x64.txt")
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
+                        Select-Object "(Default)" }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-IeExtensions {
-        param(
-            [string]$OutputFile = "$SystemFolder\ie_extensions.txt"
-        )
+        param([string]$OutputFile = "$SystemFolder\ie_extensions.txt")
         Get-ItemProperty "HKCU:\SOFTWARE\Microsoft\Internet Explorer\Extensions\*" | Select-Object ButtonText, Icon | Out-File -FilePath $OutputFile
         Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Internet Explorer\Extensions\*" | Select-Object ButtonText, Icon | Out-File -Append -FilePath $OutputFile
         Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Internet Explorer\Extensions\*" | Select-Object ButtonText, Icon | Out-File -Append -FilePath $OutputFile
     }
 
-
     function Get-UsbDevices {
         param(
-            [string]$OutputFile = "$ConnectedDevicesFolder\usb_devices.csv"
+            [string]$OutputFile1 = "$ConnectedDevicesFolder\usb_devices_from_Enum-USB.csv",
+            [string]$OutputFile2 = "$ConnectedDevicesFolder\usb_devices_from_Control-USBSTOR.csv"
         )
-        $Command =  { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR\*\*" |
-                        Select-Object -Property *
-                    }
-        $Data = &($Command)
-        Write-OutputToCsv -Command $Command -Data $Data -OutputFile $OutputFile
+        $Command1 = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USB\*\*" | Select-Object -Property * }
+        $Data1 = &($Command1)
+        Write-OutputToCsv -Command $Command1 -Data $Data1 -OutputFile $OutputFile1
+
+        $Command2 = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\usbstor\*\*" | Select-Object -Property * }
+        $Data2 = &($Command2)
+        Write-OutputToCsv -Command $Command2 -Data $Data2 -OutputFile $OutputFile2
     }
 
-
     function Get-PnpDevices {
-        param(
-            [string]$OutputFile = "$ConnectedDevicesFolder\pnp_devices.csv"
-        )
-        $Command =  { Get-PnpDevice | Select-Object -Property *}
+        param([string]$OutputFile = "$ConnectedDevicesFolder\pnp_devices.csv")
+        $Command = { Get-PnpDevice | Select-Object -Property *}
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
-
     function Copy-HostFile {
-        param(
-            [string]$OutputFile = "$SystemFolder\hosts_file.txt"
-        )
+        param([string]$OutputFile = "$SystemFolder\hosts_file.txt")
         $Command = { Get-Content $Env:windir\system32\drivers\etc\hosts }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Copy-ServicesFile {
-        param(
-            [string]$OutputFile = "$SystemFolder\services_file.txt"
-        )
-        $Command =  { Get-Content $Env:windir\system32\drivers\etc\services }
+        param([string]$OutputFile = "$SystemFolder\services_file.txt")
+        $Command = { Get-Content $Env:windir\system32\drivers\etc\services }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-AuditPolicy {
-        param(
-            [string]$OutputFile = "$SystemFolder\audit_policy.txt"
-        )
-        $Command =  { auditpol /get /category:* }
+        param([string]$OutputFile = "$SystemFolder\audit_policy.txt")
+        $Command = { auditpol /get /category:* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-NonValidExes {
-        param(
-            [string]$OutputFile = "$SystemFolder\non_valid_exe_files.txt"
-        )
-        $Command =  { Get-ChildItem -Force -Recurse -Path "C:\Windows\*\*.exe" -File |
+        param([string]$OutputFile = "$SystemFolder\non_valid_exe_files.txt")
+        $Command = { Get-ChildItem -Force -Recurse -Path "C:\Windows\*\*.exe" -File |
                         Get-AuthenticodeSignature |
-                        Where-Object { $_.status -ne "Valid" }
-                    }
+                        Where-Object { $_.status -ne "Valid" } }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-WindowsUpdateEtlFiles {
-        param(
-            [string]$OutputFile = "$SystemFolder\windows_update_log.txt"
-        )
+        param([string]$OutputFile = "$SystemFolder\windows_update_log.txt")
         $Command = { Get-WindowsUpdateLog -IncludeAllLogs }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-WindowsFeaturesList {
-        param(
-            [string]$OutputFile = "$SystemFolder\windows_features_list.txt"
-        )
+        param([string]$OutputFile = "$SystemFolder\windows_features_list.txt")
         $Command = { dism /online /get-features }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-WindowsCapabilitiesList {
-        param(
-            [string]$OutputFile = "$SystemFolder\windows_capabilities_list.txt"
-        )
+        param([string]$OutputFile = "$SystemFolder\windows_capabilities_list.txt")
         $Command = { dism /online /get-capabilities }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     # ----------------------------------
     # Run the functions from the module
@@ -542,7 +413,7 @@ function Get-TriageSystemData {
         )
         { Get-MappedLogicalDisks } = (
             "Getting Mapped Logical Disks...",
-            "logical_disk_mapped.txt"
+            "logical_disks_mapped.txt"
         )
         { Get-ScheduledJobs } = (
             "Listing Scheduled Jobs...",
@@ -687,6 +558,6 @@ function Get-TriageSystemData {
     }
 
     foreach ($Task in $SystemWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.key -functionMsg $Task.value[0] -OutputFile $Task.value[1]
+        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
     }
 }

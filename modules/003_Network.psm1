@@ -1,63 +1,58 @@
 function Get-TriageNetworkData {
     [CmdletBinding()]
-    param(
-        [string]$NetworkFolder
-    )
 
+    param([string]$NetworkFolder)
 
     function Invoke-ScriptBlock {
         param(
             [scriptblock]$Action,
-            [string]$FunctionMsg,
+            [string]$FunctionMessage,
             [string]$OutputFile
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
+            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
             & $Action
-            Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
+            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
 
-
-    function Get-LocalIpInfo {
-        param(
-            [string]$OutputFile     = "$NetworkFolder\local_ip_info.txt",
-            [string]$CsvOutputFile  = "$NetworkFolder\local_ip_info.csv"
-        )
-        $NetIpCommand =   { Get-NetIPAddress |
-                                Select-Object -Property *
-                            }
+    function Get-LocalIpInfoAsTxt {
+        param([string]$OutputFile     = "$NetworkFolder\local_ip_info.txt")
+        $NetIpCommand = { Get-NetIPAddress |
+                            Select-Object -Property * }
         $NetIpData = &$NetIpCommand
         Write-OutputToFile -Command $NetIpCommand -Data $NetIpData -OutputFile $OutputFile
-        Write-OutputToCsv -Data $NetIpData -OutputFile $CsvOutputFile
 
         $IpConfigCommand = { ipconfig /all }
         $IpConfigData = &$IpConfigCommand
         Write-OutputToFile -Command $IpConfigCommand -Data $IpConfigData -OutputFile $OutputFile -Append
     }
 
+    function Get-LocalIpInfoAsCsv {
+        param([string]$OutputFile  = "$NetworkFolder\local_ip_info.csv")
+        $NetIpCommand = { Get-NetIPAddress |
+                            Select-Object -Property * }
+        $NetIpData = &$NetIpCommand
+        Write-OutputToCsv -Data $NetIpData -OutputFile $CsvOutputFile
+    }
+
     function Get-NetworkConfig {
-        param(
-            [string]$OutputFile = "$NetworkFolder\network_config.txt"
-        )
-        $Command =  { Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration |
+        param([string]$OutputFile = "$NetworkFolder\network_config.txt")
+        $Command = { Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration |
                         Where-Object { $_.IPEnabled -eq "True" } |
                         Select-Object -Property * |
-                        Format-List
-                    }
+                        Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-EstablishedConnections {
-        param(
-            [string]$OutputFile = "$NetworkFolder\netstat_established_connections.txt"
-        )
+        param([string]$OutputFile = "$NetworkFolder\netstat_established_connections.txt")
         $Command = netstat -nao | Select-String "ESTA"
 
         foreach ($Element in $Command) {
@@ -76,87 +71,69 @@ function Get-TriageNetworkData {
         }
     }
 
-
     function Get-AllConnections {
-        param(
-            [string]$OutputFile = "$NetworkFolder\netstat_all_connections.txt"
-        )
-        $Command =  { netstat -nao }
+        param([string]$OutputFile = "$NetworkFolder\netstat_all_connections.txt")
+        $Command = { netstat -nao }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-NetTcpConnections {
         param(
             [string]$OutputFile    = "$NetworkFolder\net_tcp_connections.txt",
             [string]$CsvOutputFile = "$NetworkFolder\net_tcp_connections.csv"
         )
-        $AllCommand =   { Get-NetTCPConnection |
+        $AllCommand = { Get-NetTCPConnection |
                             Select-Object -Property * |
-                            Sort-Object LocalAddress -Desc
-                        }
+                            Sort-Object LocalAddress -Desc }
         $AllData = &($AllCommand)
         Write-OutputToFile -Command $AllCommand -Data $AllData -OutputFile $OutputFile
         Write-OutputToCsv -Data $AllData -OutputFile $CsvOutputFile
     }
 
-
     function Get-DnsCache {
-        param(
-            [string]$OutputFile = "$NetworkFolder\dns_cache.txt"
-        )
+        param([string]$OutputFile = "$NetworkFolder\dns_cache.txt")
         $Command = { ipconfig /displaydns }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-
     function Get-DnsCacheByRecordName {
-        param(
-            [string]$OutputFile = "$NetworkFolder\dns_cache_by_record_name.txt"
-        )
-        $Command =  { ipconfig /displaydns |
+        param([string]$OutputFile = "$NetworkFolder\dns_cache_by_record_name.txt")
+        $Command = { ipconfig /displaydns |
                         Select-String "Record Name" |
-                        Sort-Object
-                    }
+                        Sort-Object }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-NetworkShares {
-        param(
-            [string]$OutputFile = "$NetworkFolder\network_shares.txt"
-        )
-        $Command =  { Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2" |
-                        Select-Object * -ExcludeProperty PS*
-                    }
+        param([string]$OutputFile = "$NetworkFolder\network_shares.txt")
+        $Command = { Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2" |
+                        Select-Object * -ExcludeProperty PS* }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-SmbShareData {
-        param(
-            [string]$OutputFile = "$NetworkFolder\smb_shares.txt"
-        )
-        $Command =  { Get-SmbShare |
-                        Select-Object -Property *
-                    }
+        param([string]$OutputFile = "$NetworkFolder\smb_shares.txt")
+        $Command =  { Get-SmbShare | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
 
     $NetworkWorkFlow = [ordered]@{
-        { Get-LocalIpInfo } = (
-            "Collecting local IP info...",
-            "[local_ip_info.txt, local_ip_info.csv]"
+        { Get-LocalIpInfoAsTxt } = (
+            "Collecting local IP info as text...",
+            "local_ip_info.txt"
+        )
+        {Get-LocalIPInfoAsCsv} = (
+            "Collecting local IP info to CSV...",
+            "local_ip_info.csv"
         )
         { Get-NetworkConfig } = (
             "Getting Network Configuration Information...",
@@ -193,6 +170,6 @@ function Get-TriageNetworkData {
     }
 
     foreach ($Task in $NetworkWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.key -functionMsg $Task.value[0] -OutputFile $Task.value[1]
+        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
     }
 }

@@ -1,44 +1,35 @@
 function Get-TriagePrefetchData {
     [CmdletBinding()]
-    param(
-        [string]$PrefetchFolder
-    )
 
+    param([string]$PrefetchFolder)
 
     function Invoke-ScriptBlock {
         param(
             [scriptblock]$Action,
-            [string]$FunctionMsg,
+            [string]$FunctionMessage,
             [string]$OutputFile
         )
         try {
-            Show-MessageAndWriteLogEntry -Msg $FunctionMsg -Level INFO
+            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
             & $Action
-            Show-MessageAndWriteLogEntry -File $OutputFile -Level SUCCESS
+            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error: $( $_.Exception.Message )"
-            Show-MessageAndWriteLogEntry -Msg $ErrorMsg -Level ERROR
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
 
-
     function Get-PrefetchFiles {
-        param(
-            [string]$CsvOutputFile = "$PrefetchFolder\prefetch_files.csv"
-        )
-        $Command =  { Get-ChildItem -Path "C:\Windows\Prefetch\*.pf" |
-                        Select-Object -Property *
-                    }
+        param([string]$CsvOutputFile = "$PrefetchFolder\prefetch_files.csv")
+        $Command = { Get-ChildItem -Path "C:\Windows\Prefetch\*.pf" |
+                        Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
     }
 
-
     function Get-RecentExecutions {
-        param(
-            [string]$OutputFile = "$PrefetchFolder\recent_executions.txt"
-        )
+        param([string]$OutputFile = "$PrefetchFolder\recent_executions.txt")
         $FoldersToCheck = @(
             "$env:TEMP",
             "$env:USERPROFILE\AppData\Roaming",
@@ -47,13 +38,10 @@ function Get-TriagePrefetchData {
         $Command = { foreach ($Folder in $FoldersToCheck) {
                         Get-ChildItem -Path $Folder -Recurse |
                         Select-Object -Property * |
-                        Sort-Object LastAccessTime -Descending
-                    }
-                    }
+                        Sort-Object LastAccessTime -Descending } }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     # ----------------------------------
     # Run the functions from the module
@@ -70,8 +58,7 @@ function Get-TriagePrefetchData {
         )
     }
 
-    foreach ($Task in $PrefetchWorkFlow.GetEnumerator())
-    {
-        Invoke-ScriptBlock -Action $Task.key -functionMsg $Task.value[0] -OutputFile $Task.value[1]
+    foreach ($Task in $PrefetchWorkFlow.GetEnumerator()) {
+        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
     }
 }
