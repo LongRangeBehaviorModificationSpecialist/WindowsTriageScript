@@ -1,7 +1,8 @@
 <#
     File         :  Run-Triage.ps1
     Purpose      :  Automated launcher for the Forensic Triage Suite.
-    Usage        :  Run from an Elevated PowerShell prompt on the target machine.
+    Usage        :  Run from an Elevated PowerShell prompt on the target
+                    machine.
     Compiled by  :  mikespon
     DLU          :  31-May-2026
 #>
@@ -14,13 +15,15 @@ param(
 
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Continue
 
-# Dynamically find the USB drive root directory (avoids hardcoding drive letters)
+# Dynamically find the USB drive root directory (avoids hardcoding drive
+# letters)
 $UsbDirectory = $PSScriptRoot
 
 $FunctionsModule = [System.IO.Path]::GetFullPath($(Join-Path -Path $UsbDirectory -ChildPath "modules\functions.psm1"))
 Import-Module -Name $FunctionsModule -Force
 
-# FORCE the path to convert to an absolute path string (Resolves any .\ or broken slashes)
+# FORCE the path to convert to an absolute path string (Resolves any .\ or
+# broken slashes)
 $ManifestPath = [System.IO.Path]::GetFullPath($(Join-Path -Path $UsbDirectory -ChildPath "modules\triage.psd1"))
 
 # Import the Master Manifest Module
