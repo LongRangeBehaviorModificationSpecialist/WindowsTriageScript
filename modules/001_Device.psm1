@@ -15,7 +15,7 @@ function Get-TriageDeviceData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
@@ -29,14 +29,16 @@ function Get-TriageDeviceData {
 
     function Get-SystemProcesses {
         param([string]$OutputFile = "$DeviceFolder\PS_info.txt")
-        & $Binaries["PSInfo"] -accepteula -s -h -d > $OutputFile 2>&1
+        # & (Get-TriageBinary -Name "PSInfo") -accepteula -s -h -d > $OutputFile 2>&1
+        & $global:Binaries["PSInfo"] -accepteula -s -h -d > $OutputFile 2>&1
     }
 
     function Get-FullFileList {
-        param([string]$OutputFile = "$DeviceFolder\full_dir_list.txt")
-        $Command =  { cmd.exe /c "dir C:\ /A:H /Q /R /S /X" }
+        param([string]$OutputFile = "$DeviceFolder\full_dir_list.csv")
+        # $Command =  { cmd.exe /c "dir C:\ /A:H /Q /R /S /X" }
+        $Command = { Get-ChildItem -Path $env:SystemDrive\ -Recurse -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-CurrentComputerInfo {
@@ -75,7 +77,7 @@ function Get-TriageDeviceData {
         param([string]$OutputFile = "$DeviceFolder\disk_partitions.csv")
         $Command = { Get-CimInstance -ClassName Win32_DiskPartition | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToCsv -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
     function Get-UserAccounts {
@@ -102,23 +104,25 @@ function Get-TriageDeviceData {
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
 
-        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`n" | Out-File -FilePath $OutputFile -Append
-        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
+        $RunKeys = @(
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run',
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce',
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run',
+            'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run',
+            'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce',
+            'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run'
+        )
 
-        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run`n" | Out-File -FilePath $OutputFile -Append
-        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
-
-        "From : HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce`n" | Out-File -FilePath $OutputFile -Append
-        Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
-
-        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`n" | Out-File -FilePath $OutputFile -Append
-        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
-
-        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run`n" | Out-File -FilePath $OutputFile -Append
-        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
-
-        "From : HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce`n" | Out-File -FilePath $OutputFile -Append
-        Get-ItemProperty "HKCU:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce" | Select-Object * -ExcludeProperty PS* | Out-File -FilePath $OutputFile -Append
+        foreach($Key in $RunKeys) {
+            "From : $Key`n" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            $KeyData = Invoke-RegistryCommand -Command { Get-ItemProperty $Key | Select-Object * -ExcludeProperty PS* }
+            if ($KeyData) {
+                $KeyData | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            }
+            else {
+                "No data was found for that registry key.`n" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            }
+        }
     }
 
     function Get-MotherboardInfo {
@@ -142,10 +146,10 @@ function Get-TriageDeviceData {
             "Running SysInternals PSInfo.exe...",
             "PS_info.txt"
         )
-        { Get-FullFileList } = (
-            "Getting list of all files on the C:\ drive...",
-            "full_dir_list.txt"
-        )
+        # { Get-FullFileList } = (
+        #     "Getting list of all files on the $env:SystemDrive\ path...",
+        #     "full_dir_list.csv"
+        # )
         { Get-CurrentComputerInfo } = (
             "Parsing Computer Information...",
             "computer_info.txt"
@@ -176,7 +180,7 @@ function Get-TriageDeviceData {
         )
         { Get-StartUpApps } = (
             "Parsing Startup Apps from various sources...",
-            "[start_up_apps.txt, start_up_apps.csv]"
+            "[start_up_apps.txt, start_up_apps.csv, start_up_apps_per_user.csv]"
         )
         { Get-MotherboardInfo } = (
             "Gathering Motherboard properties...",
