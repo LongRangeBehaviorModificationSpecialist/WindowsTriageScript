@@ -1,6 +1,5 @@
 function Get-TriageDeviceData {
     [CmdletBinding()]
-
     param ([string]$DeviceFolder)
 
     function Invoke-ScriptBlock {

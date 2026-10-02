@@ -1,6 +1,5 @@
 function Get-TriageNetworkData {
     [CmdletBinding()]
-
     param([string]$NetworkFolder)
 
     function Invoke-ScriptBlock {

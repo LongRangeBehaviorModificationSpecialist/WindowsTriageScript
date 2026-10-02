@@ -23,6 +23,7 @@
                 3 = unexpected fatal error.
     Last Updated: 02-Oct-2026
 #>
+
 [CmdletBinding()]
 param(
     [switch]$Gui,

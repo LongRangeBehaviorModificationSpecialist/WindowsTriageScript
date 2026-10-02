@@ -1,6 +1,5 @@
 function Get-RunningProcesses {
     [CmdletBinding()]
-
     param(
         [Parameter(Mandatory = $true)]
         [string]$ResultsFolder

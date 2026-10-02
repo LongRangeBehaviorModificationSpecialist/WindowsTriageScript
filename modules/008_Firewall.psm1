@@ -1,6 +1,5 @@
 function Get-TriageFirewallData {
     [CmdletBinding()]
-
     param([string]$FirewallFolder)
 
     function Invoke-ScriptBlock {

@@ -1,6 +1,5 @@
 function Get-CaseArchive {
     [CmdletBinding()]
-
     param(
         [Parameter(Mandatory = $true)]
         [string]$ResultsFolder

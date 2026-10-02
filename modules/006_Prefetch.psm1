@@ -1,6 +1,5 @@
 function Get-TriagePrefetchData {
     [CmdletBinding()]
-
     param([string]$PrefetchFolder)
 
     function Invoke-ScriptBlock {

@@ -1,6 +1,5 @@
 function Get-TriageEncryptionData {
     [CmdletBinding()]
-
     param( [string]$EncryptionFolder )
 
 

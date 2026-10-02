@@ -1,6 +1,5 @@
 function Get-TriageProcessData {
     [CmdletBinding()]
-
     param([string]$ProcessFolder)
 
     function Invoke-ScriptBlock {

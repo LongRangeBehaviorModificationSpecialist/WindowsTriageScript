@@ -1,6 +1,5 @@
 function Get-FileHashes {
     [CmdletBinding()]
-
     param(
         [Parameter(Mandatory = $true)][string]$ResultsFolder,
         [string[]]$ExcludedFiles = @(

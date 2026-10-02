@@ -1,6 +1,5 @@
 function Invoke-EncryptedDiskDetector {
     [CmdletBinding()]
-
     param(
         [Parameter(Mandatory = $true)]
         [string]$ResultsFolder

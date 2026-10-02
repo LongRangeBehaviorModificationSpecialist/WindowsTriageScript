@@ -1,6 +1,5 @@
 function Get-TriageInternetData {
     [CmdletBinding()]
-
     param([string]$InternetFolder)
 
     $TempFolder = Join-Path -Path $InternetFolder -ChildPath "temp"

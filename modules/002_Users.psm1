@@ -1,6 +1,5 @@
 function Get-TriageUserData {
     [CmdletBinding()]
-
     param([string]$UserFolder)
 
     function Invoke-ScriptBlock {

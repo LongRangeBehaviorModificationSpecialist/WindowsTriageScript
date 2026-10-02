@@ -1,6 +1,5 @@
 function Get-TriageEventLogData {
     [CmdletBinding()]
-
     param([string]$EventLogFolder)
 
     function Invoke-ScriptBlock {

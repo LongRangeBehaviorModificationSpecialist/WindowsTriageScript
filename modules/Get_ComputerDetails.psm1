@@ -1,6 +1,5 @@
 function Get-ComputerDetails {
     [CmdletBinding()]
-
     param()
 
     begin {
