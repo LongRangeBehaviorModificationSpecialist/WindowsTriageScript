@@ -198,4 +198,81 @@ process {
 }
 
 
+#TODO -- `Get-WindowsUpdateLog` writes to the Desktop and pulls symbols over the network. Copy the raw ETLs instead.
+
+#TODO -- `dism /online` starts TrustedInstaller and writes logs.
+
+#\TODO -- Your commands land in the target's PSReadLine history, so run with -NoProfile and disable history saving.
+
+#TODO -- Consider calling `netstat`, `ipconfig` and the like from trusted copies in bin\ rather than the target's PATH.
+
+#\TODO -- Timestamps. They're local time with no offset, and there are two log formats (Show-Message and Write-LogMessage). Use UTC ISO-8601 everywhere and record the offset and clock state in a case manifest. The operator, agency and case number are only logged, never stored as data.
+
+#TODO -- Preflight. Check that `bin\` tools exist and match pinned SHA-256 values before prompting. Right now it asks "run RAM capture?" and only then discovers the exe is missing. Also check -ExitCode, since none of the Start-Process calls do. The process-capture argument uses single quotes ('$ProcessCaptureFolder'), which Windows programs don't treat as quotes.
+
+#  Collection gaps and quality
+
+#TODO -- Raw artifacts. You have listings and text dumps but few originals. Add raw copies of SYSTEM/SOFTWARE/SAM/SECURITY/Amcache.hve, each user's NTUSER.DAT and UsrClass.dat, the .pf files (you only export their metadata), SRUM, $MFT/$UsnJrnl, LNK and jump lists, and browser DBs with WAL files.
+
+#TODO -- Event logs. Export native .evtx with wevtutil epl instead of Get-WinEvent | Select * | Sort | CSV, which loads the whole Security log into RAM and loses fidelity. Add WMI-Activity, BITS-Client, WinRM, CodeIntegrity and Firewall logs.
+
+#TODO -- Persistence. Add WMI event subscriptions (root\subscription), IFEO, all services (not just running ones), startup folders and BITS jobs. Get-IeExtensions and Temporary Internet Files are rarely useful now.
+
+#TODO -- Volatile extras. ARP, routes, qwinsta, Get-SmbSession/Get-SmbOpenFile, Defender detections and quarantine. Firefox is missing, and the browser SQL hardcodes "GMT+3 IL" columns and has a %H:%M:S typo. Stay in UTC.
+
+#TODO -- Speed. Get-EstablishedConnections calls Get-Process five times per connection and .Modules throws on protected processes. Build a PID lookup once, or use Win32_Process. Cache hashes by path in 004, and use $env:SystemDrive/$env:SystemRoot rather than a hardcoded C:\.
+
+# Structure
+
+#TODO -- One runner. Invoke-ScriptBlock is pasted into 10 modules, and each of ~60 collectors repeats $Command = {...}; $Data = &($Command); Write-Output.... A single data-driven runner also fixes the false "SUCCESS" message, which currently prints even when a non-terminating error left an empty file.
+
+<#
+function Invoke-Collector {
+    param(
+        [string]$Name,
+        [scriptblock]$Script,
+        [string]$OutFile,
+        [ValidateSet("Csv","Json","Text")][string]$Format = "Csv"
+    )
+
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    try {
+        $data = & $Script
+        switch ($Format) {
+            "Csv"  { $data | Export-Csv $OutFile -NoTypeInformation -Encoding UTF8 }
+            "Json" { $data | ConvertTo-Json -Depth 5 | Set-Content $OutFile -Encoding UTF8 }
+            "Text" { $data | Out-String -Width 4096 | Set-Content $OutFile -Encoding UTF8 }
+        }
+        if (-not (Test-Path $OutFile) -or (Get-Item $OutFile).Length -eq 0) { throw "No output produced" }
+
+        Write-TriageLog SUCCESS "$Name => $(Split-Path $OutFile -Leaf) ($([int]$sw.Elapsed.TotalSeconds)s)"
+    }
+    catch { Write-TriageLog ERROR "$Name failed: $($_.Exception.Message)" }
+}
+
+$Collectors = @(
+    @{ Name = "Startup commands"; Out = "startup.csv"; Format = "Csv"
+       Script = { Get-CimInstance Win32_StartupCommand } }
+)
+foreach ($c in $Collectors) {
+    Invoke-Collector -Name $c.Name -Script $c.Script -OutFile (Join-Path $Folder $c.Out) -Format $c.Format
+}
+#>
+
+#TODO -- Text dumps. Out-File truncates narrow tables with ..., so prefer CSV/JSON or Out-String -Width. Also standardize encoding, since you currently mix UTF-8 and default.
+
+#TODO -- Single root module. Nested modules can't reliably see each other's functions, so you depend on $global:LogFile, $global:ResultsFolder and $global:Binaries. One root .psm1 dot-sourcing Public/ and Private/ removes that, and $Dlu, $ExecutableFileTypes and $Binaries (defined in two places) collapse to one config.
+
+#TODO -- Parameterize everything. Take operator, agency, case number and collection switches as parameters, and gather every prompt up front (the banner says three prompts, but there are about eight). The same entry point then serves the CLI, the GUI and unattended runs over EDR or remote shells, where ReadKey fails. Return a non-zero exit code on failure, and run the GUI collection in a runspace so the form doesn't freeze.
+
+# Manifest and README.
+
+#TODO -- The manifest says CompatiblePSEditions = Core while other code is 5.1-only (.ipv4address, Get-WindowsUpdateLog) or 7-only (EnumerationOptions). Pick 5.1 unless you'll test both.
+
+#\TODO -- Replace Author = "mikes" and "Stark Industries" against the "VECTOR" banner. Put the license in LicenseUri instead of the full GPL text in Copyright.
+
+#\TODO -- Save files as UTF-8 (the .psd1 is UTF-16).
+
+#\TODO -- The README omits EDD, which the code needs, and cites an old script name.
+
 #TODO -- Tooling. Add PSScriptAnalyzer and a few Pester tests with mocked collectors. Either would have caught most of the table above.
