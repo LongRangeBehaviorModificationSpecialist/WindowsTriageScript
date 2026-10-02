@@ -18,7 +18,7 @@ function Get-TriageEncryptionData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
@@ -43,7 +43,7 @@ function Get-TriageEncryptionData {
 
                 # Write output based on the protection status of each drive
                 if ($ProtectionStatus -eq "On" -and $null -ne $RecoveryKey) {
-                    $Data1 = "Drive $DriveLetter -> Recovery Key: $($RecoveryKey.RecoveryPassword)"
+                    $Data1 = "Drive $DriveLetter => Recovery Key: $($RecoveryKey.RecoveryPassword)"
                     Write-OutputToFile -Data $Data1 -OutputFile $OutputFile -Append
                     Show-Message -Message $Data1 -Level INFO -AddToLog
                 }
