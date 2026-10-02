@@ -1,7 +1,5 @@
 ## NOVA ICAC Windows Forensic Triage Suite
 
----
-
 ### A. Required Binaries
 
 1. In order for this script to run properly, you will need to download the following executable files directly from their main download site and place them in a folder named "\bin" at the root of directory in which the `run_triage.ps1` is located:
