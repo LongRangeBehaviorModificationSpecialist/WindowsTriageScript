@@ -15,7 +15,7 @@ function Get-TriageFirewallData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
@@ -39,15 +39,16 @@ function Get-TriageFirewallData {
         Show-Message -Message "Copying Windows Defender Log Files..." -Level INFO -AddToLog
 
         $MpOutputFolder = Join-Path -Path $FirewallFolder -ChildPath "Defender_Log_Files"
-        $null           = New-Item -ItemType Directory -Path $MpOutputFolder -Force
+        $null = New-Item -ItemType Directory -Path $MpOutputFolder -Force
 
         $MpLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support"
-        $MpLogFiles    = Get-ChildItem -Path $MpLogLocation -Name "*.log"
+        $MpLogFiles = Get-ChildItem -LiteralPath $MpLogLocation -Filter "*.log" -File
 
         foreach ($File in $MpLogFiles) {
-            Copy-Item -Path $File -Destination $MpOutputFolder
-            Add-Content -Path $OutputFile -Value "$($File.Name)" -Encoding UTF8 -Force
+            Copy-Item -LiteralPath $File.FullName -Destination $MpOutputFolder
+            Add-Content -Path $OutputFile -Value $File.FullName -Encoding UTF8 -Force
         }
+        # $MpLogFiles = Get-ChildItem -Path $MpLogLocation
 
         Show-Message -File $OutputFile -Level SUCCESS -AddToLog
     }
