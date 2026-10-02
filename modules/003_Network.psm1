@@ -15,7 +15,7 @@ function Get-TriageNetworkData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
@@ -23,16 +23,16 @@ function Get-TriageNetworkData {
     function Get-LocalIpInfoAsTxt {
         param([string]$OutputFile = "$NetworkFolder\local_ip_info.txt")
         $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
-        $NetIpData = &$NetIpCommand
+        $NetIpData = &($NetIpCommand)
         Write-OutputToFile -Command $NetIpCommand -Data $NetIpData -OutputFile $OutputFile
 
-        $IpConfigCommand = { ipconfig /all }
-        $IpConfigData = &$IpConfigCommand
+        $IpConfigCommand = { & $global:Binaries["ipconfig"] /all }
+        $IpConfigData = &($IpConfigCommand)
         Write-OutputToFile -Command $IpConfigCommand -Data $IpConfigData -OutputFile $OutputFile -Append
     }
 
     function Get-LocalIpInfoAsCsv {
-        param([string]$OutputFile = "$NetworkFolder\local_ip_info.csv")
+        param([string]$CsvOutputFile = "$NetworkFolder\local_ip_info.csv")
         $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
         $NetIpData = &$NetIpCommand
         Write-OutputToCsv -Data $NetIpData -OutputFile $CsvOutputFile
@@ -48,7 +48,7 @@ function Get-TriageNetworkData {
 
     function Get-EstablishedConnections {
         param([string]$OutputFile = "$NetworkFolder\netstat_established_connections.txt")
-        $Command = netstat -nao | Select-String "ESTA"
+        $Command = { & $global:Binaries["netstat"] -nao | Select-String "ESTA" }
 
         foreach ($Element in $Command) {
             $Data = $Element -split " " | Where-Object { $_ -ne "" }
@@ -68,7 +68,7 @@ function Get-TriageNetworkData {
 
     function Get-AllConnections {
         param([string]$OutputFile = "$NetworkFolder\netstat_all_connections.txt")
-        $Command = { netstat -nao }
+        $Command = { & $global:Binaries["netstat"] -nao }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
@@ -86,23 +86,21 @@ function Get-TriageNetworkData {
 
     function Get-DnsCache {
         param([string]$OutputFile = "$NetworkFolder\dns_cache.txt")
-        $Command = { ipconfig /displaydns }
+        $Command = { & $global:Binaries["ipconfig"] /displaydns }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-DnsCacheByRecordName {
         param([string]$OutputFile = "$NetworkFolder\dns_cache_by_record_name.txt")
-        $Command = { ipconfig /displaydns | Select-String "Record Name" | Sort-Object }
+        $Command = { & $global:Binaries["ipconfig"] /displaydns | Select-String "Record Name" | Sort-Object }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-NetworkShares {
-        param([string]$OutputFile = "$NetworkFolder\network_shares.txt")
-        $Command = { Get-ChildItem -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2" | Select-Object * -ExcludeProperty PS* }
-        $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        param([string]$OutputFile = "$NetworkFolder\network_shares.csv")
+        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $OutputFile -SubKey 'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
     }
 
     function Get-SmbShareData {
@@ -151,7 +149,7 @@ function Get-TriageNetworkData {
         )
         { Get-NetworkShares } = (
             "Parsing Network Shares...",
-            "network_shares.txt"
+            "network_shares.csv"
         )
         { Get-SmbShareData } = (
             "Parsing SMB Shares...",
