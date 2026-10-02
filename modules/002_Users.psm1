@@ -15,7 +15,7 @@ function Get-TriageUserData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
