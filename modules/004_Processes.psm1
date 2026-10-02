@@ -15,7 +15,7 @@ function Get-TriageProcessData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
@@ -46,8 +46,8 @@ function Get-TriageProcessData {
                 $ProcessList += $ProcessObject
             }
         }
-        ($ProcessList | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
-        ($ProcessList | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput
+        ($ProcessList | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput -Encoding UTF8
+        ($ProcessList | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput -Encoding UTF8
     }
 
     function Get-SvcHostsAndProcess {
@@ -95,14 +95,7 @@ function Get-TriageProcessData {
     }
 
 
-    function Get-PnPSignedDrivers {
-        param([string]$OutputFile = "$ConnectedDevicesFolder\pnp_signed_drivers.csv")
-        $Command = { Get-CimInstance -ClassName Win32_PnPSignedDriver | Select-Object -Property * }
-        $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
-        $ResultCount = ($Data).Count
-        Show-Message -Message "There were $ResultCount results returned for this function." -AddToLog
-    }
+
 
     # ----------------------------------
     # Run the functions from the module
@@ -113,7 +106,7 @@ function Get-TriageProcessData {
             "Getting Running Processes...",
             "[running_processes.txt, running_processes.csv, unique_process_hashes.csv, process_list.csv]"
         )
-        { Get-RunningProcessList } = (
+        { Get-SvcHostsAndProcess } = (
             "Getting SVCHost & Associated Process...",
             "svc_host_and_processes.txt"
         )
@@ -128,10 +121,6 @@ function Get-TriageProcessData {
         { Get-SystemDrivers } = (
             "Getting System Drivers...",
             "system_drivers.csv"
-        )
-        { Get-PnPSignedDrivers } = (
-            "Gathering Driver Info for PnP Devices...",
-            "pnp_signed_drivers.csv"
         )
     }
 
