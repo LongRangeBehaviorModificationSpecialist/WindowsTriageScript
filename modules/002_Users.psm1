@@ -67,8 +67,8 @@ function Get-TriageUserData {
 
         foreach ($UserDir in $UserDirs) {
             if ($UserDir.Count -eq 0) {
-                $NoDataFoundMsg = "No data found when running the '$( $MyInvocation.MyCommand.Name )' command."
-                Show-Message -Message $NoDataFoundMsg -Level INFO -AddToLog
+                $NoDataFoundMsg = "No data was found when running the '$( $MyInvocation.MyCommand.Name )' command."
+                Show-Message -Message $NoDataFoundMsg -Level INFO -AddToLog -MessageColor Yellow
             }
             else {
                 $UserName = "User.$UserDir"

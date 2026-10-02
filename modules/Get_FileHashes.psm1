@@ -22,7 +22,7 @@ function Get-FileHashes {
             $HashResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "Hash_Results"
             $null = New-Item -ItemType Directory -Path $HashResultsFolder -Force
 
-            $FolderCreatedMsg = "### '$HashResultsFolder' sub-directory created successfully ###"
+            $FolderCreatedMsg = "### $HashResultsFolder directory created successfully ###"
             Show-Message -Message $FolderCreatedMsg -Level INFO -AddToLog
 
             $HashResultsFolderName = (Get-Item -Path $ResultsFolder).Name
@@ -56,8 +56,8 @@ function Get-FileHashes {
                 $FileSha256HashValue = (Get-FileHash -Algorithm SHA256 -Path $File.FullName).Hash
 
                 # Show & log $ProgressMsg message
-                $ProgressMsg = "Hashing file => '$( $File.Name )'"
-                Show-Message -Message $ProgressMsg -Level INFO -AddToLog
+                # $ProgressMsg = "Hashing file => '$( $File.Name )'"
+                # Show-Message -Message $ProgressMsg -Level INFO -AddToLog
 
                 $Results += [PSCustomObject]@{
                     # DirectoryName      = Split-Path $File.DirectoryName -Leaf
@@ -76,8 +76,8 @@ function Get-FileHashes {
                     LastWriteTimeUTC   = $File.LastWriteTimeUtc
                 }
 
-                $HashFileMsg = "Completed hashing file: '$( $File.Name )' [SHA256: $( $FileSha256HashValue )]"
-                Show-Message -Message $HashFileMsg -Level INFO -AddToLog
+                $HashFileMsg = "Hashed file => '$( $File.Name )' [SHA256: $( $FileSha256HashValue )]"
+                Show-Message -Message $HashFileMsg -Level SUCCESS -AddToLog
             }
 
             if ($Results.Count -gt 0) {

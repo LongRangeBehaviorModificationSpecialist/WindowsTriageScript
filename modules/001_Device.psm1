@@ -119,7 +119,7 @@ function Get-TriageDeviceData {
                 $KeyData | Out-File -FilePath $OutputFile -Append -Encoding utf8
             }
             else {
-                "No data was found for that registry key.`n" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+                "No data found for registry key => $Key" | Out-File -FilePath $OutputFile -Append -Encoding utf8
             }
         }
     }

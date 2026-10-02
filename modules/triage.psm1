@@ -17,12 +17,12 @@ function Invoke-DfirTriageScan {
         $global:TriageErrorCount   = 0
         $global:TriageWarningCount = 0
         $global:TriageResult       = $null
-        Write-LogMessage -Message "Script Log for VECTOR DFIR Script Usage"
-        Write-LogMessage -Message "'$( $MyInvocation.MyCommand.Name )' execution started."
+        Write-ShowMessage -Message "Script Log for VECTOR DFIR Script Usage" -Level SUCCESS -AddToLog
+        Write-ShowMessage -Message "'$( $MyInvocation.MyCommand.Name )' execution started." -Level SUCCESS -AddToLog
     }
     process {
         Show-IsAdmin
-        Show-Message -Message "Operator: $Operator | Agency: $Agency | Case: $CaseNumber" -Level INFO -AddToLog
+        Show-Message -Message "Operator: $Operator | Agency: $Agency | Case: $CaseNumber" -Level INFO -AddToLog -MessageColor Yellow
 
         Write-CaseInfo -ResultsFolder $ResultsFolder -Operator $Operator -Agency $Agency -CaseNumber $CaseNumber -Selected ([ordered]@{
             Modules = $Modules;
@@ -104,8 +104,8 @@ function Invoke-DfirTriageScan {
             }
         }
 
-        $Scratch = Join-Path $global:ToolkitRoot '_scratch'
-        $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path $ResultsFolder 'Registry_Hives') -ScratchFolder $Scratch)
+        $Scratch = Join-Path $global:ToolkitRoot "_scratch"
+        $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path $ResultsFolder "Registry_Hives") -ScratchFolder $Scratch)
 
         foreach ($H in $global:TriageUserHives) {
             Show-Message -Message "User hive: $($H.UserName) [$($H.Sid)] - $($H.Note)" -Level INFO -AddToLog
@@ -124,18 +124,12 @@ function Invoke-DfirTriageScan {
             Get-CaseArchive -ResultsFolder $ResultsFolder
         }
         else {
-            Show-Message -Message "Skipped: case archive (not selected)." -Level INFO -AddToLog
+            Show-Message -Message "Skipped: case archive (not selected)." -Level INFO -AddToLog -MessageColor Yellow
         }
 
         # Summary. Deliberately not -AddToLog: the log was hashed above and
         # must not change afterwards.
         $Duration = (Get-Date) - $StartTime
-
-        # $DurationFormat = "{0} days, {1} hour(s), {2} minutes, {3} seconds" -f `
-        #     $Duration.Days,
-        #     $Duration.Hours,
-        #     $Duration.Minutes,
-        #     $Duration.Seconds
 
         $Code = if ($global:TriageErrorCount -gt 0) { 1 } else { 0 }
 
@@ -149,10 +143,7 @@ function Invoke-DfirTriageScan {
         }
 
         Show-Message -Message ("Completed in {0:hh\:mm\:ss}: {1} error(s), {2} warning(s). Exit code {3}. Results: {4}" -f
-            $Duration, $global:TriageErrorCount, $global:TriageWarningCount, $Code, $ResultsFolder)
-
-        # Write-Host "`nScript execution completed in $DurationFormat."
-        # Write-Host "`nThe results are available in the '$ResultsFolder' directory"
+            $Duration, $global:TriageErrorCount, $global:TriageWarningCount, $Code, $ResultsFolder) -Level SUCCESS
     }
     end {
         # Force the .NET Garbage Collector to immediately purge the freed

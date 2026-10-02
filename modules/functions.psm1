@@ -71,7 +71,7 @@ function Write-OutputToCsv {
 
     process {
         if ($null -eq $Data -or @($Data).Count -eq 0) {
-            "No data found when running this function." | Out-File -FilePath $OutputFile -Encoding UTF8
+            "No data was found when running this function." | Out-File -FilePath $OutputFile -Encoding UTF8
         }
         else {
             $Data | Export-Csv -Path $OutputFile -NoTypeInformation -Encoding UTF8
@@ -124,7 +124,9 @@ function Show-Message {
 
         [switch]$NoTime,
 
-        [switch]$AddToLog
+        [switch]$AddToLog,
+
+        [switch]$SpaceAbove
     )
 
     try {
@@ -135,7 +137,7 @@ function Show-Message {
 
         # Handle SUCCESS auto-message
         if ($Level -eq "SUCCESS") {
-            $Message = "Process completed successfully. Output saved to => '$( [System.IO.Path]::GetFileName($File) )'"
+            $Message = "Process completed. Output saved to => '$( [System.IO.Path]::GetFileName($File) )'"
             if ($ExecutionTime) {
                 $Message += " (completed in $ExecutionTime)."
             }
@@ -163,6 +165,10 @@ function Show-Message {
 
         # OUTPUT TO TERMINAL - colors are applied here
         if ($NoTime) {
+            Write-Host $Message -ForegroundColor $DisplayColor
+        }
+        elseif ($SpaceAbove) {
+            Write-Host "`n[$Timestamp] " -ForegroundColor $TimestampColor -NoNewLine
             Write-Host $Message -ForegroundColor $DisplayColor
         }
         else {
@@ -225,7 +231,7 @@ function Write-OutputToFile {
     }
     process {
         if (-not $Data) {
-            "$CommandString No data found when running this function." |
+            "$CommandString No data was found when running this function." |
                 Out-File -FilePath $OutputFile
         }
         else {
@@ -278,8 +284,7 @@ function Test-IfExists {
         $FolderNameText = $(Split-Path -Path $FolderName -Leaf)
         if (Test-Path $FolderName) {
             $FolderCreatedMsg = "'$FolderNameText' directory created successfully"
-            Show-Message -Message "`n" -NoTime
-            Show-Message -Message $FolderCreatedMsg -Level INFO -AddToLog
+            Show-Message -Message $FolderCreatedMsg -Level INFO -AddToLog -SpaceAbove
         }
         else {
             # Show-Message -Message "The necessary sub-directory does not exist `
@@ -715,10 +720,10 @@ function Invoke-RegistryCommand {
 
     foreach ($E in $Errors) {
         if ($E.FullyQualifiedErrorId -like 'PathNotFound*') {
-            Show-Message -Message "No data was found for that registry key: $( $E.TargetObject )" -Level INFO -AddToLog
+            Show-Message -Message "No data found for registry key => $( $E.TargetObject )" -Level INFO -AddToLog -MessageColor Yellow
         }
         else {
-            Show-Message -Message "Registry read problem: $( $E.Exception.Message )" -Level ERROR -AddToLog
+            Show-Message -Message "Registry read problem => $( $E.Exception.Message )" -Level ERROR -AddToLog
         }
     }
 

@@ -15,7 +15,7 @@ function Get-TriageEventLogData {
             $LogFile = Join-Path -Path $EventLogPath -ChildPath (($LogName -replace "/", "%4") + ".evtx")
 
             if (-not (Test-Path -LiteralPath $LogFile)) {
-                Show-Message -Message "Event Log $LogName was not found in '$EventLogPath'" -Level WARNING -AddToLog
+                Show-Message -Message "Event Log $( $LogName ) was not found in '$EventLogPath'" -Level INFO -AddToLog -MessageColor Yellow
                 return
             }
 
@@ -28,7 +28,7 @@ function Get-TriageEventLogData {
         }
         catch {
             if ($_.FullyQualifiedErrorId -like "NoMatchingEventsFound*") {
-                Show-Message -Message "No data was found for $LogName." -Level INFO -AddToLog
+                Show-Message -Message "No data was found in the $( $LogName ) Event Log." -Level INFO -AddToLog -MessageColor Yellow
             }
             else {
                 Show-Message -Message "Execution failed on $LogName. Error => $( $_.Exception.Message )" -Level ERROR -AddToLog

@@ -128,13 +128,13 @@ begin {
             $CaseNumber = Read-Required "Enter Case Number: "
         }
         if (-not $PSBoundParameters.ContainsKey("RunEdd")) {
-            $RunEdd = Read-YesNo "Run Encrypted Disk Detector on $ComputerName?"
+            $RunEdd = Read-YesNo "Run Encrypted Disk Detector on $( $ComputerName )?"
         }
         if (-not $PSBoundParameters.ContainsKey("CaptureProcesses")) {
-            $CaptureProcesses = Read-YesNo "Run MAGNET Process Capture on $ComputerName?"
+            $CaptureProcesses = Read-YesNo "Run MAGNET Process Capture on $( $ComputerName )?"
         }
         if (-not $PSBoundParameters.ContainsKey("CaptureRam")) {
-            $CaptureRam = Read-YesNo "Run MAGNET RAM Capture on $ComputerName?"
+            $CaptureRam = Read-YesNo "Run MAGNET RAM Capture on $( $ComputerName )?"
         }
         if (-not $PSBoundParameters.ContainsKey("CreateArchive")) {
             $CreateArchive = Read-YesNo "Package the results into a .zip when finished?"
@@ -146,7 +146,7 @@ begin {
         if (-not $Operator)   { $Missing += "-Operator" }
         if (-not $CaseNumber) { $Missing += "-CaseNumber" }
         if ($Missing) {
-            Show-Message -Message "Unattended run requires: $($Missing -join ', ')" -Level ERROR
+            Show-Message -Message "Unattended run requires: $( $Missing -join ', ' )" -Level ERROR
             exit 2
         }
     }
@@ -175,7 +175,7 @@ process {
             function Show-LoadedModules {
                 Show-Message "Functions Loaded =>" -MessageColor Green -AddToLog
                 foreach ($Cmd in $(Get-Command -Module triage | Select-Object Name)) {
-                    Write-Host "$( $Cmd.Name )"
+                    Write-Host "$( $Cmd.Name -join ', ')"
                 }
             }
 
@@ -202,14 +202,6 @@ process {
 #TODO -- `Get-WindowsUpdateLog` writes to the Desktop and pulls symbols over the network. Copy the raw ETLs instead.
 
 #TODO -- `dism /online` starts TrustedInstaller and writes logs.
-
-#\TODO -- Your commands land in the target's PSReadLine history, so run with -NoProfile and disable history saving.
-
-#TODO -- Consider calling `netstat`, `ipconfig` and the like from trusted copies in bin\ rather than the target's PATH.
-
-#\TODO -- Timestamps. They're local time with no offset, and there are two log formats (Show-Message and Write-LogMessage). Use UTC ISO-8601 everywhere and record the offset and clock state in a case manifest. The operator, agency and case number are only logged, never stored as data.
-
-#TODO -- Preflight. Check that `bin\` tools exist and match pinned SHA-256 values before prompting. Right now it asks "run RAM capture?" and only then discovers the exe is missing. Also check -ExitCode, since none of the Start-Process calls do. The process-capture argument uses single quotes ('$ProcessCaptureFolder'), which Windows programs don't treat as quotes.
 
 #  Collection gaps and quality
 
@@ -264,16 +256,8 @@ foreach ($c in $Collectors) {
 
 #TODO -- Single root module. Nested modules can't reliably see each other's functions, so you depend on $global:LogFile, $global:ResultsFolder and $global:Binaries. One root .psm1 dot-sourcing Public/ and Private/ removes that, and $Dlu, $ExecutableFileTypes and $Binaries (defined in two places) collapse to one config.
 
-#TODO -- Parameterize everything. Take operator, agency, case number and collection switches as parameters, and gather every prompt up front (the banner says three prompts, but there are about eight). The same entry point then serves the CLI, the GUI and unattended runs over EDR or remote shells, where ReadKey fails. Return a non-zero exit code on failure, and run the GUI collection in a runspace so the form doesn't freeze.
-
 # Manifest and README.
 
 #TODO -- The manifest says CompatiblePSEditions = Core while other code is 5.1-only (.ipv4address, Get-WindowsUpdateLog) or 7-only (EnumerationOptions). Pick 5.1 unless you'll test both.
-
-#\TODO -- Replace Author = "mikes" and "Stark Industries" against the "VECTOR" banner. Put the license in LicenseUri instead of the full GPL text in Copyright.
-
-#\TODO -- Save files as UTF-8 (the .psd1 is UTF-16).
-
-#\TODO -- The README omits EDD, which the code needs, and cites an old script name.
 
 #TODO -- Tooling. Add PSScriptAnalyzer and a few Pester tests with mocked collectors. Either would have caught most of the table above.

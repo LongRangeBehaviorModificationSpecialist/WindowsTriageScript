@@ -66,55 +66,73 @@ function Get-TriageInternetData {
 
     function Get-BrowserAnalysis {
         param([string]$OutputFile = $null)
-        $OutputFile = Join-Path -Path $InternetFolder -ChildPath "browser_analysis.txt"
+
         $SqlitePath = $global:Binaries["SQLite3"]
-        $Names = Get-ChildItem -Path "C:\Users"
+        if (-not (Test-Path -LiteralPath $SqlitePath)) {
+            Show-Message -Message "sqlite3.exe not found at '$SqlitePath'. Skipping browser analysis." -Level ERROR -AddToLog -MessageColor Yellow
+            return
+        }
+        $OutputFile = Join-Path -Path $InternetFolder -ChildPath "browser_analysis.txt"
 
-        foreach ($Name in $Names) {
-            $FullUserPath = Join-Path -Path "C:\Users" -ChildPath $Name
-            # List of browser paths
-            $BrowserPaths = @{
-                "Chrome" = "\AppData\Local\Google\Chrome\User Data\Default\History"
-                "Brave"  = "AppData\Local\BraveSoftware\Brave-Browser\User Data\Default\History"
-                "Edge"   = "AppData\Local\Microsoft\Edge\User Data\Default\History"
-                #"Opera" = "AppData\Roaming\Opera Software\Opera Stable\Default\History"
-                "Firefox" = "AppData\Roaming\Mozilla\Firefox\Profiles\*\places.sqlite"
-            }
+        $BrowserPaths = [ordered]@{
+            "Chrome"  = "AppData\Local\Google\Chrome\User Data\Default\History"
+            "Brave"   = "AppData\Local\BraveSoftware\Brave-Browser\User Data\Default\History"
+            "Edge"    = "AppData\Local\Microsoft\Edge\User Data\Default\History"
+            "Firefox" = "AppData\Roaming\Mozilla\Firefox\Profiles\*\places.sqlite"
+        }
 
-            # Make single search for each browser path
+        # Dates stay in UTC
+        $Queries = [ordered]@{
+            "Url_analysis"                 = "SELECT datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch') AS VisitTimeUTC, visit_count AS VisitCount, title AS Title, url AS Url FROM urls ORDER BY last_visit_time DESC"
+
+            "keyword_search_term_analysis" = "SELECT url_id AS TermId, term AS SearchTerm FROM keyword_search_terms ORDER BY url_id DESC"
+
+            "download-analysis"            = "SELECT datetime((start_time / 1000000) - 11644473600, 'unixepoch') AS DownloadStartUTC, datetime((end_time / 1000000) - 11644473600, 'unixepoch') AS DownloadEndUTC, round(total_bytes / 1048576.0, 3) AS SizeMB, mime_type AS MimeType, opened AS OpenedFromBrowser, current_path AS SavedPath, tab_url AS DownloadedFrom FROM downloads ORDER BY start_time DESC"
+
+        }
+
+        foreach ($UserDir in (Get-ChildItem -Path "$env:SystemDrive\Users" -Directory -Force)) {
             foreach ($BrowserName in $BrowserPaths.Keys) {
-                # Full path to chech each user for each browser path
-                $UserWithBrowserPath = Join-Path -Path $FullUserPath -ChildPath $BrowserPaths[$BrowserName]
+                $Source = Join-Path $UserDir.FullName $BrowserPaths[$BrowserName]
+                if (-not (Test-Path -LiteralPath $Source)) { continue }
 
-                # If the user have the browser path.
-                if (Test-Path $UserWithBrowserPath) {
-                    $AnalysisParentDir = Join-path -Path $InternetFolder -ChildPath "Browser_Analysis"
-                    $null = New-Item -ItemType Directory -Path $AnalysisParentDir -Force
+                $BrowserDir = Join-Path $InternetFolder "Browser_Analysis\$BrowserName"
+                $null = New-Item -ItemType Directory -Path $BrowserDir -Force
 
-                    $AnalysisBrowserDir = Join-Path -Path $AnalysisParentDir -ChildPath $BrowserName
-                    $null = New-Item -ItemType Directory -Path $AnalysisBrowserDir -Force
+                # Copy the database, plus its -wal/-journal files, so recent
+                # entries are not lost
+                $Db = Join-Path $BrowserDir "$($UserDir.Name)-$BrowserName-History-File.sqlite"
+                try {
+                    Copy-Item -LiteralPath $Source -Destination $Db -ErrorAction Stop
+                    foreach ($Suffix in '-wal', '-journal', '-shm') {
+                        if (Test-Path -LiteralPath "$Source$Suffix") {
+                            Copy-Item -LiteralPath "$Source$Suffix" -Destination "$Db$Suffix" -ErrorAction SilentlyContinue
+                        }
+                    }
+                }
+                catch {
+                    Show-Message -Message "Could not copy $BrowserName history for $($UserDir.Name) => $( $_.Exception.Message )" -Level ERROR -AddToLog
+                    continue
+                }
 
-                    Copy-Item -Path $UserWithBrowserPath -Destination "$AnalysisBrowserDir\$Name-$BrowserName-History-File.sqlite"
+                foreach ($Q in $Queries.GetEnumerator()) {
+                    $OutFile = Join-Path $BrowserDir "$($UserDir.Name)-$BrowserName-$($Q.Key).csv"
 
-                    $UrlOutputFile = Join-Path -Path $AnalysisBrowserDir -ChildPath "$Name-$BrowserName-Url_analysis.txt"
-                    $KeywordOutputFile = Join-Path -Path $AnalysisBrowserDir -ChildPath "$Name-$BrowserName-keyword_search_term_analysis.txt"
-                    $DownloadOutputFile = Join-Path -Path $AnalysisBrowserDir -ChildPath "$Name-$BrowserName-download-analysis.txt"
-                    $Db = Join-Path -Path $AnalysisBrowserDir -ChildPath "$Name-$BrowserName-History-File.sqlite"
+                    # Database and query go in as separate arguments. 2>&1 captures sqlite3's error text.
+                    $Out = & $SqlitePath -readonly -header -csv $Db $Q.Value 2>&1
 
-                    $UrlQuery   = "SELECT datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch') AS 'Visit Time UTC Form', substr(datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch', '+3 hours'), 12, 8) AS 'GMT+3 IL', substr(datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch', '+2 hours'), 12, 8) AS 'GMT+2 IL', visit_count AS 'Count', SUBSTR(title, 1, 90) AS 'URL Title', url AS 'Full URL' FROM urls ORDER BY last_visit_time DESC"
-                    $UrlCommand = "$SqlitePath `"$Db`" `"$UrlQuery`""
-                    $UrlData    = &($UrlCommand)
-                    Write-OutputToFile -Command $UrlCommand -Data $UrlData -OutputFile $UrlOutputFile
+                    if ($LASTEXITCODE -ne 0) {
+                        Show-Message -Message "sqlite3 failed ($BrowserName / $($UserDir.Name) / $($Q.Key)) => $( $Out -join ' ' )" -Level ERROR -AddToLog
+                        continue
+                    }
 
-                    $KeywordQuery   = "SELECT url_id AS 'Term ID', term AS 'Browser Keyword Search Term' FROM keyword_search_terms ORDER BY url_id DESC"
-                    $KeywordCommand = "$SqlitePath `"$Db`" `"$KeywordQuery`""
-                    $KeywordData    = &($KeywordCommand)
-                    Write-OutputToFile -Command $KeywordCommand -Data $KeywordData -OutputFile $KeywordOutputFile
-
-                    $DownloadQuery = "SELECT datetime((start_time / 1000000) - 11644473600, 'unixepoch') AS 'Download Start Time', strftime('%H:%M:S', (end_time / 1000000) - 11644473600, 'unixepoch') AS 'End Time', (ROUND(total_bytes / 1048576.0, 3) || ' MB') AS 'File Size', SUBSTR(mime_type, 1, 30) AS 'File Type', CASE WHEN opened = 1 THEN 'Yes' WHEN opened = 0 THEN 'No' ELSE opened END AS 'Opened From Browser?', current_path AS 'Path Of The Downloaded File', tab_url AS 'File Was Downloaded From This Link' FROM downloads ORDER BY start_time DESC"
-                    $DownloadCommand = "$SqlitePath `"$Db`" `"$DownloadQuery`""
-                    $DownloadData    = &($DownloadCommand)
-                    Write-OutputToFile -Command $DownloadCommand -Data $DownloadData -OutputFile $DownloadOutputFile
+                    Show-Message -Message "sqlite3 -readonly -header -csv `"$Db`" <$($Q.Key) query>" -Level INFO -AddToLog
+                    if ($Out) {
+                        $Out | Set-Content -LiteralPath $OutFile -Encoding UTF8
+                    }
+                    else {
+                        "No data was found for that query." | Set-Content -LiteralPath $OutFile -Encoding UTF8
+                    }
                 }
             }
         }
@@ -156,9 +174,3 @@ function Get-TriageInternetData {
         Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
     }
 }
-
-
-#TODO -- Fix the following error:
-<#
-Execution failed during 'Invoke-ScriptBlock'. Error => The term 'Y:\Proton Drive\My files\__001_MyGitHubRepos\WinTriageScript\bin\sqlite3.exe "Y:\Proton Drive\My files\__001_MyGitHubRepos\WinTriageScript\20261002_072917_192.168.1.19_MAS-4N6-BOX\010_Internet\Browser_Analysis\Edge\digintel-Edge-History-File.sqlite" "SELECT datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch') AS 'Visit Time UTC Form', substr(datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch', '+3 hours'), 12, 8) AS 'GMT+3 IL', substr(datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch', '+2 hours'), 12, 8) AS 'GMT+2 IL', visit_count AS 'Count', SUBSTR(title, 1, 90) AS 'URL Title', url AS 'Full URL' FROM urls ORDER BY last_visit_time DESC"' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-#>
