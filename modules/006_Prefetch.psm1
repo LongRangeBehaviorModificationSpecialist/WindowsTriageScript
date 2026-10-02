@@ -15,7 +15,7 @@ function Get-TriagePrefetchData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
@@ -29,18 +29,20 @@ function Get-TriagePrefetchData {
     }
 
     function Get-RecentExecutions {
-        param([string]$OutputFile = "$PrefetchFolder\recent_executions.txt")
-        $FoldersToCheck = @(
-            "$env:TEMP",
-            "$env:USERPROFILE\AppData\Roaming",
-            "$env:USERPROFILE\AppData\Local\Temp"
-        )
-        $Command = { foreach ($Folder in $FoldersToCheck) {
-                        Get-ChildItem -Path $Folder -Recurse |
-                        Select-Object -Property * |
-                        Sort-Object LastAccessTime -Descending } }
-        $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        param([string]$OutputFile = "$PrefetchFolder\recent_executions.csv")
+
+        $Folders = @("$env:SystemRoot\Temp")
+        foreach ($U in $global:TriageUserHives) {
+            $Folders += Join-Path $U.ProfilePath 'AppData\Roaming'
+            $Folders += Join-Path $U.ProfilePath 'AppData\Local\Temp'
+        }
+
+        $Data = foreach ($F in $Folders) {
+            if (-not (Test-Path -LiteralPath $F)) { continue }
+            Get-ChildItem -LiteralPath $F -Recurse -Force -ErrorAction SilentlyContinue |
+                Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc
+        }
+        Write-OutputToCsv -Data ($Data | Sort-Object LastAccessTimeUtc -Descending) -OutputFile $OutputFile
     }
 
     # ----------------------------------
@@ -54,7 +56,7 @@ function Get-TriagePrefetchData {
         )
         { Get-RecentExecutions } = (
             "Gatting Recently Executed Files...",
-            "recent_executions.txt"
+            "recent_executions.csv"
         )
     }
 
