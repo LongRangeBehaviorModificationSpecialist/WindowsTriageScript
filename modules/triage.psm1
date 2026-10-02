@@ -1,124 +1,71 @@
 function Invoke-DfirTriageScan {
     [CmdletBinding()]
-
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$ResultsFolder
+        [Parameter(Mandatory = $true)][string]$ResultsFolder,
+        [Parameter(Mandatory)][string]$Operator,
+        [Parameter(Mandatory)][string]$CaseNumber,
+        [string]$Agency = '',
+        [string[]]$Modules = @('001_Device','002_Users','003_Network','004_Process','005_System','006_Prefetch','007_Event_Logs','008_Firewall','009_Encryption','010_Internet'),
+        [switch]$RunEdd,
+        [switch]$CaptureProcesses,
+        [switch]$CaptureRam,
+        [switch]$CreateArchive
     )
 
     begin {
-        $ModuleName = Split-Path -Path $PSCommandPath
-
-        # Date Last Updated
-        $Dlu = "15-Aug-2026"
-
-        # List of file types to use in some commands
-        $ExecutableFileTypes = @(
-            "*.BAT", "*.BIN", "*.CGI", "*.CMD", "*.COM", "*.DLL", "*.EXE",
-            "*.JAR", "*.JOB", "*.JSE", "*.MSI", "*.PAF", "*.PS1", "*.SCR",
-            "*.SCRIPT", "*.VB", "*.VBE", "*.VBS", "*.VBSCRIPT", "*.WS", "*.WSF"
-        )
-
         $StartTime = Get-Date
-
-        $global:Binaries = @{
-            "MagnetRamCapture"     = ".\bin\MagnetRAMCapture.exe"
-            "MagnetProcessCapture" = ".\bin\MagnetProcessCapture.exe"
-            "PSInfo"               = ".\bin\PsInfo.exe"
-            "SQLite3"              = ".\bin\sqlite3.exe"
-            "EDD"                  = ".\bin\EDDv310.exe"
-        }
-
-        # Write the data to the log file and display start time message on the screen
-        $Header = "Script Log for VECTOR DFIR Script Usage"
-        Write-LogMessage -Message $Header
-
-        $StartMsg = "'$( $MyInvocation.MyCommand.Name )' execution started."
-        Write-LogMessage -Message $StartMsg
-
-        # Display the DFIR banner and instructions to the user
-        $IntroBanner = @"
-+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-|                                     |
-|   VECTOR Triage Script              |
-|   Compiled by : Michael Sponheimer  |
-|   Last Updated : $Dlu        |
-|                                     |
-+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-
-[1] You are about to run the VECTOR Windows Triage Script.
-[2] PURPOSE: Gather information from the target machine and
-    save the data to outside storage device.
-[3] The results will automatically be stored in a directory that
-    is automatically created in the same directory from where this
-    script is run.
-[4] There are three (3) prompts that will require user input at the
-    start.
-[5] **IMPORTANT** DO NOT VIEW THE RESULTS OF THE SCAN ON THE TARGET
-    MACHINE. MOVE THE COLLECTION DEVICE TO A FORENSIC MACHINE BEFORE
-    OPENING ANY FILES!
-[6] DO NOT close any pop-up windows that may appear.
-[7] To get help for this script, run 'Get-Help .\run-triage.ps1'
-    command from a PowerShell CLI prompt.
-
-[8] To exit this script at anytime, press [Ctrl + C].
-"@
-
-        Show-Message -Message $IntroBanner -NoTime -MessageColor Green
-
-        # Stops the script until the user presses the ENTER key so the script does not begin before the user is ready
-        Write-Host "`nPress [ENTER] after reading the instructions" -ForegroundColor Yellow
-
-        #  Wait and loop until ONLY the Enter key is pressed
-        do {
-            # 'IncludeKeyDown' ensures we catch the press, 'NoEcho' prevents the key from printing to the screen
-            $Key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        } while ($Key.VirtualKeyCode -ne 13) # 13 is the virtual key code for the Enter key
-
-        # Move to the next line once [ENTER] is pressed
-        Write-Host ""
+        $global:TriageErrorCount   = 0
+        $global:TriageWarningCount = 0
+        $global:TriageResult       = $null
+        Write-LogMessage -Message "Script Log for VECTOR DFIR Script Usage"
+        Write-LogMessage -Message "'$( $MyInvocation.MyCommand.Name )' execution started."
     }
     process {
-
         Show-IsAdmin
+        Show-Message -Message "Operator: $Operator | Agency: $Agency | Case: $CaseNumber" -Level INFO -AddToLog
 
-        function Get-OperatorInfo {
-            # Gather some basic operator information to add to the log file.
-            param()
+        Write-CaseInfo -ResultsFolder $ResultsFolder -Operator $Operator -Agency $Agency -CaseNumber $CaseNumber -Selected ([ordered]@{
+            Modules = $Modules;
+            RunEdd = [bool]$RunEdd;
+            CaptureProcesses = [bool]$CaptureProcesses;
+            CaptureRam = [bool]$CaptureRam;
+            CreateArchive = [bool]$CreateArchive
+        })
 
-            $User     = Read-LogHost -Prompt "Enter your name for the report: "
-            $UserMsg  = "Operator Name recorded as: $User"
-            Show-Message -Message $UserMsg -Level INFO -AddToLog -MessageColor Green
+        Initialize-TriageSystemTools -ToolkitRoot $global:ToolkitRoot
 
-            $Agency    = Read-LogHost -Prompt "Enter Agency Name: "
-            $AgencyMsg = "Agency Name recorded as: $Agency"
-            Show-Message -Message $AgencyMsg -Level INFO -AddToLog -MessageColor Green
-
-            $CaseNumber     = Read-LogHost -Prompt "Enter Case Number: "
-            $CaseNumberMsg  = "Case Number recorded  as: $CaseNumber"
-            Show-Message -Message $CaseNumberMsg -Level INFO -AddToLog -MessageColor Green
+        # Optional captures: the decision was made up front, so just branch
+        if ($RunEdd) {
+            Invoke-EncryptedDiskDetector -ResultsFolder $ResultsFolder
+        }
+        else {
+            Show-Message -Message "Skipped Encrypted Disk Detector (not selected)." -Level INFO -AddToLog -MessageColor Yellow
         }
 
-        Get-OperatorInfo
+        if ($CaptureProcesses) {
+            Get-RunningProcesses -ResultsFolder $ResultsFolder
+        }
+        else {
+            Show-Message -Message "Skipped Magnet Process Capture (not selected)." -Level INFO -AddToLog -MessageColor Yellow
+        }
 
-
-        Invoke-EncryptedDiskDetector -ResultsFolder $ResultsFolder
-
-
-        Get-RunningProcesses -ResultsFolder $ResultsFolder
-
-
-        Get-ComputerRam -ResultsFolder $ResultsFolder
-
+        if ($CaptureRam) {
+            Get-ComputerRam -ResultsFolder $ResultsFolder
+        }
+        else {
+            Show-Message -Message "Skipped Magnet RAM Capture (not selected)." -Level INFO -AddToLog -MessageColor Yellow
+        }
 
         function Initialize-TriageScan {
             [CmdletBinding()]
             param(
-                [string]$ResultsFolder
+                [string]$ResultsFolder,
+                [string[]]$Modules
             )
 
             function Invoke-TriageScan {
                 param(
+                    [string]$ResultsFolder,
                     [string]$FolderName,
                     [scriptblock]$Action
                 )
@@ -127,58 +74,91 @@ function Invoke-DfirTriageScan {
                     $null              = New-Item -ItemType Directory -Path $SubFolderPathName -Force
 
                     Test-IfExists -FolderName $SubFolderPathName -Type FOLDER
-                    & $Action
+                    & $Action $SubFolderPathName
                 }
                 catch {
-                    $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ). Error -> $( $_.Exception.Message )"
+                    $ErrorMsg = "Execution failed during '$FolderName' on $( $env:COMPUTERNAME ). Error => $( $_.Exception.Message )"
                     Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
                 }
             }
 
-
             $DfirScanWorkflow = [ordered]@{
-                "001_Device"     = { Get-TriageDeviceData -DeviceFolder $SubFolderPathName }
-                "002_Users"      = { Get-TriageUserData -UserFolder $SubFolderPathName }
-                "003_Network"    = { Get-TriageNetworkData -NetworkFolder $SubFolderPathName }
-                "004_Process"    = { Get-TriageProcessData -ProcessFolder $SubFolderPathName }
-                "005_System"     = { Get-TriageSystemData -SystemFolder $SubFolderPathName }
-                "006_Prefetch"   = { Get-TriagePrefetchData -PrefetchFolder $SubFolderPathName }
-                "007_Event_Logs" = { Get-TriageEventLogData -EventLogFolder $SubFolderPathName }
-                "008_Firewall"   = { Get-TriageFirewallData -FirewallFolder $SubFolderPathName }
-                "009_Encryption" = { Get-TriageEncryptionData -EncryptionFolder $SubFolderPathName }
-                "010_Internet"   = { Get-TriageInternetData -InternetFolder $SubFolderPathName }
+                "001_Device"     = { param($FolderName) Get-TriageDeviceData -DeviceFolder $FolderName }
+                "002_Users"      = { param($FolderName) Get-TriageUserData -UserFolder $FolderName }
+                "003_Network"    = { param($FolderName) Get-TriageNetworkData -NetworkFolder $FolderName }
+                "004_Process"    = { param($FolderName) Get-TriageProcessData -ProcessFolder $FolderName }
+                "005_System"     = { param($FolderName) Get-TriageSystemData -SystemFolder $FolderName }
+                "006_Prefetch"   = { param($FolderName) Get-TriagePrefetchData -PrefetchFolder $FolderName }
+                "007_Event_Logs" = { param($FolderName) Get-TriageEventLogData -EventLogFolder $FolderName }
+                "008_Firewall"   = { param($FolderName) Get-TriageFirewallData -FirewallFolder $FolderName }
+                "009_Encryption" = { param($FolderName) Get-TriageEncryptionData -EncryptionFolder $FolderName }
+                "010_Internet"   = { param($FolderName) Get-TriageInternetData -InternetFolder $FolderName }
             }
 
             foreach ($Entry in $DfirScanWorkflow.GetEnumerator()) {
-                Invoke-TriageScan -FolderName $Entry.key -Action $Entry.value
+                if ($Modules -notcontains $Entry.Key) {
+                    Show-Message -Message "Skipped module => $( $Entry.Key ) (not selected)" -Level INFO -AddToLog -MessageColor Yellow
+                    continue
+                }
+                Invoke-TriageScan -ResultsFolder $ResultsFolder -FolderName $Entry.Key -Action $Entry.Value
             }
         }
 
+        $Scratch = Join-Path $global:ToolkitRoot '_scratch'
+        $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path $ResultsFolder 'Registry_Hives') -ScratchFolder $Scratch)
 
-        Initialize-TriageScan -ResultsFolder $ResultsFolder
+        foreach ($H in $global:TriageUserHives) {
+            Show-Message -Message "User hive: $($H.UserName) [$($H.Sid)] - $($H.Note)" -Level INFO -AddToLog
+        }
 
+        try {
+            Initialize-TriageScan -ResultsFolder $ResultsFolder -Modules $Modules
+        }
+        finally {
+            Dismount-TriageUserHives -Hives $global:TriageUserHives -ScratchFolder $Scratch
+        }
 
-        Get-FileHashes -ResultsFolder $ResultsFolder -LogFile $LogFole
+        Get-FileHashes -ResultsFolder $ResultsFolder
 
+        if ($CreateArchive) {
+            Get-CaseArchive -ResultsFolder $ResultsFolder
+        }
+        else {
+            Show-Message -Message "Skipped: case archive (not selected)." -Level INFO -AddToLog
+        }
 
-        Get-CaseArchive -ResultsFolder $ResultsFolder
+        # Summary. Deliberately not -AddToLog: the log was hashed above and
+        # must not change afterwards.
+        $Duration = (Get-Date) - $StartTime
 
+        # $DurationFormat = "{0} days, {1} hour(s), {2} minutes, {3} seconds" -f `
+        #     $Duration.Days,
+        #     $Duration.Hours,
+        #     $Duration.Minutes,
+        #     $Duration.Seconds
 
-        $EndTime = Get-Date
-        $Duration = $EndTime - $StartTime
+        $Code = if ($global:TriageErrorCount -gt 0) { 1 } else { 0 }
 
-        $DurationFormat = "{0} days, {1} hour(s), {2} minutes, {3} seconds" -f `
-        $Duration.Days,
-        $Duration.Hours,
-        $Duration.Minutes,
-        $Duration.Seconds
+        $global:TriageResult = [pscustomobject]@{
+            ExitCode      = $Code
+            Errors        = $global:TriageErrorCount
+            Warnings      = $global:TriageWarningCount
+            ResultsFolder = $ResultsFolder
+            LogFile       = $global:LogFile
+            Duration      = $Duration
+        }
 
-        Write-Host "`nScript execution completed in $DurationFormat."
-        Write-Host "`nThe results are available in the '$ResultsFolder' directory"
+        Show-Message -Message ("Completed in {0:hh\:mm\:ss}: {1} error(s), {2} warning(s). Exit code {3}. Results: {4}" -f
+            $Duration, $global:TriageErrorCount, $global:TriageWarningCount, $Code, $ResultsFolder)
+
+        # Write-Host "`nScript execution completed in $DurationFormat."
+        # Write-Host "`nThe results are available in the '$ResultsFolder' directory"
     }
     end {
-        # Force the .NET Garbage Collector to immediately purge the freed memory slots
+        # Force the .NET Garbage Collector to immediately purge the freed
+        # memory slots
         [System.GC]::Collect()
         [System.GC]::WaitForPendingFinalizers()
     }
 }
+
