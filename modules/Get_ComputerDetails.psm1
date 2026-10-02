@@ -35,7 +35,7 @@ function Get-ComputerDetails {
 
             $DataProps = [ordered]@{
                 Host        = $env:COMPUTERNAME
-                DateScanned = (Get-Date)
+                DateScanned = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
             }
 
             $MergeProperties = {
@@ -94,7 +94,7 @@ function Get-ComputerDetails {
             [PSCustomObject]$DataProps | Select-Object Host, DateScanned, CurrentTimeZone, InstallDate, LastBootUpTime, UpTime, LocalDateTime, BootDevice, BootROMSupported, BootupState, ChassisBootupState, DataExecutionPrevention_32BitApplications, DataExecutionPrevention_Available, DataExecutionPrevention_Drivers, DataExecutionPrevention_SupportPolicy, MinimumPasswordLength, USBStorageLock, Debug, EncryptionLevel, AdminPasswordStatus, Description, Distributed, OSArchitecture, OSProductSuite, OSType, OperatingSystemSKU, Organization, OtherTypeDescription, PortableOperatingSystem, ProductType, RegisteredUser, ServicePackMajorVersion, ServicePackMinorVersion, Status, SuiteMask, BuildNumber, Caption, LicenseType, LicenseStatus, SystemDevice, SystemDirectory, SystemDrive, MUILanguages, Version, WindowsDirectory, DNSHostName, DaylightInEffect, Domain, DomainRole, EnableDaylightSavingsTime, PrimaryOwnerContact, PrimaryOwnerName, SupportContactDescription, UserName, Manufacturer, Model, NetworkServerModeEnabled, HypervisorPresent, SystemSKUNumber, ThermalState, BIOSVersion, BIOSInstallDate, BIOSManufacturer, PrimaryBIOS, BIOSReleaseDate, SMBIOSBIOSVersion, SMBIOSMajorVersion, SMBIOSMinorVersion, SMBIOSPresent, BIOSSerialNumber, SystemBiosMajorVersion, SystemBiosMinorVersion, VirtualizationFirmwareEnabled
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $Computer ). Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $Computer ). Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
