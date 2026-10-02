@@ -2,44 +2,49 @@ function Get-FileHashes {
     [CmdletBinding()]
 
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$ResultsFolder,
-
-        [string[]]$ExcludedFiles = @("*PowerShell_transcript*", "*Hash_Values*")
-
-        [Parameter(Mandatory = $false)]
-        [string]$LogFile
+        [Parameter(Mandatory = $true)][string]$ResultsFolder,
+        [string[]]$ExcludedFiles = @(
+            "*PowerShell_transcript*",
+            "*Hash_Values*"
+        ),
+        [Parameter(Mandatory = $false)][string]$LogFile
     )
 
     begin {
-        $Stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:computername
     }
 
     process {
         try {
-            $BeginMsg = "Hashing triage files for computer: $( $ComputerName )"
+            $BeginMsg = "Hashing triage files for computer => $ComputerName"
             Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
             $HashResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "Hash_Results"
-            $null              = New-Item -ItemType Directory -Path $HashResultsFolder -Force
+            $null = New-Item -ItemType Directory -Path $HashResultsFolder -Force
 
-            Test-IfExists -FolderName $HashResultsFolder -Type FOLDER
+            $FolderCreatedMsg = "### '$HashResultsFolder' sub-directory created successfully ###"
+            Show-Message -Message $FolderCreatedMsg -Level INFO -AddToLog
 
             $HashResultsFolderName = (Get-Item -Path $ResultsFolder).Name
 
-            # Add the filename and filetype to the end
-            $HashResultsFilePath = Join-Path -Path $HashResultsFolder -ChildPath "${HashResultsFolderName}_hash_values.csv"
+            $HashFileSuffix = "hash_values.csv"
+            $ResultsFile = "$($HashResultsFolderName)_$($HashFileSuffix)"
 
-            Test-IfExists -FileName $HashResultsFilePath -Type FILE
+            # Add the filename and filetype to the end
+            $HashResultsFilePath = Join-Path -Path $HashResultsFolder -ChildPath $ResultsFile
+
+            $FileCreatedMsg = "The '$HashResultsFilePath' file was created successfully."
+            Show-Message -Message $FileCreatedMsg -Level INFO -AddToLog
 
             # Get the hash values of all the saved files in the output directory
             $Results = @()
 
-            # Exclude the PowerShell transcript file from being included in the file that are hashed
+            # Exclude the PowerShell transcript file from being included in the
+            # file that are hashed
             $FileToHash = Get-ChildItem -Path $ResultsFolder -Recurse -Force -File | Where-Object {
                 foreach ($Pattern in $ExcludedFiles) {
-                    if ($_.Name -like $Pattern) {
+                    if ($File.Name -like $Pattern) {
                         return $false
                     }
                 }
@@ -47,20 +52,24 @@ function Get-FileHashes {
             }
 
             foreach ($File in $FileToHash) {
-                $FileHashValue = (Get-FileHash -Algorithm SHA256 -Path $File.FullName).Hash
+                $FileMd5HashValue = (Get-FileHash -Algorithm MD5 -Path $File.FullName).Hash
+
+                $FileSha256HashValue = (Get-FileHash -Algorithm SHA256 -Path $File.FullName).Hash
 
                 # Show & log $ProgressMsg message
-                $ProgressMsg = "Hashing file: '$( $File.Name )'"
+                $ProgressMsg = "Hashing file => '$( $File.Name )'"
                 Show-Message -Message $ProgressMsg -Level INFO -AddToLog
 
                 $Results += [PSCustomObject]@{
-                    DirectoryName      = Split-Path $File.DirectoryName -Leaf
+                    # DirectoryName      = Split-Path $File.DirectoryName -Leaf
+                    DirectoryName      = $File.DirectoryName
                     Name               = $File.Name
                     Extension          = $File.Extension
                     PSIsContainer      = $File.PSIsContainer
                     SizeInKB           = [math]::Round(($File.Length / 1KB), 2)
                     Mode               = $File.Mode
-                    "FileHash(Sha256)" = $FileHashValue
+                    "FileHash(MD5)"    = $FileMd5HashValue
+                    "FileHash(Sha256)" = $FileSha256HashValue
                     Attributes         = $File.Attributes
                     IsReadOnly         = $File.IsReadOnly
                     CreationTimeUTC    = $File.CreationTimeUtc
@@ -68,7 +77,7 @@ function Get-FileHashes {
                     LastWriteTimeUTC   = $File.LastWriteTimeUtc
                 }
 
-                $HashFileMsg = "Completed hashing file: '$( $_.Name )' [SHA256: $( $FileHashValue )]"
+                $HashFileMsg = "Completed hashing file: '$( $File.Name )' [SHA256: $( $FileSha256HashValue )]"
                 Show-Message -Message $HashFileMsg -Level INFO -AddToLog
             }
 
@@ -83,13 +92,11 @@ function Get-FileHashes {
             Show-Message -File $HashResultsFileName -ExecutionTime "$ExecutionTime seconds" -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ). Error -> $( $_.Exception.Message )"
+            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ). Error => $( $_.Exception.Message )"
             Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
         }
     }
     end {
-        if ($Stopwatch.IsRunning) {
-            $Stopwatch.Stop()
-        }
+        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
     }
 }
