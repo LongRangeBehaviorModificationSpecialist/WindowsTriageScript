@@ -97,12 +97,15 @@ function Write-OutputToCsv {
 function Show-IsAdmin {
 
     try {
-        $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
         if ($IsAdmin) {
             Show-Message -Message "DFIR Session starting as Administrator..." -Level INFO -AddToLog -MessageColor Green
         }
         else {
-            Show-Message -Message "No Administrator session detected. For the best performance run as Administrator. Not all items can be collected. DFIR Session starting..." -Level WARNING -AddToLog
+            Show-Message "CRITICAL ACCESS ERROR => This triage tool must be run as Administrator." -Level ERROR
+            exit 2
+            # Show-Message -Message "No Administrator session detected. For the best performance run as Administrator. Not all items can be collected. DFIR Session starting..." -Level WARNING -AddToLog
         }
     }
     catch {

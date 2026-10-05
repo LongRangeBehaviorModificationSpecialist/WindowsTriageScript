@@ -77,14 +77,14 @@ begin {
         Write-Host "CRITICAL: cannot load the triage module => $( $_.Exception.Message )" -ForegroundColor Red; exit 2
     }
 
-    # Check for Administrator Rights -- Volatile collection (Network, RAM,
-    # Handles) will fail silently without this.
-    $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    # # Check for Administrator Rights -- Volatile collection (Network, RAM,
+    # # Handles) will fail silently without this.
+    # $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-    if (-not $IsAdmin) {
-        Show-Message "CRITICAL ACCESS ERROR => This triage tool must be run as Administrator." -Level ERROR
-        exit 2
-    }
+    # if (-not $IsAdmin) {
+    #     Show-Message "CRITICAL ACCESS ERROR => This triage tool must be run as Administrator." -Level ERROR
+    #     exit 2
+    # }
 
     # Validate parameters
     # Under `-File`, a comma list can arrive as ONE string, so split
