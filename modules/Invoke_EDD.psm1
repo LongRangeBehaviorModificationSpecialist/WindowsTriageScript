@@ -1,34 +1,33 @@
-function Invoke-EncryptedDiskDetector {
+function Invoke-EDD {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$ResultsFolder
+        [Parameter(Mandatory)][string]$ResultsFolder
     )
 
     begin {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
-        $ComputerName = $env:computername
+        $ComputerName = $env:COMPUTERNAME
     }
     process {
         try {
-            $BeginMsg = "Starting Encrypted Disk Detector on: $( $ComputerName )"
+            $BeginMsg = "Starting Encrypted Disk Detector on => $( $ComputerName )"
             Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
-            $EddResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "Encrypted_Disk_Detector"
+            $EddResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "EDD"
             $null = New-Item -ItemType Directory -Path $EddResultsFolder -Force
 
             Test-IfExists -FolderName $EddResultsFolder -Type FOLDER
 
             # Name the file to which the scan results will be saved
-            $EddResultsFilePath = Join-Path -Path $EddResultsFolder -ChildPath "encrypted_disk_detector_results.txt"
+            $EddResultsFilePath = Join-Path -Path $EddResultsFolder -ChildPath "edd_results.txt"
             $null               = New-Item -ItemType File -Path $EddResultsFilePath -Force
             $EddResultsFileName = [System.IO.Path]::GetFileName($EddResultsFilePath)
 
             Test-IfExists -FileName $EddResultsFilePath -Type FILE
 
-            # Start the encrypted disk detector executable
+            # Run the executable
             Start-Process -NoNewWindow `
-                -FilePath $global:Binaries["EDD"] `
+                -FilePath (Get-TriageBinary "EDD") `
                 -ArgumentList "/batch" `
                 -Wait `
                 -RedirectStandardOutput $EddResultsFilePath
@@ -43,17 +42,15 @@ function Invoke-EncryptedDiskDetector {
 
             # Guard against an empty result file
             if ([string]::IsNullOrWhiteSpace($EddResults)) {
-                $EddResults = "(EDD produced no output -- check if the tool ran interactively)"
+                $EddResults = "(EDD produced no output => check if the tool ran interactively)"
             }
 
             Write-LogMessage -Message $EddResults
 
-            $SuccessMsg = "Encrypted Disk Detector was run successfully on computer: '$( $ComputerName )'"
-            Show-Message -Message $SuccessMsg -File $EddResultsFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS -AddToLog
+            Show-Message -Message "Encrypted Disk Detector was run successfully on computer => $( $ComputerName )" -File $EddResultsFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )' on $( $ComputerName ). Error => $( $_.Exception.Message )"
-            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
     end {

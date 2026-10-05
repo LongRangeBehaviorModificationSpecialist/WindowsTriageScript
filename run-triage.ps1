@@ -4,13 +4,22 @@
 .DESCRIPTION
     Interactive by default: asks every question up front, then collects with no
     further prompts.
-    With -Unattended (or when no console is available) nothing is ever
+    With `-Unattended` (or when no console is available) nothing is ever
     prompted; supply
-    -Operator and -CaseNumber plus any collection switches wanted.
+    `-Operator` and `-CaseNumber` plus any collection switches wanted.
 .PARAMETER Modules
-    Any of 001_Device, 002_Users, 003_Network, 004_Process, 005_System,
-    006_Prefetch, 007_Event_Logs, 008_Firewall, 009_Encryption,
-    010_Internet. Default: all.
+    Any of:
+        001_Device,
+        002_Users,
+        003_Network,
+        004_Process,
+        005_System,
+        006_Prefetch,
+        007_Event_Logs,
+        008_Firewall,
+        009_Encryption,
+        010_Internet.
+    Default: all.
 .EXAMPLE
     .\run-triage.ps1
 .EXAMPLE
@@ -43,46 +52,33 @@ begin {
 
     $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Continue
 
-    $AllModules = @("001_Device","002_Users","003_Network","004_Process","005_System","006_Prefetch","007_Event_Logs","008_Firewall","009_Encryption","010_Internet")
+    $AllModules = @(
+        "001_Device",
+        "002_Users",
+        "003_Network",
+        "004_Process",
+        "005_System",
+        "006_Prefetch",
+        "007_Event_Logs",
+        "008_Firewall",
+        "009_Encryption",
+        "010_Internet"
+    )
 
     $global:ToolkitRoot = $PSScriptRoot
 
     $ComputerName = $env:COMPUTERNAME
 
-    # 1. Load the toolkit
+    # Load the toolkit
     try {
-        Import-Module -Name (Join-Path $PSScriptRoot "modules\triage.psd1") -Force -ErrorAction Stop
+        Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath "modules\triage.psd1") -Force -ErrorAction Stop
     }
     catch {
-        Write-Host "CRITICAL: cannot load the triage module => $($_.Exception.Message)" -ForegroundColor Red; exit 2
+        Write-Host "CRITICAL: cannot load the triage module => $( $_.Exception.Message )" -ForegroundColor Red; exit 2
     }
 
-    # Dynamically find the USB drive root directory (avoids hardcoding drive
-    # letters)
-
-    # $FunctionsModule = [System.IO.Path]::GetFullPath($(Join-Path -Path $global:ToolkitRoot -ChildPath "modules\functions.psm1"))
-    # Import-Module -Name $FunctionsModule -Force
-    # Show-Message "The functions.psm1 file was imported successfully"
-
-    # # FORCE the path to convert to an absolute path string (Resolves any .\ or
-    # # broken slashes)
-    # $ManifestPath = [System.IO.Path]::GetFullPath($(Join-Path -Path $global:ToolkitRoot -ChildPath "modules\triage.psd1"))
-
-    # # Import the Master Manifest Module
-    # if (Test-Path -Path $ManifestPath) {
-    #     Show-Message "Loading forensic modules..." -MessageColor Green -AddToLog
-    #     Import-Module -Name $ManifestPath -Force
-    #     Show-Message "Module file: '$( Split-Path $ManifestPath -Leaf )' was imported successfully" -MessageColor Green -AddToLog
-    #     Show-Message "Triage Suite loaded successfully..." -MessageColor Green -AddToLog
-    # }
-    # else {
-    #     Show-Message "CRITICAL FILE ERROR: Cannot find the triage manifest at '$ManifestPath'." -Level ERROR -AddToLog
-    #     Exit
-    # }
-
-    # Check for Administrator Rights
-    # Volatile collection (Network, RAM, Handles) will fail silently
-    # without this.
+    # Check for Administrator Rights -- Volatile collection (Network, RAM,
+    # Handles) will fail silently without this.
     $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
     if (-not $IsAdmin) {
@@ -90,8 +86,9 @@ begin {
         exit 2
     }
 
-    # 3. Validate parameters.
-    # Under -File, a comma list can arrive as ONE string, so split it ourselves.
+    # Validate parameters
+    # Under `-File`, a comma list can arrive as ONE string, so split
+    # it ourselves.
     $Modules = if ($Modules) {
         @($Modules -split "[,;\s]+" | Where-Object { $_ })
     } else { $AllModules }
@@ -108,10 +105,10 @@ begin {
         exit 2
     }
 
-    # 4. Mode
+    # Set Mode
     $Interactive = (-not $Unattended) -and (Test-TriageInteractive)
 
-    # 5. Gather everything up front
+    # Gather everything up front
     if ($Gui) {
         # the GUI collects its own answers
     }
@@ -166,32 +163,23 @@ begin {
 process {
     try {
         if ($Gui) {
-            Disable-PSReadLineHistory
-            Write-LaunchContext
             $Result = Get-Gui -OutputRoot $OutputRoot
             if (-not $Result) { exit 0 }
         }
         else {
-            function Show-LoadedModules {
-                Show-Message "Functions Loaded =>" -MessageColor Green -AddToLog
-                foreach ($Cmd in $(Get-Command -Module triage | Select-Object Name)) {
-                    Write-Host "$( $Cmd.Name -join ', ')"
-                }
-            }
 
             Get-InitialSetup -OutputRoot $OutputRoot
-            Show-TriageBanner
+            # Show-TriageBanner
             Write-LaunchContext
             Disable-PSReadLineHistory
-            Show-LoadedModules
 
-            Show-Message -Message "Results folder => $global:ResultsFolder" -Level INFO -AddToLog
-            $null   = Invoke-DfirTriageScan -ResultsFolder $global:ResultsFolder @Options
+            Show-Message -Message "Results folder => $global:ResultsFolder" -Level INFO -AddToLog -MessageColor Green
+            $null = Invoke-DfirTriageScan -ResultsFolder $global:ResultsFolder @Options
             $Result = $global:TriageResult
         }
     }
     catch {
-        Show-Message -Message "FATAL ERROR => $($_.Exception.Message)" -Level ERROR -AddToLog
+        Show-Message -Message "FATAL ERROR => $( $_.Exception.Message )" -Level ERROR -AddToLog
         exit 3
     }
     if (-not $Result) { exit 3 }
@@ -213,7 +201,7 @@ process {
 
 #TODO -- Volatile extras. ARP, routes, qwinsta, Get-SmbSession/Get-SmbOpenFile, Defender detections and quarantine. Firefox is missing, and the browser SQL hardcodes "GMT+3 IL" columns and has a %H:%M:S typo. Stay in UTC.
 
-#TODO -- Speed. Get-EstablishedConnections calls Get-Process five times per connection and .Modules throws on protected processes. Build a PID lookup once, or use Win32_Process. Cache hashes by path in 004, and use $env:SystemDrive/$env:SystemRoot rather than a hardcoded C:\.
+#\TODO -- Speed. Get-EstablishedConnections calls Get-Process five times per connection and .Modules throws on protected processes. Build a PID lookup once, or use Win32_Process. Cache hashes by path in 004, and use $env:SystemDrive/$env:SystemRoot rather than a hardcoded C:\Windows.
 
 # Structure
 
@@ -232,7 +220,7 @@ function Invoke-Collector {
     try {
         $data = & $Script
         switch ($Format) {
-            "Csv"  { $data | Export-Csv $OutFile -NoTypeInformation -Encoding UTF8 }
+            "Csv" { $data | Export-Csv $OutFile -NoTypeInformation -Encoding UTF8 }
             "Json" { $data | ConvertTo-Json -Depth 5 | Set-Content $OutFile -Encoding UTF8 }
             "Text" { $data | Out-String -Width 4096 | Set-Content $OutFile -Encoding UTF8 }
         }
@@ -240,7 +228,7 @@ function Invoke-Collector {
 
         Write-TriageLog SUCCESS "$Name => $(Split-Path $OutFile -Leaf) ($([int]$sw.Elapsed.TotalSeconds)s)"
     }
-    catch { Write-TriageLog ERROR "$Name failed: $($_.Exception.Message)" }
+    catch { Write-TriageLog ERROR "$Name failed: $( $_.Exception.Message )" }
 }
 
 $Collectors = @(
@@ -248,7 +236,7 @@ $Collectors = @(
        Script = { Get-CimInstance Win32_StartupCommand } }
 )
 foreach ($c in $Collectors) {
-    Invoke-Collector -Name $c.Name -Script $c.Script -OutFile (Join-Path $Folder $c.Out) -Format $c.Format
+    Invoke-Collector -Name $c.Name -Script $c.Script -OutFile (Join-Path -Path $Folder -ChildPath $c.Out) -Format $c.Format
 }
 #>
 

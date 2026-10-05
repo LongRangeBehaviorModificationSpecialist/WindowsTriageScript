@@ -12,7 +12,7 @@ function Get-Gui {
     # Add-Type -AssemblyName Microsoft.VisualBasic
 
     $script:OutputRoot   = $OutputRoot
-    $script:ManifestPath = Join-Path $global:ToolkitRoot 'modules\triage.psd1'
+    $script:ManifestPath = Join-Path -Path $global:ToolkitRoot -ChildPath "modules\triage.psd1"
     $script:LastResult   = $null
     $script:Async        = $null
     $script:LogFile      = $null
@@ -42,7 +42,7 @@ function Get-Gui {
 
     # Form Base Shell
     $MainForm                 = New-Object System.Windows.Forms.Form
-    $MainForm.Text            = "VECTOR Triage Interface"
+    $MainForm.Text            = "NOVA ICAC VECTOR Triage Application"
     $MainForm.Size            = New-Object System.Drawing.Size(700, 775)
     $MainForm.StartPosition   = "CenterScreen"
     $MainForm.FormBorderStyle = "Sizable"
@@ -344,19 +344,19 @@ function Get-Gui {
     $BtnStartTriage.Forecolor                  = "#dddddd"
 
     $ModuleMap = @{
-        DeviceData     = '001_Device';
-        UserData       = '002_Users';
-        NetworkData    = '003_Network'
-        ProcessData    = '004_Process';
-        SystemData     = '005_System';
-        PrefetchData   = '006_Prefetch'
-        EventLogData   = '007_Event_Logs';
-        FirewallData   = '008_Firewall'
-        EncryptionData = '009_Encryption';
-        InternetData   = '010_Internet'
+        DeviceData     = "001_Device";
+        UserData       = "002_Users";
+        NetworkData    = "003_Network"
+        ProcessData    = "004_Process";
+        SystemData     = "005_System";
+        PrefetchData   = "006_Prefetch"
+        EventLogData   = "007_Event_Logs";
+        FirewallData   = "008_Firewall"
+        EncryptionData = "009_Encryption";
+        InternetData   = "010_Internet"
     }
     # Checkboxes with no code behind them yet. Refusing is safer than silently ignoring a ticked box.
-    $NotImplemented = @('CopyRegHives', 'CopyPrefetch', 'CopyNTUser', 'ListAllFiles', 'CopySRUDB')
+    $NotImplemented = @("CopyRegHives", "CopyPrefetch", "CopyNTUser", "ListAllFiles", "CopySRUDB")
 
     $script:SetBusy = {
         param([bool]$Busy)
@@ -367,9 +367,9 @@ function Get-Gui {
 
     $script:PumpLog = {
         if (-not $script:LogFile -or -not (Test-Path -LiteralPath $script:LogFile)) { return }
-        $Fs = [System.IO.File]::Open($script:LogFile, 'Open', 'Read', 'ReadWrite')  # the collector keeps appending
+        $Fs = [System.IO.File]::Open($script:LogFile, "Open", "Read", "ReadWrite")  # the collector keeps appending
         try {
-            [void]$Fs.Seek($script:LogPos, 'Begin')
+            [void]$Fs.Seek($script:LogPos, "Begin")
             $Reader = New-Object System.IO.StreamReader($Fs, [System.Text.Encoding]::UTF8)
             $New = $Reader.ReadToEnd()
             $script:LogPos = $Fs.Position
@@ -382,7 +382,7 @@ function Get-Gui {
         $Operator = $TxtboxUserName.Text.Trim()
         $Case = $TxtboxCaseNumber.Text.Trim()
         if (-not $Operator -or -not $Case) {
-            [void][System.Windows.Forms.MessageBox]::Show('User Name and Case Number are required.', 'Missing information', 'OK', 'Warning')
+            [void][System.Windows.Forms.MessageBox]::Show("User Name and Case Number are required.", "Missing information", "OK", "Warning")
             return
         }
 
@@ -391,19 +391,19 @@ function Get-Gui {
 
         $Unbuilt = @($NotImplemented | Where-Object { $Ticked[$_] })
         if ($Unbuilt) {
-            [void][System.Windows.Forms.MessageBox]::Show("Not implemented yet, untick: $($Unbuilt -join ', ')", 'Option unavailable', 'OK', 'Warning')
+            [void][System.Windows.Forms.MessageBox]::Show("Not implemented yet, untick: $($Unbuilt -join ', ')", "Option unavailable", "OK", "Warning")
             return
         }
 
         $Modules = @($ModulesChkBoxes | Where-Object Checked | ForEach-Object { $ModuleMap[$_.Tag] })
         if (-not $Modules -and -not ($Ticked.RunEDD -or $Ticked.CaptureProcesses -or $Ticked.CaptureRAM)) {
-            [void][System.Windows.Forms.MessageBox]::Show('Nothing is selected.', 'Nothing to do', 'OK', 'Information')
+            [void][System.Windows.Forms.MessageBox]::Show("Nothing is selected.", "Nothing to do", "OK", "Information")
             return
         }
 
         & $script:SetBusy $true
         $TxtLog.Clear()
-        $LblStatus.Text = 'Running... do not close this window.'
+        $LblStatus.Text = "Running... Do not close this window."
 
         # Folder and log are created here so the log timer can start
         # tailing immediately
@@ -411,6 +411,9 @@ function Get-Gui {
         $script:ResultsFolder = $global:ResultsFolder
         $script:LogFile       = $global:LogFile
         $script:LogPos        = 0
+
+        Disable-PSReadLineHistory
+        Write-LaunchContext
 
         $Options = @{
             Operator         = $Operator;
@@ -452,10 +455,10 @@ function Get-Gui {
             $Sender.Stop()
             try {
                 $Out = $script:Ps.EndInvoke($script:Async)  # throws if the worker died
-                $script:LastResult = @($Out | Where-Object { $_ -and $_.PSObject.Properties['ExitCode'] }) | Select-Object -Last 1
+                $script:LastResult = @($Out | Where-Object { $_ -and $_.PSObject.Properties["ExitCode"] }) | Select-Object -Last 1
             }
             catch {
-                $TxtLog.AppendText("`r`nFATAL: $($_.Exception.Message)`r`n")
+                $TxtLog.AppendText("`r`nFATAL ERROR => $( $_.Exception.Message )`r`n")
             }
             finally {
                 $script:Ps.Dispose();
@@ -466,14 +469,14 @@ function Get-Gui {
 
             & $script:PumpLog  # pick up the last lines
             & $script:SetBusy $false
-            $LblStatus.Text = "Finished. Exit code $($script:LastResult.ExitCode). Results: $($script:ResultsFolder)"
+            $LblStatus.Text = "Finished. Exit code $( $script:LastResult.ExitCode ). Results => $( $script:ResultsFolder )"
         }
     })
 
     $MainForm.Add_FormClosing({
         param($Sender, $e)
         if ($script:Async -and -not $script:Async.IsCompleted) {
-            [void][System.Windows.Forms.MessageBox]::Show('Collection is still running. Wait for it to finish.', 'Triage running', 'OK', 'Warning')
+            [void][System.Windows.Forms.MessageBox]::Show("Collection is still running. Wait for it to finish.", "Triage running", "OK", "Warning")
             $e.Cancel = $true
         }
     })
@@ -504,14 +507,14 @@ function Get-Gui {
     $TxtLog            = New-Object System.Windows.Forms.TextBox
     $TxtLog.Multiline  = $true
     $TxtLog.ReadOnly   = $true
-    $TxtLog.ScrollBars = 'Vertical'
-    $TxtLog.Font       = New-Object System.Drawing.Font('Consolas', 8.5)
+    $TxtLog.ScrollBars = "Vertical"
+    $TxtLog.Font       = New-Object System.Drawing.Font("Consolas", 8.5)
     $TxtLog.Location   = New-Object System.Drawing.Point(10, 525)
     $TxtLog.Size       = New-Object System.Drawing.Size(665, 170)
     $MainForm.Controls.Add($TxtLog)
 
     $LblStatus          = New-Object System.Windows.Forms.Label
-    $LblStatus.Text     = 'Ready.'
+    $LblStatus.Text     = "Ready."
     $LblStatus.Location = New-Object System.Drawing.Point(10, 702)
     $LblStatus.Size     = New-Object System.Drawing.Size(665, 22)
     $MainForm.Controls.Add($LblStatus)

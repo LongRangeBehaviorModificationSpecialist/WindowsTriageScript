@@ -1,6 +1,8 @@
 function Get-TriageEventLogData {
     [CmdletBinding()]
-    param([string]$EventLogFolder)
+    param(
+        [string]$EventLogFolder
+    )
 
     function Invoke-ScriptBlock {
         param(
@@ -11,11 +13,11 @@ function Get-TriageEventLogData {
         try {
             Show-Message -Message $Message -Level INFO -AddToLog
 
-            $EventLogPath = "C:\Windows\System32\winevt\Logs"
+            $EventLogPath = "$env:SystemRoot\System32\winevt\Logs"
             $LogFile = Join-Path -Path $EventLogPath -ChildPath (($LogName -replace "/", "%4") + ".evtx")
 
             if (-not (Test-Path -LiteralPath $LogFile)) {
-                Show-Message -Message "Event Log $( $LogName ) was not found in '$EventLogPath'" -Level INFO -AddToLog -MessageColor Yellow
+                Show-Message -Message "Event Log [ $LogName ] was not found in [ $EventLogPath ] directory" -Level INFO -AddToLog -MessageColor Yellow
                 return
             }
 
@@ -28,16 +30,18 @@ function Get-TriageEventLogData {
         }
         catch {
             if ($_.FullyQualifiedErrorId -like "NoMatchingEventsFound*") {
-                Show-Message -Message "No data was found in the $( $LogName ) Event Log." -Level INFO -AddToLog -MessageColor Yellow
+                Show-Message -Message "No data was found in the [ $LogName ] file." -Level INFO -AddToLog -MessageColor Yellow
             }
             else {
-                Show-Message -Message "Execution failed on $LogName. Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
+                Show-Message -Message "Execution failed on [ $LogName ].  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
             }
         }
     }
 
     function Get-AvailableLogFiles {
-        param([string]$OutputFile = "$EventLogFolder\available_log_files.txt")
+        param(
+            [string]$OutputFile = "$EventLogFolder\available_log_files.txt"
+        )
         $BeginMsg = "Gathering list of available Event Log files..."
         Show-Message -Message $BeginMsg -Level INFO -AddToLog
         $Command = { Get-WinEvent -ListLog * |
@@ -53,73 +57,73 @@ function Get-TriageEventLogData {
         param()
         $EventLogList = [ordered]@{
             "Application" = (
-                "Getting 'Application' Log...",
+                "Getting Application.evtx log...",
                 "application_log.csv"
             )
-            "Microsoft-Windows-Application-Experience/Program-Inventory" = (
-                "Getting 'Microsoft-Windows-Application-Experience%4Program Inventory' Log...",
+            "Microsoft-Windows-Application-Experience/Program Inventory" = (
+                "Getting Microsoft-Windows-Application-Experience%4Program Inventory.evtx log...",
                 "win_application_experience_program_inventory_log.csv"
             )
             "Microsoft-Windows-DriverFrameworks-UserMode/Operational" = (
-                "Getting 'Microsoft-Windows-DriverFrameworks-UserMode%4Operational' Log...",
+                "Getting Microsoft-Windows-DriverFrameworks-UserMode%4Operational.evtx log...",
                 "win_driveframeworks_usermode_operational_log.csv"
             )
             "Microsoft-Windows-Partition/Diagnostic" = (
-                "Getting 'Microsoft-Windows-Partition%4Diagnostic' Log...",
+                "Getting Microsoft-Windows-Partition%4Diagnostic.evtx log...",
                 "win_partition_diagnostic_log.csv"
             )
             "Microsoft-Windows-PowerShell/Admin" = (
-                "Getting 'Microsoft-Windows-PowerShell%4Admin' Log...",
+                "Getting Microsoft-Windows-PowerShell%4Admin.evtx log...",
                 "win_powershell_admin_log.csv"
             )
             "Microsoft-Windows-PowerShell/Operational" = (
-                "Getting 'Microsoft-Windows-PowerShell%4Operational' Log...",
+                "Getting Microsoft-Windows-PowerShell%4Operational.evtx log...",
                 "win_powershell_operational_log.csv"
             )
             "Microsoft-Windows-Sysmon/Operational" = (
-                "Getting 'Microsoft-Windows-Sysmon%4Operational' Log...",
+                "Getting Microsoft-Windows-Sysmon%4Operational.evtx log...",
                 "win_sysmon_operational_log.csv"
             )
             "Microsoft-Windows-TaskScheduler/Operational" = (
-                "Getting 'Microsoft-Windows-TaskScheduler%4Operational' Log...",
+                "Getting Microsoft-Windows-TaskScheduler%4Operational.evtx log...",
                 "win_taskscheduler_operational_log.csv"
             )
             "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational" = (
-                "Getting 'Microsoft-Windows-TerminalServices-LocalSessionManager%4Operational' Log...",
+                "Getting Microsoft-Windows-TerminalServices-LocalSessionManager%4Operational.evtx log...",
                 "windows_terminalservices_localsessionmanager_operational_log.csv"
             )
             "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational" = (
-                "Getting 'Microsoft-Windows-TerminalServices-RemoteConnectionManager%4Operational' Log...",
+                "Getting Microsoft-Windows-TerminalServices-RemoteConnectionManager%4Operational.evtx log...",
                 "win_terminalservices_remoteconnectionmanager_operational_log.csv"
             )
             "Microsoft-Windows-TerminalServices-RDPClient/Operational" = (
-                "Getting 'Microsoft-Windows-TerminalServices-RDPClient%4Operational' Log...",
+                "Getting Microsoft-Windows-TerminalServices-RDPClient%4Operational.evtx log...",
                 "win_terminalservices_rdpclient_operational_log.csv"
             )
             "Microsoft-Windows-Windows Defender/Operational" = (
-                "Getting 'Microsoft-Windows-Windows Defender%4Operational' Log...",
+                "Getting Microsoft-Windows-Windows Defender%4Operational.evtx log...",
                 "win_windows_defender_operational_log.csv"
             )
             "Microsoft-Windows-Windows Defender/WHC" = (
-                "Getting 'Microsoft-Windows-Windows Defender%4WHC' Log...",
+                "Getting Microsoft-Windows-Windows Defender%4WHC.evtx log...",
                 "win_windows_defender_whc_log.csv"
             )
             "Security" = (
-                "Getting 'Security' Log...",
+                "Getting Security.evtx log...",
                 "security_log.csv"
             )
             "System" = (
-                "Getting 'System' Log...",
+                "Getting System.evtx log...",
                 "system_log.csv"
             )
-            "Windows-PowerShell" = (
-                "Getting 'Windows-PowerShell' Log...",
+            "Windows PowerShell" = (
+                "Getting Windows PowerShell.evtx log...",
                 "win_powershell_log.csv"
             )
         }
 
         foreach ($Log in $EventLogList.GetEnumerator()) {
-            Invoke-ScriptBlock -LogName $Log.Key -Message $Log.Value[0] -OutputFile (Join-Path $EventLogFolder $Log.Value[1])
+            Invoke-ScriptBlock -LogName $Log.Key -Message $Log.Value[0] -OutputFile (Join-Path -Path $EventLogFolder -ChildPath $Log.Value[1])
         }
     }
 

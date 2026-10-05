@@ -1,6 +1,8 @@
 function Get-TriagePrefetchData {
     [CmdletBinding()]
-    param([string]$PrefetchFolder)
+    param(
+        [string]$PrefetchFolder
+    )
 
     function Invoke-ScriptBlock {
         param(
@@ -14,26 +16,28 @@ function Get-TriagePrefetchData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
-            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
 
     function Get-PrefetchFiles {
-        param([string]$CsvOutputFile = "$PrefetchFolder\prefetch_files.csv")
-        $Command = { Get-ChildItem -Path "C:\Windows\Prefetch\*.pf" |
+        param(
+            [string]$OutputFile = "$PrefetchFolder\prefetch_files.csv"
+        )
+        $Command = { Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" |
                         Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
     function Get-RecentExecutions {
-        param([string]$OutputFile = "$PrefetchFolder\recent_executions.csv")
-
-        $Folders = @("$env:SystemRoot\Temp")
+        param(
+            [string]$OutputFile = "$PrefetchFolder\recent_executions.csv"
+        )
+        $Folders = @("$env:SystemDrive\Temp")
         foreach ($U in $global:TriageUserHives) {
-            $Folders += Join-Path $U.ProfilePath 'AppData\Roaming'
-            $Folders += Join-Path $U.ProfilePath 'AppData\Local\Temp'
+            $Folders += Join-Path -Path $U.ProfilePath -ChildPath "AppData\Roaming"
+            $Folders += Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Temp"
         }
 
         $Data = foreach ($F in $Folders) {
@@ -60,6 +64,6 @@ function Get-TriagePrefetchData {
     }
 
     foreach ($Task in $PrefetchWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
+        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
     }
 }

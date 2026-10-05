@@ -4,8 +4,8 @@ function Invoke-DfirTriageScan {
         [Parameter(Mandatory = $true)][string]$ResultsFolder,
         [Parameter(Mandatory)][string]$Operator,
         [Parameter(Mandatory)][string]$CaseNumber,
-        [string]$Agency = '',
-        [string[]]$Modules = @('001_Device','002_Users','003_Network','004_Process','005_System','006_Prefetch','007_Event_Logs','008_Firewall','009_Encryption','010_Internet'),
+        [string]$Agency = "",
+        [string[]]$Modules = @("001_Device","002_Users","003_Network","004_Process","005_System","006_Prefetch","007_Event_Logs","008_Firewall","009_Encryption","010_Internet"),
         [switch]$RunEdd,
         [switch]$CaptureProcesses,
         [switch]$CaptureRam,
@@ -17,8 +17,8 @@ function Invoke-DfirTriageScan {
         $global:TriageErrorCount   = 0
         $global:TriageWarningCount = 0
         $global:TriageResult       = $null
-        Write-ShowMessage -Message "Script Log for VECTOR DFIR Script Usage" -Level SUCCESS -AddToLog
-        Write-ShowMessage -Message "'$( $MyInvocation.MyCommand.Name )' execution started." -Level SUCCESS -AddToLog
+        Show-Message -Message "Script Log for VECTOR DFIR Script Usage" -Level SUCCESS -AddToLog
+        Show-Message -Message "$( $MyInvocation.MyCommand.Name ) execution started." -Level SUCCESS -AddToLog
     }
     process {
         Show-IsAdmin
@@ -36,7 +36,7 @@ function Invoke-DfirTriageScan {
 
         # Optional captures: the decision was made up front, so just branch
         if ($RunEdd) {
-            Invoke-EncryptedDiskDetector -ResultsFolder $ResultsFolder
+            Invoke-EDD -ResultsFolder $ResultsFolder
         }
         else {
             Show-Message -Message "Skipped Encrypted Disk Detector (not selected)." -Level INFO -AddToLog -MessageColor Yellow
@@ -71,13 +71,13 @@ function Invoke-DfirTriageScan {
                 )
                 try {
                     $SubFolderPathName = Join-Path -Path $ResultsFolder -ChildPath $FolderName
-                    $null              = New-Item -ItemType Directory -Path $SubFolderPathName -Force
+                    $null = New-Item -ItemType Directory -Path $SubFolderPathName -Force
 
                     Test-IfExists -FolderName $SubFolderPathName -Type FOLDER
                     & $Action $SubFolderPathName
                 }
                 catch {
-                    $ErrorMsg = "Execution failed during '$FolderName' on $( $env:COMPUTERNAME ). Error => $( $_.Exception.Message )"
+                    $ErrorMsg = "Execution failed during $FolderName on $( $env:COMPUTERNAME ).  Error => $( $_.Exception.Message )"
                     Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
                 }
             }
@@ -104,27 +104,43 @@ function Invoke-DfirTriageScan {
             }
         }
 
-        $Scratch = Join-Path $global:ToolkitRoot "_scratch"
-        $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path $ResultsFolder "Registry_Hives") -ScratchFolder $Scratch)
-
-        foreach ($H in $global:TriageUserHives) {
-            Show-Message -Message "User hive: $($H.UserName) [$($H.Sid)] - $($H.Note)" -Level INFO -AddToLog
-        }
+        $Scratch = Join-Path -Path $global:ToolkitRoot -ChildPath ("_scratch\" + (Split-Path $ResultsFolder -Leaf))
+        $global:TriageUserHives = @()
 
         try {
+            $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path -Path $ResultsFolder -ChildPath "Registry_Hives") -ScratchFolder $Scratch)
+
+            foreach ($H in $global:TriageUserHives) {
+                Show-Message -Message "User hive: $( $H.UserName ) [$( $H.Sid )] - $( $H.Note )" -Level INFO -AddToLog
+            }
+
             Initialize-TriageScan -ResultsFolder $ResultsFolder -Modules $Modules
         }
         finally {
             Dismount-TriageUserHives -Hives $global:TriageUserHives -ScratchFolder $Scratch
         }
 
+        Show-Message -Message "Collection finished ($( $global:TriageErrorCount ) error(s), $( $global:TriageWarningCount ) warning(s) so far). Hashing evidence..." -Level INFO -AddToLog -MessageColor Magenta
+
         Get-FileHashes -ResultsFolder $ResultsFolder
 
+        Show-Message -Message "Closing the log. Nothing further is written to it." -Level INFO -AddToLog -MessageColor Yellow
+        $Closed = Close-TriageLog -ResultsFolder $ResultsFolder
+
+        $Archive = $null
         if ($CreateArchive) {
-            Get-CaseArchive -ResultsFolder $ResultsFolder
+            $Archive = Get-CaseArchive -ResultsFolder $ResultsFolder
         }
         else {
-            Show-Message -Message "Skipped: case archive (not selected)." -Level INFO -AddToLog -MessageColor Yellow
+            Show-Message -Message "Skipped => Case Archive (not selected)." -Level INFO -MessageColor Yellow
+        }
+
+        Show-Message -Message "Record these values in your case notes => " -Level INFO -MessageColor Green
+
+        Show-Message -Message "  final_hashes.csv SHA-256 => $( $Closed.FinalHashesSha256 )" -Level INFO -MessageColor Green
+
+        if ($Archive) {
+            Show-Message -Message "  $( Split-Path $Archive.ZipPath -Leaf ) SHA-256 : $( $Archive.Sha256 )" -Level INFO -MessageColor Green
         }
 
         # Summary. Deliberately not -AddToLog: the log was hashed above and
@@ -138,7 +154,7 @@ function Invoke-DfirTriageScan {
             Errors        = $global:TriageErrorCount
             Warnings      = $global:TriageWarningCount
             ResultsFolder = $ResultsFolder
-            LogFile       = $global:LogFile
+            LogFile       = $Closed.LogFile
             Duration      = $Duration
         }
 

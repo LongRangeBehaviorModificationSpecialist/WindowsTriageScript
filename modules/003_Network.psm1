@@ -1,6 +1,8 @@
 function Get-TriageNetworkData {
     [CmdletBinding()]
-    param([string]$NetworkFolder)
+    param(
+        [string]$NetworkFolder
+    )
 
     function Invoke-ScriptBlock {
         param(
@@ -14,31 +16,36 @@ function Get-TriageNetworkData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
-            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
 
     function Get-LocalIpInfoAsTxt {
-        param([string]$OutputFile = "$NetworkFolder\local_ip_info.txt")
+        param(
+            [string]$OutputFile = "$NetworkFolder\local_ip_info.txt"
+        )
         $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
         $NetIpData = &($NetIpCommand)
         Write-OutputToFile -Command $NetIpCommand -Data $NetIpData -OutputFile $OutputFile
 
-        $IpConfigCommand = { & $global:Binaries["ipconfig"] /all }
+        $IpConfigCommand = { & (Get-TriageBinary "ipconfig") /all }
         $IpConfigData = &($IpConfigCommand)
         Write-OutputToFile -Command $IpConfigCommand -Data $IpConfigData -OutputFile $OutputFile -Append
     }
 
     function Get-LocalIpInfoAsCsv {
-        param([string]$CsvOutputFile = "$NetworkFolder\local_ip_info.csv")
+        param(
+            [string]$OutputFile = "$NetworkFolder\local_ip_info.csv"
+        )
         $NetIpCommand = { Get-NetIPAddress | Select-Object -Property * }
         $NetIpData = &$NetIpCommand
-        Write-OutputToCsv -Data $NetIpData -OutputFile $CsvOutputFile
+        Write-OutputToCsv -Data $NetIpData -OutputFile $OutputFile
     }
 
     function Get-NetworkConfig {
-        param([string]$OutputFile = "$NetworkFolder\network_config.txt")
+        param(
+            [string]$OutputFile = "$NetworkFolder\network_config.txt"
+        )
         $Command = { Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq "True" } | Select-Object -Property * | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -46,28 +53,30 @@ function Get-TriageNetworkData {
 
 
     function Get-EstablishedConnections {
-        param([string]$OutputFile = "$NetworkFolder\netstat_established_connections.txt")
-        $Command = { & $global:Binaries["netstat"] -nao | Select-String "ESTA" }
+        param(
+            [string]$OutputFile = "$NetworkFolder\netstat_established_connections.txt"
+        )
 
-        foreach ($Element in $Command) {
-            $Data = $Element -split " " | Where-Object { $_ -ne "" }
-            New-Object -TypeName PSObject -Property @{
-                "Local IP : Port#"              = $Data[1];
-                "Remote IP : Port#"             = $Data[2];
-                "Process ID"                    = $Data[4];
-                "Process Name"                  = ((Get-Process | Where-Object { $_.ID -eq $Data[4] })).Name
-                "Process File Path"             = ((Get-Process | Where-Object { $_.ID -eq $Data[4] })).Path
-                "Process Start Time"            = ((Get-Process | Where-Object { $_.ID -eq $Data[4] })).StartTime
-                "Associated DLLs and File Path" = ((Get-Process | Where-Object { $_.ID -eq $Data[4] })).Modules |
-                    Select-Object @{ N = "Module"; E = { $_.FileName -join "; " } } |
-                    Out-String
-            } | Out-File -Append -FilePath $OutputFile
+        $Procs = @{}
+        Get-CimInstance Win32_Process | ForEach-Object { $Procs[[int]$_.ProcessId] = $_ }
+
+        $Rows = & (Get-TriageBinary "netstat") -nao | Select-String "ESTABLISHED" | ForEach-Object {
+            $F = ($_.Line -split "\s+") | Where-Object { $_ }  # Proto, Local, Remote, State, PID
+            $P = $Procs[[int]$F[4]]
+            [pscustomobject]@{
+                Local = $F[1]; Remote = $F[2]; PID = $F[4]
+                ProcessName = $P.Name; Path = $P.ExecutablePath
+                CommandLine = $P.CommandLine; Created = $P.CreationDate
+            }
         }
+        Write-OutputToCsv -Data $Rows -OutputFile $OutputFile
     }
 
     function Get-AllConnections {
-        param([string]$OutputFile = "$NetworkFolder\netstat_all_connections.txt")
-        $Command = { & $global:Binaries["netstat"] -nao }
+        param(
+            [string]$OutputFile = "$NetworkFolder\netstat_all_connections.txt"
+        )
+        $Command = { & (Get-TriageBinary "netstat") -nao }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
@@ -84,26 +93,34 @@ function Get-TriageNetworkData {
     }
 
     function Get-DnsCache {
-        param([string]$OutputFile = "$NetworkFolder\dns_cache.txt")
-        $Command = { & $global:Binaries["ipconfig"] /displaydns }
+        param(
+            [string]$OutputFile = "$NetworkFolder\dns_cache.txt"
+        )
+        $Command = { & (Get-TriageBinary "ipconfig") /displaydns }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-DnsCacheByRecordName {
-        param([string]$OutputFile = "$NetworkFolder\dns_cache_by_record_name.txt")
-        $Command = { & $global:Binaries["ipconfig"] /displaydns | Select-String "Record Name" | Sort-Object }
+        param(
+            [string]$OutputFile = "$NetworkFolder\dns_cache_by_record_name.txt"
+        )
+        $Command = { & (Get-TriageBinary "ipconfig") /displaydns | Select-String "Record Name" | Sort-Object }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-NetworkShares {
-        param([string]$OutputFile = "$NetworkFolder\network_shares.csv")
-        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $OutputFile -SubKey 'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
+        param(
+            [string]$OutputFile = "$NetworkFolder\network_shares.csv"
+        )
+        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $OutputFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2"
     }
 
     function Get-SmbShareData {
-        param([string]$OutputFile = "$NetworkFolder\smb_shares.txt")
+        param(
+            [string]$OutputFile = "$NetworkFolder\smb_shares.txt"
+        )
         $Command =  { Get-SmbShare | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -157,6 +174,6 @@ function Get-TriageNetworkData {
     }
 
     foreach ($Task in $NetworkWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
+        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
     }
 }

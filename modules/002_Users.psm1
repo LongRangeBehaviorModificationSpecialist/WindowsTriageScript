@@ -1,6 +1,8 @@
 function Get-TriageUserData {
     [CmdletBinding()]
-    param([string]$UserFolder)
+    param(
+        [string]$UserFolder
+    )
 
     function Invoke-ScriptBlock {
         param(
@@ -14,71 +16,79 @@ function Get-TriageUserData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
-            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
 
     function Get-WhoAmI {
-        param([string]$OutputFile = "$UserFolder\who_am_I.txt")
-        $Command =  { whoami /ALL /FO LIST }
+        param(
+            [string]$OutputFile = "$UserFolder\who_am_I.txt"
+        )
+        $Command =  { & (Get-TriageBinary "whoami") /ALL /FO LIST }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-Win32UserProfile {
-        param([string]$OutputFile = "$UserFolder\win32_user_profile.txt")
+        param(
+            [string]$OutputFile = "$UserFolder\win32_user_profile.txt"
+        )
         $Command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-LocalUserData {
-        param([string]$OutputFile = "$UserFolder\local_users.txt")
+        param(
+            [string]$OutputFile = "$UserFolder\local_users.txt"
+        )
         $Command = { Get-LocalUser | Select-Object -Property * | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-UserGroups {
-        param([string]$OutputFile = "$UserFolder\user_groups.csv")
+        param(
+            [string]$OutputFile = "$UserFolder\user_groups.csv"
+        )
         $Command = { Get-CimInstance -ClassName Win32_Group | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
     function Get-Win32LocalLogons {
-        param([string]$OutputFile = "$UserFolder\win32_local_logons.txt")
+        param(
+            [string]$OutputFile = "$UserFolder\win32_local_logons.txt"
+        )
         $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-Win32UserAccount {
-        param([string]$OutputFile = "$UserFolder\win32_user_account.txt")
+        param(
+            [string]$OutputFile = "$UserFolder\win32_user_account.txt"
+        )
         $Command = { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     function Get-PowershellConsoleHistoryAllUsers {
-        param([string]$OutputFile = "$UserFolder\powershell_history_all_users.txt")
-        $UserDirs = Get-ChildItem -Path "C:\Users" -Directory
+        param(
+            [string]$OutputFile = "$UserFolder\powershell_history_all_users.txt"
+        )
+        $Target = Join-Path -Path $env:SystemDrive -ChildPath "Users"
+        $UserDirs = Get-ChildItem -LiteralPath $Target -Directory
 
         foreach ($UserDir in $UserDirs) {
-            if ($UserDir.Count -eq 0) {
-                $NoDataFoundMsg = "No data was found when running the '$( $MyInvocation.MyCommand.Name )' command."
-                Show-Message -Message $NoDataFoundMsg -Level INFO -AddToLog -MessageColor Yellow
-            }
-            else {
-                $UserName = "User.$UserDir"
-                $HistoryFilePath = Join-Path -Path $UserDir.FullName -ChildPath "AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
-                # $PsHistoryFileName = [System.IO.Path]::GetFileName($HistoryFilePath)
-                if (Test-Path -Path $HistoryFilePath -PathType Leaf) {
-                    $OutputDir = New-Item -ItemType Directory -Path $UserFolder -Name $UserName
-                    Copy-Item -Path $HistoryFilePath -Destination $OutputDir -Force
-                    # $File = "$(Split-Path $OutputDir -Leaf)\$PsHistoryFileName"
-                }
+            $UserName = "User.$UserDir"
+            $HistoryFilePath = Join-Path -Path $UserDir.FullName -ChildPath "AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+            # $PsHistoryFileName = [System.IO.Path]::GetFileName($HistoryFilePath)
+            if (Test-Path -Path $HistoryFilePath -PathType Leaf) {
+                $OutputDir = New-Item -ItemType Directory -Path $UserFolder -Name $UserName -Force
+                Copy-Item -Path $HistoryFilePath -Destination $OutputDir -Force
+                # $File = "$(Split-Path $OutputDir -Leaf)\$PsHistoryFileName"
             }
         }
     }
@@ -119,6 +129,6 @@ function Get-TriageUserData {
     }
 
     foreach ($Task in $UsersWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
+        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
     }
 }

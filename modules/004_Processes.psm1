@@ -1,6 +1,8 @@
 function Get-TriageProcessData {
     [CmdletBinding()]
-    param([string]$ProcessFolder)
+    param(
+        [string]$ProcessFolder
+    )
 
     function Invoke-ScriptBlock {
         param(
@@ -14,8 +16,7 @@ function Get-TriageProcessData {
             Show-Message -File $OutputFile -Level SUCCESS -AddToLog
         }
         catch {
-            $ErrorMsg = "Execution failed during '$( $MyInvocation.MyCommand.Name )'. Error => $( $_.Exception.Message )"
-            Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
 
@@ -45,12 +46,16 @@ function Get-TriageProcessData {
                 $ProcessList += $ProcessObject
             }
         }
+
         ($ProcessList | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput -Encoding UTF8
+
         ($ProcessList | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput -Encoding UTF8
     }
 
     function Get-SvcHostsAndProcess {
-        param([string]$OutputFile = "$ProcessFolder\svc_host_and_processes.txt")
+        param(
+            [string]$OutputFile = "$ProcessFolder\svc_host_and_processes.txt"
+        )
         $Command =  { Get-CimInstance -ClassName Win32_Process |
                         Where-Object { $_.name -eq "svchost.exe" } |
                         Select-Object ProcessId |
@@ -70,30 +75,28 @@ function Get-TriageProcessData {
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-        $ResultCount = ($Data).Count
-        Show-Message -Message "There were $ResultCount results returned for this function." -AddToLog
+        Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
     }
 
     function Get-RunningDriverInfo {
-        param([string]$OutputFile = "$ProcessFolder\driver_query.csv")
-        $Command = { driverquery.exe /v /FO CSV }
+        param(
+            [string]$OutputFile = "$ProcessFolder\driver_query.csv"
+        )
+        $Command = { & (Get-TriageBinary "driverquery") .exe /v /FO CSV }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-        $ResultCount = ($Data).Count
-        Show-Message -Message "There were $ResultCount results returned for this function." -AddToLog
+        Set-Content -Path $OutputFile -Value $Data -Encoding UTF8
+        Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
     }
 
     function Get-SystemDrivers {
-        param([string]$CsvOutputFile = "$ProcessFolder\system_drivers.csv")
+        param(
+            [string]$OutputFile = "$ProcessFolder\system_drivers.csv"
+        )
         $Command = { Get-CimInstance -ClassName Win32_SystemDriver | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
-        $ResultCount = ($Data).Count
-        Show-Message -Message "There were $ResultCount results returned for this function." -AddToLog
-
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+        Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
     }
-
-
 
 
     # ----------------------------------
@@ -124,6 +127,6 @@ function Get-TriageProcessData {
     }
 
     foreach ($Task in $ProcessWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.key -FunctionMessage $Task.value[0] -OutputFile $Task.value[1]
+        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
     }
 }

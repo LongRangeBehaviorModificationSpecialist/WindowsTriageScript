@@ -7,13 +7,12 @@
 
 
 function Get-LinkFiles {
-
     param(
         [string]$OutputFile = "$SystemFolder\link_files.txt"
     )
 
     try {
-        $FuncName = $($MyInvocation.MyCommand.Name)
+        $FuncName = $( $MyInvocation.MyCommand.Name )
         $Msg = "Listing Link Files (Last 20 Days)..."
 
         Show-Message -Message $Msg
@@ -32,18 +31,17 @@ function Get-LinkFiles {
 
 
 function Get-CompressedFiles {
-
     param(
         [string]$OutputFile = "$SystemFolder\compressed_files.txt"
     )
 
     try {
-        $FuncName = $($MyInvocation.MyCommand.Name)
+        $FuncName = $( $MyInvocation.MyCommand.Name )
         $Msg = "Listing Compressed Files..."
 
         Show-Message -Message $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -Include $ExecutableFileTypes | Where-Object { $_.Attributes -band [IO.FileAttributes]::Compressed } }
+        $Command = { Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes | Where-Object { $_.Attributes -band [IO.FileAttributes]::Compressed } }
         $Data = &($Command)
 
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -57,18 +55,17 @@ function Get-CompressedFiles {
 
 
 function Get-EncryptedFiles {
-
     param(
         [string]$OutputFile = "$SystemFolder\encrypted_files.txt"
     )
 
     try {
-        $FuncName = $($MyInvocation.MyCommand.Name)
+        $FuncName = $ ($MyInvocation.MyCommand.Name )
         $Msg = "Listing Encrypted Files..."
 
         Show-Message -Message $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -Include $ExecutableFileTypes | Where-Object { $_.Attributes -band [IO.FileAttributes]::Encrypted } }
+        $Command = { Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes | Where-Object { $_.Attributes -band [IO.FileAttributes]::Encrypted } }
         $Data = &($Command)
 
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -82,18 +79,17 @@ function Get-EncryptedFiles {
 
 
 function Get-TimelineOfExecutables {
-
     param(
         [string]$OutputFile = "$SystemFolder\timeline_of_executables.txt"
     )
 
     try {
-        $FuncName = $($MyInvocation.MyCommand.Name)
+        $FuncName = $( $MyInvocation.MyCommand.Name )
         $Msg = "Getting Timeline of Executables..."
 
         Show-Message -Message $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -include $ExecutableFileTypes | Where-Object { -Not $_.PSIsContainer -and $_.LastWriteTime -gt ((Get-Date).AddDays(-10)) } | Select-Object FullName, LastWriteTime, @{N = "Owner"; E = { ($_ | Get-ACL).Owner } } | Sort-Object LastWriteTime -Desc }
+        $Command = { Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -include $ExecutableFileTypes | Where-Object { -Not $_.PSIsContainer -and $_.LastWriteTime -gt ((Get-Date).AddDays(-10)) } | Select-Object FullName, LastWriteTime, @{N = "Owner"; E = { ($_ | Get-ACL).Owner } } | Sort-Object LastWriteTime -Desc }
         $Data = &($Command)
 
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
@@ -107,18 +103,17 @@ function Get-TimelineOfExecutables {
 
 
 function Get-DownloadedExecutables {
-
     param(
         [string]$OutputFile = "$SystemFolder\downloaded_executables.txt"
     )
 
     try {
-        $FuncName = $($MyInvocation.MyCommand.Name)
+        $FuncName = $( $MyInvocation.MyCommand.Name )
         $Msg = "Listing Downloaded Executable Files..."
 
         Show-Message -Message $Msg
 
-        $Command = { Get-ChildItem -Path C:\ -Recurse -Force -include $ExecutableFileTypes | ForEach-Object { $P = $_.FullName; Get-Item $P -Stream * } | Where-Object { $_.Stream -match "Zone.Identifier" } | Select-Object filename, stream, @{ N = "LastWriteTime"; E = { (Get-ChildItem $P).LastWriteTime } } }
+        $Command = { Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -include $ExecutableFileTypes | ForEach-Object { $P = $_.FullName; Get-Item $P -Stream * } | Where-Object { $_.Stream -match "Zone.Identifier" } | Select-Object filename, stream, @{ N = "LastWriteTime"; E = { (Get-ChildItem $P).LastWriteTime } } }
         $Data = &($Command)
 
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
