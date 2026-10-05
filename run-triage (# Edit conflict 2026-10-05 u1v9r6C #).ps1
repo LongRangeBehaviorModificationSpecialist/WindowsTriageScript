@@ -99,12 +99,12 @@ begin {
     $Bad = @($Modules | Where-Object { $_ -notin $AllModules })
 
     if ($Bad) {
-        Show-Message -Message "Unknown module(s) => $($Bad -join ', '). Valid => $($AllModules -join ', ')" -Level ERROR
+        Show-Message -Message "Unknown module(s): $($Bad -join ', '). Valid: $($AllModules -join ', ')" -Level ERROR
         exit 2
     }
 
     if ($OutputRoot -and -not (Test-Path -LiteralPath $OutputRoot -PathType Container)) {
-        Show-Message -Message "OutputRoot does not exist => $OutputRoot" -Level ERROR
+        Show-Message -Message "OutputRoot does not exist: $OutputRoot" -Level ERROR
         exit 2
     }
 
@@ -146,7 +146,7 @@ begin {
         if (-not $Operator)   { $Missing += "-Operator" }
         if (-not $CaseNumber) { $Missing += "-CaseNumber" }
         if ($Missing) {
-            Show-Message -Message "Unattended run requires => $( $Missing -join ', ' )" -Level ERROR
+            Show-Message -Message "Unattended run requires: $( $Missing -join ', ' )" -Level ERROR
             exit 2
         }
     }
@@ -172,6 +172,7 @@ process {
         else {
 
             Get-InitialSetup -OutputRoot $OutputRoot
+            # Show-TriageBanner
             Write-LaunchContext
             Disable-PSReadLineHistory
 
@@ -189,19 +190,23 @@ process {
 }
 
 
+#TODO -- `Get-WindowsUpdateLog` writes to the Desktop and pulls symbols over the network. Copy the raw ETLs instead.
+
+#TODO -- `dism /online` starts TrustedInstaller and writes logs.
+
+#  Collection gaps and quality
+
+#TODO -- Raw artifacts. You have listings and text dumps but few originals. Add raw copies of SYSTEM/SOFTWARE/SAM/SECURITY/Amcache.hve, each user's NTUSER.DAT and UsrClass.dat, the .pf files (you only export their metadata), SRUM, $MFT/$UsnJrnl, LNK and jump lists, and browser DBs with WAL files.
+
+#TODO -- Event logs. Export native .evtx with wevtutil epl instead of Get-WinEvent | Select * | Sort | CSV, which loads the whole Security log into RAM and loses fidelity. Add WMI-Activity, BITS-Client, WinRM, CodeIntegrity and Firewall logs.
+
+#TODO -- Persistence. Add WMI event subscriptions (root\subscription), IFEO, all services (not just running ones), startup folders and BITS jobs. Get-IeExtensions and Temporary Internet Files are rarely useful now.
+
+#TODO -- Volatile extras. ARP, routes, qwinsta, Get-SmbSession/Get-SmbOpenFile, Defender detections and quarantine. Firefox is missing, and the browser SQL hardcodes "GMT+3 IL" columns and has a %H:%M:S typo. Stay in UTC.
+
+#\TODO -- Speed. Get-EstablishedConnections calls Get-Process five times per connection and .Modules throws on protected processes. Build a PID lookup once, or use Win32_Process. Cache hashes by path in 004, and use $env:SystemDrive/$env:SystemRoot rather than a hardcoded C:\Windows.
+
 # Structure
-
-#TODO -- For 010_Internet Get-BrowserAnalysis function:
-
-    #TODO -- Firefox never runs.**  `Test-Path -LiteralPath` treats the  in the path as a literal character, so that entry never matches and is skipped without any message.  If it did match, the queries wouldn't work, because Firefox's `places.sqlite` has no `urls`, `keyword_search_terms` or `downloads` tables.  It uses `moz_places` and `moz_historyvisits` with Unix-epoch timestamps in microseconds.  Remove the Firefox line, or I can write a Firefox version.
-
-    #TODO -- Only the `Default` profile is read.**  Additional Chromium profiles are in folders named `Profile 1`, `Profile 2` and so on, and are missed.
-
-    #TODO -- `browser_analysis.txt` is never created.**  `$OutputFile` is assigned and then unused, and the workflow still names that file in its success message.  Either delete it or write a short summary file there.
-
-    #TODO -- Noisy logging.**  The Magenta debug lines for each step go to the evidence log, including one that logs the path of a CSV before it's written.  Once things work, I'd delete most of them.
-
-    #TODO -- Nested databases.**  Your loop reads `C:\Users` directly.  If you want it to follow the profiles the hive-mounting step found, loop over `$global:TriageUserHives.ProfilePath` instead. That also covers profiles stored outside `C:\Users`.
 
 #TODO -- One runner. Invoke-ScriptBlock is pasted into 10 modules, and each of ~60 collectors repeats $Command = {...}; $Data = &($Command); Write-Output.... A single data-driven runner also fixes the false "SUCCESS" message, which currently prints even when a non-terminating error left an empty file.
 
@@ -238,33 +243,12 @@ foreach ($c in $Collectors) {
 }
 #>
 
-#TODO -- Event logs. Export native .evtx with wevtutil epl instead of Get-WinEvent | Select * | Sort | CSV, which loads the whole Security log into RAM and loses fidelity. Add WMI-Activity, BITS-Client, WinRM, CodeIntegrity and Firewall logs.
+#TODO -- Text dumps. Out-File truncates narrow tables with ..., so prefer CSV/JSON or Out-String -Width. Also standardize encoding, since you currently mix UTF-8 and default.
 
-#TODO -- Persistence. Add WMI event subscriptions (root\subscription), IFEO, all services (not just running ones), startup folders and BITS jobs. Get-IeExtensions and Temporary Internet Files are rarely useful now.
-
-#\TODO -- Single root module. Nested modules can't reliably see each other's functions, so you depend on $global:LogFile, $global:ResultsFolder and $global:Binaries. One root .psm1 dot-sourcing Public/ and Private/ removes that, and $Dlu, $ExecutableFileTypes and $Binaries (defined in two places) collapse to one config.
-
-#TODO -- `Get-WindowsUpdateLog` writes to the Desktop and pulls symbols over the network. Copy the raw ETLs instead.
-
-#TODO -- `dism /online` starts TrustedInstaller and writes logs.
-
-#  Collection gaps and quality
-
-#TODO -- Raw artifacts. You have listings and text dumps but few originals. Add raw copies of SYSTEM/SOFTWARE/SAM/SECURITY/Amcache.hve, each user's NTUSER.DAT and UsrClass.dat, the .pf files (you only export their metadata), SRUM, $MFT/$UsnJrnl, LNK and jump lists, and browser DBs with WAL files.
-
-
-#TODO -- Volatile extras. ARP, routes, qwinsta, Get-SmbSession/Get-SmbOpenFile, Defender detections and quarantine. Firefox is missing, and the browser SQL hardcodes "GMT+3 IL" columns and has a %H:%M:S typo. Stay in UTC.
-
-#\TODO -- Speed. Get-EstablishedConnections calls Get-Process five times per connection and .Modules throws on protected processes. Build a PID lookup once, or use Win32_Process. Cache hashes by path in 004, and use $env:SystemDrive/$env:SystemRoot rather than a hardcoded C:\Windows.
-
-
-
-#\TODO -- Text dumps. Out-File truncates narrow tables with ..., so prefer CSV/JSON or Out-String -Width. Also standardize encoding, since you currently mix UTF-8 and default.
-
-
+#TODO -- Single root module. Nested modules can't reliably see each other's functions, so you depend on $global:LogFile, $global:ResultsFolder and $global:Binaries. One root .psm1 dot-sourcing Public/ and Private/ removes that, and $Dlu, $ExecutableFileTypes and $Binaries (defined in two places) collapse to one config.
 
 # Manifest and README.
 
-#\TODO -- The manifest says CompatiblePSEditions = Core while other code is 5.1-only (.ipv4address, Get-WindowsUpdateLog) or 7-only (EnumerationOptions). Pick 5.1 unless you'll test both.
+#TODO -- The manifest says CompatiblePSEditions = Core while other code is 5.1-only (.ipv4address, Get-WindowsUpdateLog) or 7-only (EnumerationOptions). Pick 5.1 unless you'll test both.
 
 #TODO -- Tooling. Add PSScriptAnalyzer and a few Pester tests with mocked collectors. Either would have caught most of the table above.
