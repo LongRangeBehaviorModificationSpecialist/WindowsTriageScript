@@ -4,22 +4,6 @@ function Get-TriageUserData {
         [string]$UserFolder
     )
 
-    function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$Action,
-            [string]$FunctionMessage,
-            [string]$OutputFile
-        )
-        try {
-            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
-            & $Action
-            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
-        }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
-    }
-
     function Get-WhoAmI {
         param(
             [string]$OutputFile = "$UserFolder\who_am_I.txt"
@@ -74,6 +58,7 @@ function Get-TriageUserData {
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
+    #TODO -- Check function
     function Get-PowershellConsoleHistoryAllUsers {
         param(
             [string]$OutputFile = "$UserFolder\powershell_history_all_users.txt"
@@ -97,38 +82,44 @@ function Get-TriageUserData {
     # Run the functions from the module
     # ----------------------------------
 
-    $UsersWorkFlow = [ordered]@{
-        { Get-WhoAmI } = (
-            "Getting WhoAmI Data...",
-            "who_am_I.txt"
-        )
-        { Get-Win32UserProfile } = (
-            "Getting Win32 User Profile Data...",
-            "win32_user_profile.txt"
-        )
-        { Get-LocalUserData } = (
-            "Getting Local Users List...",
-            "local_users.txt"
-        )
-        { Get-UserGroups } = (
-            "Getting User Groups...",
-            "user_groups.csv"
-        )
-        { Get-Win32LocalLogons } = (
-            "Getting Win32 Local Logons...",
-            "win32_local_logons.txt"
-        )
-        { Get-Win32UserAccount } = (
-            "Getting Win32 User Account Data...",
-            "win32_user_account.txt"
-        )
-        { Get-PowershellConsoleHistoryAllUsers } = (
-            "Getting PowerShell History (All Users)...",
-            "powershell_history_all_users.txt"
-        )
-    }
+    $Tasks = @(
+        @{
+            Action  = { Get-WhoAmI }
+            Message = "Getting WhoAmI Data..."
+            Files   = "who_am_I.txt"
+        }
+        @{
+            Action  = { Get-Win32UserProfile }
+            Message = "Getting Win32 User Profile Data..."
+            Files   = "win32_user_profile.txt"
+        }
+        @{
+            Action  = { Get-LocalUserData }
+            Message = "Getting Local Users List..."
+            Files   = "local_users.txt"
+        }
+        @{
+            Action  = { Get-UserGroups }
+            Message = "Getting User Groups..."
+            Files   = "user_groups.csv"
+        }
+        @{
+            Action  = { Get-Win32LocalLogons }
+            Message = "Getting Win32 Local Logons..."
+            Files   = "win32_local_logons.txt"
+        }
+        @{
+            Action  = { Get-Win32UserAccount }
+            Message = "Getting Win32 User Account Data..."
+            Files   = "win32_user_account.txt"
+        }
+        @{
+            Action  = { Get-PowershellConsoleHistoryAllUsers }
+            Message = "Getting PowerShell History (All Users)..."
+            Files   = "powershell_history_all_users.txt"
+        }
+    )
 
-    foreach ($Task in $UsersWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $UserFolder
+
 }

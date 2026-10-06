@@ -4,22 +4,6 @@ function Get-TriageNetworkData {
         [string]$NetworkFolder
     )
 
-    function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$Action,
-            [string]$FunctionMessage,
-            [string]$OutputFile
-        )
-        try {
-            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
-            & $Action
-            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
-        }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
-    }
-
     function Get-LocalIpInfoAsTxt {
         param(
             [string]$OutputFile = "$NetworkFolder\local_ip_info.txt"
@@ -50,7 +34,6 @@ function Get-TriageNetworkData {
         $Data = &($Command)
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
-
 
     function Get-EstablishedConnections {
         param(
@@ -130,50 +113,58 @@ function Get-TriageNetworkData {
     # Run the functions from the module
     # ----------------------------------
 
-    $NetworkWorkFlow = [ordered]@{
-        { Get-LocalIpInfoAsTxt } = (
-            "Collecting local IP info as text...",
-            "local_ip_info.txt"
-        )
-        {Get-LocalIPInfoAsCsv} = (
-            "Collecting local IP info to CSV...",
-            "local_ip_info.csv"
-        )
-        { Get-NetworkConfig } = (
-            "Getting Network Configuration Information...",
-            "network_config.txt"
-        )
-        { Get-EstablishedConnections } = (
-            "Getting Established Connections...",
-            "netstat_established_connections.txt"
-        )
-        { Get-AllConnections } = (
-            "Getting Basic Internet Connection Information...",
-            "netstat_all_connections.txt"
-        )
-        { Get-NetTcpConnections } = (
-            "Getting Network Connection Information...",
-            "[net_tcp_connections.txt, net_tcp_connections.csv]"
-        )
-        { Get-DnsCache } = (
-            "Parsing DNS Cache...",
-            "dns_cache.txt"
-        )
-        { Get-DnsCacheByRecordName } = (
-            "Parsing DNS Cache by Record Name...",
-            "dns_cache_by_record_name.txt"
-        )
-        { Get-NetworkShares } = (
-            "Parsing Network Shares...",
-            "network_shares.csv"
-        )
-        { Get-SmbShareData } = (
-            "Parsing SMB Shares...",
-            "smb_shares.txt"
-        )
-    }
+    $Tasks = @(
+        @{
+            Action  = { Get-LocalIpInfoAsTxt }
+            Message = "Collecting local IP info as text..."
+            Files   = "local_ip_info.txt"
+        }
+        @{
+            Action  = {Get-LocalIPInfoAsCsv}
+            Message = "Collecting local IP info to CSV..."
+            Files   = "local_ip_info.csv"
+        }
+        @{
+            Action  = { Get-NetworkConfig }
+            Message = "Getting Network Configuration Information..."
+            Files   = "network_config.txt"
+        }
+        @{
+            Action  = { Get-EstablishedConnections }
+            Message = "Getting Established Connections..."
+            Files   = "netstat_established_connections.txt"
+        }
+        @{
+            Action  = { Get-AllConnections }
+            Message = "Getting Basic Internet Connection Information..."
+            Files   = "netstat_all_connections.txt"
+        }
+        @{
+            Action  = { Get-NetTcpConnections }
+            Message = "Getting Network Connection Information..."
+            Files   = "net_tcp_connections.txt", "net_tcp_connections.csv"
+        }
+        @{
+            Action  = { Get-DnsCache }
+            Message = "Parsing DNS Cache..."
+            Files   = "dns_cache.txt"
+        }
+        @{
+            Action  = { Get-DnsCacheByRecordName }
+            Message = "Parsing DNS Cache by Record Name..."
+            Files   = "dns_cache_by_record_name.txt"
+        }
+        @{
+            Action  = { Get-NetworkShares }
+            Message = "Parsing Network Shares..."
+            Files   = "network_shares.csv"
+        }
+        @{
+            Action  = { Get-SmbShareData }
+            Message = "Parsing SMB Shares..."
+            Files   = "smb_shares.txt"
+        }
+    )
 
-    foreach ($Task in $NetworkWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $NetworkFolder
 }

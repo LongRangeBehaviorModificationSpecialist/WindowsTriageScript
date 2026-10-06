@@ -28,11 +28,11 @@ function Get-RunningProcesses {
             #>
             Start-Process -NoNewWindow -FilePath (Get-TriageBinary "MagnetProcessCapture") -ArgumentList "/saveall `"$ProcessCaptureFolder`"" -Wait
 
-            $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
+            # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
             Show-Message -Message "Process Capture completed successfully from computer => $( $ComputerName )" -Level SUCCESS -AddToLog
 
-            Show-Message -File $(Split-Path -Path $ProcessCaptureFolder -Leaf) -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS -AddToLog
+            Show-Message -File $(Split-Path -Path $ProcessCaptureFolder -Leaf) -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
 
             $Stopwatch.Stop()
         }

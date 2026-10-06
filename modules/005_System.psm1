@@ -4,33 +4,9 @@ function Get-TriageSystemData {
         [string]$SystemFolder
     )
 
-    $ConnectedDevicesFolder = Join-Path -Path $SystemFolder -ChildPath "Connected_Devices"
-    if (Test-Path -Path $ConnectedDevicesFolder) {
-        continue
-    }
-    else {
-        $null = New-Item -ItemType Directory -Path $ConnectedDevicesFolder -Force
-    }
-
-    function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$Action,
-            [string]$FunctionMessage,
-            [string]$OutputFile
-        )
-        try {
-            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
-            & $Action
-            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
-        }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
-    }
-
     function Get-PnPSignedDrivers {
         param(
-            [string]$OutputFile = "$ConnectedDevicesFolder\pnp_signed_drivers.csv"
+            [string]$OutputFile = "$SystemFolder\pnp_signed_drivers.csv"
         )
         $Command = { Get-CimInstance -ClassName Win32_PnPSignedDriver | Select-Object -Property * }
         $Data = &($Command)
@@ -271,7 +247,7 @@ function Get-TriageSystemData {
 
     function Get-ShellFolderInfo {
         param(
-            [string]$OutputFile = "$SystemFolder\shell_foldes.txt"
+            [string]$OutputFile = "$SystemFolder\shell_folders.txt"
         )
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" }
         $Data = Invoke-RegistryCommand -Command $Command
@@ -352,8 +328,8 @@ function Get-TriageSystemData {
 
     function Get-UsbDevices {
         param(
-            [string]$OutputFile1 = "$ConnectedDevicesFolder\usb_devices_from_Enum-USB.csv",
-            [string]$OutputFile2 = "$ConnectedDevicesFolder\usb_devices_from_Control-USBSTOR.csv"
+            [string]$OutputFile1 = "$SystemFolder\usb_devices_from_Enum-USB.csv",
+            [string]$OutputFile2 = "$SystemFolder\usb_devices_from_Control-USBSTOR.csv"
         )
         $Command1 = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USB\*\*" | Select-Object -Property * }
         $Data1 = Invoke-RegistryCommand -Command $Command1
@@ -366,7 +342,7 @@ function Get-TriageSystemData {
 
     function Get-PnpDevices {
         param(
-            [string]$OutputFile = "$ConnectedDevicesFolder\pnp_devices.csv"
+            [string]$OutputFile = "$SystemFolder\pnp_devices.csv"
         )
         $Command = { Get-PnpDevice | Select-Object -Property * }
         $Data = &($Command)
@@ -442,170 +418,209 @@ function Get-TriageSystemData {
     # Run the functions from the module
     # ----------------------------------
 
-    $SystemWorkFlow = [ordered]@{
-        # { Get-Last50Dlls } = (
-        #     "Getting Last 50 Created .dll Files...",
-        #     "last_50_dll_files.txt"
-        # )
-        { Get-PnPSignedDrivers } = (
-            "Gathering Driver Info for PnP Devices...",
-            "pnp_signed_drivers.csv"
-        )
-        { Get-OpenFilesList } = (
-            "Processing List of Open Files...",
-            "list_of_open_files.txt"
-        )
-        { Get-OpenShares } = (
-            "Getting Open Shares...",
-            "open_shares.txt"
-        )
-        { Get-LogicalDisks } = (
-            "Getting Logical Drives...",
-            "logical_disks.csv"
-        )
-        { Get-MappedLogicalDisks } = (
-            "Getting Mapped Logical Disks...",
-            "logical_disks_mapped.txt"
-        )
-        { Get-ScheduledJobs } = (
-            "Listing Scheduled Jobs...",
-            "scheduled_jobs.txt"
-        )
-        { Get-ScheduledTasks } = (
-            "Getting Scheduled Tasks and Task Info...",
-            "[scheduled_task_events.txt, scheduled_task_events.csv]"
-        )
-        { Get-HotFixes } = (
-            "Listing Applied HotFixes...",
-            "hot_fixes.txt"
-        )
-        { Get-InstalledApps } = (
-            "Getting Installed Applications (Default & Wow6432Node)...",
-            "[installedApps_list.csv, installedAppsProps.csv, installedApps_list_wow64.csv, installedAppsProps_wow64.csv]"
-        )
-        { Get-VolumeShadowCopies } = (
-            "Listing Volume Shadow Copies...",
-            "volume_shadow_copies.txt"
-        )
-        { Get-AppInitDllKey } = (
-            "Getting AppInit_DLL Registry Keys...",
-            "appinit_dll_key.txt"
-        )
-        { Get-UacGroupPolicy } = (
-            "Listing UAC Group Policy Settings...",
-            "uac_group_policy.txt"
-        )
-        { Get-ActiveSetupInstalls } = (
-            "Getting Active Setup Installs...",
-            "active_setup_installs.txt"
-        )
-        { Get-AppPathRegKeys } = (
-            "Getting App Path Registry Keys...",
-            "app_path_reg_keys.txt"
-        )
-        { Get-DllsLoadedByExplorerShell } = (
-            "Listing .dll Files Loaded by Explorer.exe Shell...",
-            "dlls_loaded_by_explorer_shell.txt"
-        )
-        { Get-ShellAndUserInitValues } = (
-            "Getting Shell and UserInit Values...",
-            "shell_and_user_init_values.txt"
-        )
-        { Get-SvcValues } = (
-            "Listing Security Center SVC Values...",
-            "svc_values.txt"
-        )
-        { Get-DesktopAddressBar } = (
-            "Parsing Desktop Address Bar History...",
-            "desktop_address_bar.csv"
-        )
-        { Get-RunMruKeyInfo } = (
-            "Getting RunMRU key Information...",
-            "run_mru_key_info.csv"
-        )
-        { Get-StartMenuData } = (
-            "Listing Start Menu Data...",
-            "start_menu_data.txt"
-        )
-        { Get-ProgExeBySessionManager } = (
-            "Listing Programs Executed by Session Manager...",
-            "prog_exe_by_session_manager.txt"
-        )
-        { Get-ShellFolderInfo } = (
-            "Getting User Startup Shell Folder Information...",
-            "shellFolders.txt"
-        )
-        { Get-ApprovedShellExts } = (
-            "Listing Approved Shell Extensions...",
-            "approved_shell_exts.txt"
-        )
-        { Get-AppCertDlls } = (
-            "Listing AppCert .dll Files...",
-            "app_cert_dlls.txt"
-        )
-        { Get-ExeFileShellCommands } = (
-            "Listing .exe File Shell Command Configuration...",
-            "exe_file_shell_commands.txt"
-        )
-        { Get-ShellCommands } = (
-            "Listing Shell Commands...",
-            "shell_commands.txt"
-        )
-        { Get-BcdRelatedData } = (
-            "Getting BCD Related Data...",
-            "bcd_related_data.txt"
-        )
-        { Get-LoadedLsaPackages } = (
-            "Reading Loaded LSA Packages Data...",
-            "loaded_lsa_packages.txt"
-        )
-        { Get-BrowserHelperObjects } = (
-            "Parsing Browser Helper Objects...",
-            "browser_helper_objects.txt"
-        )
-        { Get-BrowserHelperObjectsX64 } = (
-            "Parsing Browser Helper Objects (64 Bit)...",
-            "browser_helper_objects_x64.txt"
-        )
-        { Get-UsbDevices } = (
-            "Listing Connected USB Devices...",
-            "usb_devices.txt"
-        )
-        { Get-PnpDevices } = (
-            "Listing Connected PnP Devices...",
-            "pnp_devices.csv"
-        )
-        { Copy-HostFile } = (
-            "Copying *hosts* File...",
-            "hosts_file.txt"
-        )
-        { Copy-ServicesFile } = (
-            "Copying *services* File...",
-            "services_file.txt"
-        )
-        { Get-AuditPolicy } = (
-            "Listing Computer Audit Policy...",
-            "audit_policy.txt"
-        )
-        { Get-NonValidExes } = (
-            "Listing Executables Without Valid Authenticode Signature...",
-            "non_valid_exe_files.txt"
-        )
-        # { Get-WindowsUpdateEtlFiles } = (
-        #     "Gathering Windows Update logs...",
-        #     "windows_update_log.txt"
-        # )
-        # { Get-WindowsFeaturesList } = (
-        #     "Gathering List of Windows Features...",
-        #     "windows_features_list.txt"
-        # )
-        # { Get-WindowsCapabilitiesList }   = (
-        #     "Gathering List of Windows Capabilities...",
-        #     "windows_capabilities_list.txt"
-        # )
-    }
+    $Tasks = @(
+        # @{
+        #     Action  = { Get-Last50Dlls }
+        #     Message = "Getting Last 50 Created .dll Files..."
+        #     Files   = "last_50_dll_files.txt"
+        # }
+        @{
+            Action  = { Get-PnPSignedDrivers }
+            Message = "Gathering Driver Info for PnP Devices..."
+            Files   = "pnp_signed_drivers.csv"
+        }
+        @{
+            Action  = { Get-OpenFilesList }
+            Message = "Processing List of Open Files..."
+            Files   = "list_of_open_files.txt"
+        }
+        @{
+            Action  = { Get-OpenShares }
+            Message = "Getting Open Shares..."
+            Files   = "open_shares.txt"
+        }
+        @{
+            Action  = { Get-LogicalDisks }
+            Message = "Getting Logical Drives..."
+            Files   = "logical_disks.csv"
+        }
+        @{
+            Action  = { Get-MappedLogicalDisks }
+            Message = "Getting Mapped Logical Disks..."
+            Files   = "logical_disks_mapped.txt"
+        }
+        @{
+            Action  = { Get-ScheduledJobs }
+            Message = "Listing Scheduled Jobs..."
+            Files   = "scheduled_jobs.txt"
+        }
+        @{
+            Action  = { Get-ScheduledTasks }
+            Message = "Getting Scheduled Tasks and Task Info..."
+            Files   = "scheduled_task_events.txt", "scheduled_task_info.txt"
+        }
+        @{
+            Action  =  { Get-HotFixes }
+            Message = "Listing Applied HotFixes..."
+            Files   = "hot_fixes.csv"
+        }
+        # @{
+        #     Action  =  { Get-InstalledApps }
+        #     Message = "Getting Installed Applications (Default & Wow6432Node)..."
+        #     Files   = "installed_apps_list.csv", "installed_apps_props.csv", "installed_apps_list_wow64.csv", "installed_apps_props_wow64.csv"
+        # }
+        @{
+            Action  = { Get-VolumeShadowCopies }
+            Message = "Listing Volume Shadow Copies..."
+            Files   = "volume_shadow_copies.csv"
+        }
+        @{
+            Action  = { Get-AppInitDllKey }
+            Message = "Getting AppInit_DLL Registry Keys..."
+            Files   = "appinit_dll_key.txt"
+        }
+        @{
+            Action  = { Get-UacGroupPolicy }
+            Message = "Listing UAC Group Policy Settings..."
+            Files   = "uac_group_policy.txt"
+        }
+        @{
+            Action  = { Get-ActiveSetupInstalls }
+            Message = "Getting Active Setup Installs..."
+            Files   = "active_setup_installs.txt"
+        }
+        @{
+            Action  = { Get-AppPathRegKeys }
+            Message = "Getting App Path Registry Keys..."
+            Files   = "app_path_reg_keys.txt"
+        }
+        @{
+            Action  = { Get-DllsLoadedByExplorerShell }
+            Message = "Listing .dll Files Loaded by Explorer.exe Shell..."
+            Files   = "dlls_loaded_by_explorer_shell.txt"
+        }
+        @{
+            Action  = { Get-ShellAndUserInitValues }
+            Message = "Getting Shell and UserInit Values..."
+            Files   = "shell_and_user_init_values.txt"
+        }
+        @{
+            Action  = { Get-SvcValues }
+            Message = "Listing Security Center SVC Values..."
+            Files   = "svc_values.txt"
+        }
+        @{
+            Action  = { Get-DesktopAddressBar }
+            Message = "Parsing Desktop Address Bar History..."
+            Files   = "desktop_address_bar.csv"
+        }
+        @{
+            Action  = { Get-RunMruKeyInfo }
+            Message = "Getting RunMRU key Information..."
+            Files   = "run_mru_key_info.csv"
+        }
+        @{
+            Action  = { Get-StartMenuData }
+            Message = "Listing Start Menu Data..."
+            Files   = "start_menu_data.txt"
+        }
+        @{
+            Action  = { Get-ProgExeBySessionManager }
+            Message = "Listing Programs Executed by Session Manager..."
+            Files   = "prog_exe_by_session_manager.txt"
+        }
+        @{
+            Action  = { Get-ShellFolderInfo }
+            Message = "Getting User Startup Shell Folder Information..."
+            Files   = "shell_folders.txt"
+        }
+        @{
+            Action  = { Get-ApprovedShellExts }
+            Message = "Listing Approved Shell Extensions..."
+            Files   = "approved_shell_exts.txt"
+        }
+        @{
+            Action  = { Get-AppCertDlls }
+            Message = "Listing AppCert .dll Files..."
+            Files   = "app_cert_dlls.txt"
+        }
+        @{
+            Action  = { Get-ExeFileShellCommands }
+            Message = "Listing .exe File Shell Command Configuration..."
+            Files   = "exe_file_shell_commands.txt"
+        }
+        @{
+            Action  = { Get-ShellCommands }
+            Message = "Listing Shell Commands..."
+            Files   = "shell_commands.txt"
+        }
+        @{
+            Action  = { Get-BcdRelatedData }
+            Message = "Getting BCD Related Data..."
+            Files   = "bcd_related_data.txt"
+        }
+        @{
+            Action  = { Get-LoadedLsaPackages }
+            Message = "Reading Loaded LSA Packages Data..."
+            Files   = "loaded_lsa_packages.txt"
+        }
+        @{
+            Action  = { Get-BrowserHelperObjects }
+            Message = "Parsing Browser Helper Objects..."
+            Files   = "browser_helper_objects.txt"
+        }
+        @{
+            Action  = { Get-BrowserHelperObjectsX64 }
+            Message = "Parsing Browser Helper Objects (64 Bit)..."
+            Files   = "browser_helper_objects_x64.txt"
+        }
+        @{
+            Action  = { Get-UsbDevices }
+            Message = "Listing Connected USB Devices..."
+            Files   = "usb_devices_from_Enum-USB.csv", "usb_devices_from_Control-USBSTOR.csv"
+        }
+        @{
+            Action  = { Get-PnpDevices }
+            Message = "Listing Connected PnP Devices..."
+            Files   = "pnp_devices.csv"
+        }
+        @{
+            Action  = { Copy-HostFile }
+            Message = "Copying *hosts* File..."
+            Files   = "hosts_file.txt"
+        }
+        @{
+            Action  = { Copy-ServicesFile }
+            Message = "Copying *services* File..."
+            Files   = "services_file.txt"
+        }
+        @{
+            Action  = { Get-AuditPolicy }
+            Message = "Listing Computer Audit Policy..."
+            Files   = "audit_policy.txt"
+        }
+        @{
+            Action  = { Get-NonValidExes }
+            Message = "Listing Executables Without Valid Authenticode Signature..."
+            Files   = "non_valid_exe_files.txt"
+        }
+        # @{
+        #     Action  = { Get-WindowsUpdateEtlFiles }
+        #     Message = "Gathering Windows Update logs..."
+        #     Files   = "windows_update_log.txt"
+        # }
+        # @{
+        #     Action  = { Get-WindowsFeaturesList }
+        #     Message = "Gathering List of Windows Features..."
+        #     Files   = "windows_features_list.txt"
+        # }
+        # @{
+        #     Action  = { Get-WindowsCapabilitiesList }
+        #     Message = "Gathering List of Windows Capabilities..."
+        #     Files   = "windows_capabilities_list.txt"
+        # }
+    )
 
-    foreach ($Task in $SystemWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $SystemFolder
+    Get-InstalledApps
 }

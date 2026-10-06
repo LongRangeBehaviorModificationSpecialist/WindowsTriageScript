@@ -29,7 +29,6 @@ function Get-ComputerRam {
             }
 
             # Start the RAM acquisition from the current machine
-            # Start-Process -NoNewWindow -FilePath $Binaries["MagnetRamCapture"] -ArgumentList "/accepteula /go /silent" -Wait
             $P = Start-Process -FilePath (Get-TriageBinary "MagnetRamCapture") -ArgumentList "/accepteula /go /silent" -WorkingDirectory $RamCaptureFolder -NoNewWindow -Wait -PassThru
 
             $Raw = @(Get-ChildItem -LiteralPath $RamCaptureFolder -Filter *.raw -File)
@@ -44,12 +43,12 @@ function Get-ComputerRam {
 
             $RamCaptureFileName = (Get-ChildItem -LiteralPath $RamCaptureFolder -Filter "*.raw").Name
 
-            $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
+            # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
             $SuccessMsg = "RAM capture completed successfully from computer: $( $ComputerName )"
             Show-Message -Message $SuccessMsg -Level SUCCESS -AddToLog
 
-            Show-Message -File $RamCaptureFileName -ExecutionTime " $ExecutionTime seconds" -Level SUCCESS -AddToLog
+            Show-Message -File $RamCaptureFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
 
             $Stopwatch.Stop()
         }

@@ -4,23 +4,6 @@ function Get-TriageEncryptionData {
         [string]$EncryptionFolder
     )
 
-
-    function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$Action,
-            [string]$FunctionMessage,
-            [string]$OutputFile
-        )
-        try {
-            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
-            & $Action
-            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
-        }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
-    }
-
     function Get-BitlockerInfoAndRecoveryKeys {
         param(
             [string]$OutputFile = "$EncryptionFolder\bitlocker_encryption.txt"
@@ -49,8 +32,7 @@ function Get-TriageEncryptionData {
                     foreach ($K in @($RecoveryKey)) {
                         # The password goes to the output file ONLY
                         Add-Content -LiteralPath $KeyFile -Encoding UTF8 -Value "Drive $DriveLetter => ProtectorId => $( $K.KeyProtectorId ) => RecoveryPassword => $( $K.RecoveryPassword )"
-                        # Console and log get the protector ID, which is not
-                        # secret
+                        # Console and log get the protector ID, which is not secret
                         Show-Message -Message "Drive $DriveLetter => recovery password saved to => $( Split-Path $KeyFile -Leaf ) (protector ID $( $K.KeyProtectorId ))" -Level INFO -AddToLog
                     }
 
@@ -77,14 +59,13 @@ function Get-TriageEncryptionData {
     # Run the functions from the module
     # ----------------------------------
 
-    $EncryptionWorkFlow = [ordered]@{
-        { Get-BitlockerInfoAndRecoveryKeys } = (
-            "Getting BitLocker & Encryption Data and Recovery Keys (if applicable)...",
-            "bitlocker_encryption.txt"
-        )
-    }
+    $Tasks = @(
+        @{
+            Action  = { Get-BitlockerInfoAndRecoveryKeys }
+            Message = "Getting BitLocker & Encryption Data and Recovery Keys (if applicable)..."
+            Files   = "bitlocker_encryption.txt"
+        }
+    )
 
-    foreach ($Task in $EncryptionWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $EncryptionFolder
 }

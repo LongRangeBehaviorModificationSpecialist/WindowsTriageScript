@@ -75,12 +75,14 @@
 
     # Functions to export from this module
     FunctionsToExport = @(
+        "Get-TriageConfig",
         "Get-InitialSetup",
         "Clear-TriageHives",
         "Close-TriageLog",
         "Disable-PSReadLineHistory",
         "Dismount-TriageUserHives",
         "Export-PerUserRegistry",
+        "Format-TriageDuration",
         "Get-CaseArchive",
         "Get-ComputerDetails",
         "Get-ComputerRam",
@@ -104,6 +106,8 @@
         "Initialize-TriageSystemTools",
         "Invoke-EDD",
         "Invoke-DfirTriageScan",
+        "Invoke-TriageTask",
+        "Invoke-TriageTaskList",
         "Mount-TriageUserHives",
         "Read-LogHost",
         "Show-IsAdmin",

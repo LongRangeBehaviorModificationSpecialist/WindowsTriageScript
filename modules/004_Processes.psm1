@@ -4,22 +4,6 @@ function Get-TriageProcessData {
         [string]$ProcessFolder
     )
 
-    function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$Action,
-            [string]$FunctionMessage,
-            [string]$OutputFile
-        )
-        try {
-            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
-            & $Action
-            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
-        }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
-    }
-
     function Get-RunningProcessList {
         param(
             [string]$OutputFile = "$ProcessFolder\running_processes.txt",
@@ -98,35 +82,37 @@ function Get-TriageProcessData {
         Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
     }
 
-
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
 
-    $ProcessWorkFlow = [ordered]@{
-        { Get-RunningProcessList } = (
-            "Getting Running Processes...",
-            "[running_processes.txt, running_processes.csv, unique_process_hashes.csv, process_list.csv]"
-        )
-        { Get-SvcHostsAndProcess } = (
-            "Getting SVCHost & Associated Process...",
-            "svc_host_and_processes.txt"
-        )
-        { Get-RunningServices } = (
-            "Getting Running Services...",
-            "[running_services.txt, running_services.csv]"
-        )
-        { Get-RunningDriverInfo } = (
-            "Querying Driver Information...",
-            "driver_query.csv"
-        )
-        { Get-SystemDrivers } = (
-            "Getting System Drivers...",
-            "system_drivers.csv"
-        )
-    }
+    $Tasks = @(
+        @{
+            Action  = { Get-RunningProcessList }
+            Message = "Getting Running Processes..."
+            Files   = "running_processes.txt", "running_processes.csv", "unique_process_hashes.csv", "process_list.csv"
+        }
+        @{
+            Action  = { Get-SvcHostsAndProcess }
+            Message = "Getting SVCHost & Associated Process..."
+            Files   = "svc_host_and_processes.txt"
+        }
+        @{
+            Action  = { Get-RunningServices }
+            Message = "Getting Running Services..."
+            Files   = "running_services.txt", "running_services.csv"
+        }
+        @{
+            Action  = { Get-RunningDriverInfo }
+            Message = "Querying Driver Information..."
+            Files   = "driver_query.csv"
+        }
+        @{
+            Action  = { Get-SystemDrivers }
+            Message = "Getting System Drivers..."
+            Files   = "system_drivers.csv"
+        }
+    )
 
-    foreach ($Task in $ProcessWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $ProcessFolder
 }

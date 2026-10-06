@@ -6,6 +6,9 @@
 #? =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 
 
+# $ExecutableFileTypes = (Get-TriageConfig -Key "ExecutableFileTypes")
+
+
 function Get-LinkFiles {
     param(
         [string]$OutputFile = "$SystemFolder\link_files.txt"

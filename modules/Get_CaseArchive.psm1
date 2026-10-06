@@ -2,7 +2,7 @@ function Get-CaseArchive {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$ResultsFolder,
-        [string[]]$ExcludeFolders = @("Ram_Capture")
+        [string[]]$ExcludeFolders = (Get-TriageConfig).Defaults.ArchiveExcludeFolders
     )
 
     begin {
@@ -23,7 +23,7 @@ function Get-CaseArchive {
                 throw "Archive already exists => $ZipPath"
             }
 
-            Show-Message -Message "Creating case archive => $Name.zip (excluding: $( $ExcludeFolders -join ', ' ))" -Level INFO
+            Show-Message -Message "Creating case archive => $Name.zip; excluding: [ $( $ExcludeFolders -join ', ' ) ]" -Level INFO
 
             $Skip = @($ExcludeFolders | ForEach-Object { (Join-Path -Path $Root -ChildPath $_) + "\" })
             $Files = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -File | Where-Object {

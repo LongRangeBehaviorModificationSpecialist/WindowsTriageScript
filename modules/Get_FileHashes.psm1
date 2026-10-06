@@ -2,7 +2,7 @@ function Get-StreamHash {
     # Reads the file once and feeds both algorithms from the same buffer.
     param(
         [Parameter(Mandatory)][string]$LiteralPath,
-        [switch]$IncludeMd5
+        [bool]$IncludeMd5 = (Get-TriageConfig).Defaults.HashIncludeMd5
     )
     $Sha = [System.Security.Cryptography.SHA256]::Create()
     $Md5 = if ($IncludeMd5) { [System.Security.Cryptography.MD5]::Create() }
@@ -95,7 +95,7 @@ function Get-FileHashes {
             }
 
             Write-OutputToCsv -Data $Rows -OutputFile $OutFile
-            Show-Message -Message "Hashed $( $Files.Count ) files in $( [int]$Stopwatch.Elapsed.TotalSeconds )s => $( Split-Path $OutFile -Leaf )" -Level INFO -AddToLog
+            Show-Message -Message "Hashed $( $Files.Count ) files" -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
         }
         catch {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog

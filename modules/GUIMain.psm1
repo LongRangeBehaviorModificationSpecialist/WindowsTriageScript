@@ -12,7 +12,8 @@ function Get-Gui {
     # Add-Type -AssemblyName Microsoft.VisualBasic
 
     $script:OutputRoot   = $OutputRoot
-    $script:ManifestPath = Join-Path -Path $global:ToolkitRoot -ChildPath "modules\triage.psd1"
+    # $script:ManifestPath = Join-Path -Path $global:ToolkitRoot -ChildPath "modules\triage.psd1"
+    $script:ManifestPath = Join-Path -Path (Get-TriageConfig -Key "ToolkitRoot") -ChildPath "modules\triage.psd1"
     $script:LastResult   = $null
     $script:Async        = $null
     $script:LogFile      = $null

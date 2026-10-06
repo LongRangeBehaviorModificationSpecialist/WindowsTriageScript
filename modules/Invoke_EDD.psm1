@@ -10,7 +10,7 @@ function Invoke-EDD {
     }
     process {
         try {
-            $BeginMsg = "Starting Encrypted Disk Detector on => $( $ComputerName )"
+            $BeginMsg = "Starting Encrypted Disk Detector on [ $( $ComputerName ) ]"
             Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
             $EddResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "EDD"
@@ -32,7 +32,7 @@ function Invoke-EDD {
                 -Wait `
                 -RedirectStandardOutput $EddResultsFilePath
 
-            $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
+            # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
             $Stopwatch.Stop()
 
@@ -47,7 +47,8 @@ function Invoke-EDD {
 
             Write-LogMessage -Message $EddResults
 
-            Show-Message -Message "Encrypted Disk Detector was run successfully on computer => $( $ComputerName )" -File $EddResultsFileName -ExecutionTime "$( $ExecutionTime ) seconds" -Level SUCCESS -AddToLog
+            # Show-Message -Message "Encrypted Disk Detector was run successfully on computer [ $( $ComputerName ) ]" -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
+            Show-Message -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
         }
         catch {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog

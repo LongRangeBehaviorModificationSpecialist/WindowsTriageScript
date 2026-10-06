@@ -4,22 +4,6 @@ function Get-TriageDeviceData {
         [string]$DeviceFolder
     )
 
-    function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$Action,
-            [string]$FunctionMessage,
-            [string]$OutputFile
-        )
-        try {
-            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
-            & $Action
-            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
-        }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
-    }
-
     function Get-MiscDeviceData {
         param (
             [string]$OutputFile = "$DeviceFolder\device_info.txt"
@@ -155,59 +139,69 @@ function Get-TriageDeviceData {
     # Run the functions from the module
     # ----------------------------------
 
-    $DeviceWorkFlow = [ordered]@{
+    $Tasks = @(
 
-        { Get-MiscDeviceData } = (
-            "Gathering Overall Device Information...",
-            "device_info.txt"
-        )
-        { Get-SystemProcesses } = (
-            "Running SysInternals PSInfo.exe...",
-            "PS_info.txt"
-        )
-        # { Get-FullFileList } = (
-        #     "Getting list of all files on the $env:SystemDrive\ path...",
-        #     "full_dir_list.csv"
-        # )
-        { Get-CurrentComputerInfo } = (
-            "Parsing Computer Information...",
-            "computer_info.txt"
-        )
-        { Get-SystemInfo } = (
-            "Parsing System Information...",
-            "system_info.txt"
-        )
-        { Get-PhysicalMemory } = (
-            "Getting Physical Memory Information...",
-            "physical_memory.txt"
-        )
-        { Get-EnvVars } = (
-            "Getting Environment Variables...",
-            "env_vars.txt"
-            )
-        { Get-DiskPart } = (
-            "Getting Disk Partition Information...",
-            "disk_partitions.txt"
-        )
-        { Get-UserAccounts } = (
-            "Getting User Accounts & Current Login Information...",
-            "user_accounts.txt"
-        )
-        { Get-LogonSessions } = (
-            "Getting Logon Sessions...",
-            "logon_sessions.txt"
-        )
-        { Get-StartUpApps } = (
-            "Parsing Startup Apps from various sources...",
-            "[start_up_apps.txt, start_up_apps.csv, start_up_apps_per_user.csv]"
-        )
-        { Get-MotherboardInfo } = (
-            "Gathering Motherboard properties...",
-            "motherboard.txt"
-        )
-    }
+        @{
+            Action  = { Get-MiscDeviceData }
+            Message = "Gathering Overall Device Information..."
+            Files   = "device_info.txt"
+        }
+        @{
+            Action  = { Get-SystemProcesses }
+            Message = "Running SysInternals PSInfo.exe..."
+            Files   = "PS_info.txt"
+        }
+        # @{
+        #     Action  = { Get-FullFileList }
+        #     Message = "Getting list of all files on the $env:SystemDrive\ path..."
+        #     Files   = "full_dir_list.csv"
+        # }
+        @{
+            Action  = { Get-CurrentComputerInfo }
+            Message = "Parsing Computer Information..."
+            Files   = "computer_info.txt"
+        }
+        @{
+            Action  = { Get-SystemInfo }
+            Message = "Parsing System Information..."
+            Files   = "system_info.txt"
+        }
+        @{
+            Action  = { Get-PhysicalMemory }
+            Message = "Getting Physical Memory Information..."
+            Files   = "physical_memory.txt"
+        }
+        @{
+            Action  = { Get-EnvVars }
+            Message = "Getting Environment Variables..."
+            Files   = "env_vars.txt"
+        }
+        @{
+            Action  = { Get-DiskPart }
+            Message = "Getting Disk Partition Information..."
+            Files   = "disk_partitions.csv"
+        }
+        @{
+            Action  = { Get-UserAccounts }
+            Message = "Getting User Accounts & Current Login Information..."
+            Files   = "user_accounts.txt"
+        }
+        @{
+            Action  = { Get-LogonSessions }
+            Message = "Getting Logon Sessions..."
+            Files   = "logon_sessions.txt"
+        }
+        @{
+            Action  = { Get-StartUpApps }
+            Message = "Parsing Startup Apps from various sources..."
+            Files   = "start_up_apps.txt", "start_up_apps.csv"
+        }
+        @{
+            Action  = { Get-MotherboardInfo }
+            Message = "Gathering Motherboard properties..."
+            Files   = "motherboard.txt"
+        }
+    )
 
-    foreach ($Task in $DeviceWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $DeviceFolder
 }

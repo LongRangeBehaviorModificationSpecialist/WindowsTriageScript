@@ -71,8 +71,24 @@ function Get-ComputerDetails {
             $UpTime = (Get-Date) - $Win32OperatingSystem.LastBootUpTime
             $DataProps["UpTime"] = "{0}:{1}:{2}:{3}" -f $UpTime.Days, $UpTime.Hours, $UpTime.Minutes, $UpTime.Seconds
 
-            $NetAccountsLine = & (Get-TriageBinary "net") accounts | Select-String -Pattern "Minimum password length"
-            $DataProps["MinimumPasswordLength"] = if ($NetAccountsLine) { $NetAccountsLine.ToString().Split()[-1] } else { $null }
+            $DataProps["MinimumPasswordLength"] = $null
+            try {
+                # Trusted copy, with both output streams captured so nothing reaches the screen
+                $NetOut = @(& (Get-TriageBinary "net") accounts 2>&1 | ForEach-Object { "$_" })
+                if ($LASTEXITCODE -eq 0) {
+                    $NetLine = $NetOut | Select-String -Pattern "Minimum password length"
+                    if ($NetLine) { $DataProps["MinimumPasswordLength"] = $NetLine.ToString().Split()[-1] }
+                }
+                else {
+                    Show-Message -Message "The `"net accounts`" command returned exit code $($LASTEXITCODE); minimum password length not recorded. First output line => $( $NetOut | Select-Object -First 1 )" -Level WARNING -AddToLog
+                }
+            }
+            catch {
+                Show-Message -Message "Minimum password length not recorded => $( $_.Exception.Message )" -Level WARNING -AddToLog
+            }
+
+            # $NetAccountsLine = & (Get-TriageBinary "net") accounts | Select-String -Pattern "Minimum password length"
+            # $DataProps["MinimumPasswordLength"] = if ($NetAccountsLine) { $NetAccountsLine.ToString().Split()[-1] } else { $null }
 
             $UsbStor = Get-ItemProperty -Path "HKLM:SYSTEM\CurrentControlSet\Services\USBStor" -Name "Start" -ErrorAction SilentlyContinue
             $DataProps["USBStorageLock"] = if ($UsbStor) { $UsbStor.Start } else { $null }

@@ -4,22 +4,6 @@ function Get-TriageFirewallData {
         [string]$FirewallFolder
     )
 
-    function Invoke-ScriptBlock {
-        param(
-            [scriptblock]$Action,
-            [string]$FunctionMessage,
-            [string]$OutputFile
-        )
-        try {
-            Show-Message -Message $FunctionMessage -Level INFO -AddToLog
-            & $Action
-            Show-Message -File $OutputFile -Level SUCCESS -AddToLog
-        }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
-    }
-
     function Get-FirewallRules {
         param(
             [string]$OutputFile = "$FirewallFolder\firewall_rules.txt"
@@ -59,22 +43,23 @@ function Get-TriageFirewallData {
     # Run the functions from the module
     # ----------------------------------
 
-    $FirewallWorkFlow = [ordered]@{
-        { Get-FirewallRules } = (
-            "Getting Device Firewall Configuration...",
-            "firewall_rules.txt"
-        )
-        { Get-DefenderPreferences } = (
-            "Parsing Windows Defender Preferences...",
-            "defender_preferences.txt"
-        )
-        { Copy-DefenderLogs } = (
-            "Copying Windows Defender Log Files...",
-            "defender_log_files.txt"
-        )
-    }
+    $Tasks = @(
+        @{
+            Action  = { Get-FirewallRules }
+            Message = "Getting Device Firewall Configuration..."
+            Files   = "firewall_rules.txt"
+        }
+        @{
+            Action  = { Get-DefenderPreferences }
+            Message = "Parsing Windows Defender Preferences..."
+            Files   = "defender_preferences.txt"
+        }
+        @{
+            Action  = { Copy-DefenderLogs }
+            Message = "Copying Windows Defender Log Files..."
+            Files   = "defender_log_files.txt"
+        }
+    )
 
-    foreach ($Task in $FirewallWorkFlow.GetEnumerator()) {
-        Invoke-ScriptBlock -Action $Task.Key -FunctionMessage $Task.Value[0] -OutputFile $Task.Value[1]
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $FirewallFolder
 }
