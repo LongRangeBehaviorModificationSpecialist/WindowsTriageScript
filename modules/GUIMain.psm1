@@ -48,7 +48,8 @@ function Get-Gui {
     $MainForm.StartPosition   = "CenterScreen"
     $MainForm.FormBorderStyle = "Sizable"
     $MainForm.MaximizeBox     = $false
-    $MainForm.BackColor       = [System.Drawing.Color]::FromArgb(245, 246, 248)
+    # $MainForm.BackColor       = [System.Drawing.Color]::FromArgb(245, 246, 248)
+    $MainForm.BackColor       = "#1b1b1c"
     $MainForm.TopMost         = $false
 
 
@@ -58,7 +59,8 @@ function Get-Gui {
     $LblUserName.Location  = New-Object System.Drawing.Point(10, 15)
     $LblUserName.Size      = $DefaultLblSize
     $LblUserName.Font      = $GlobalFont
-    $LblUserName.ForeColor = [System.Drawing.Color]::Black
+    # $LblUserName.ForeColor = [System.Drawing.Color]::Black
+    $LblUserName.ForeColor = "#f1f1f1"
     $LblUserName.TextAlign = "MiddleLeft"
     $MainForm.Controls.Add($LblUserName)
 
@@ -79,7 +81,7 @@ function Get-Gui {
     $LblAgency.Location  = New-Object System.Drawing.Point(10, 50)
     $LblAgency.Size      = $DefaultLblSize
     $LblAgency.Font      = $GlobalFont
-    $LblAgency.ForeColor = [System.Drawing.Color]::Black
+    $LblAgency.ForeColor = "#f1f1f1"
     $LblAgency.TextAlign = "MiddleLeft"
     $MainForm.Controls.Add($LblAgency)
 
@@ -100,7 +102,7 @@ function Get-Gui {
     $LblCaseNumber.Location  = New-Object System.Drawing.Point(10, 85)
     $LblCaseNumber.Size      = $DefaultLblSize
     $LblCaseNumber.Font      = $GlobalFont
-    $LblCaseNumber.ForeColor = [System.Drawing.Color]::Black
+    $LblCaseNumber.ForeColor = "#f1f1f1"
     $LblCaseNumber.TextAlign = "MiddleLeft"
     $MainForm.Controls.Add($LblCaseNumber)
 
@@ -116,31 +118,63 @@ function Get-Gui {
     $MainForm.Controls.Add($TxtboxCaseNumber)
 
 
-    $GpBxModules          = New-Object System.Windows.Forms.GroupBox
-    $GpBxModules.Text     = "Sel MODULES TO RUN"
-    $GpBxModules.Location = New-Object System.Drawing.Point(10, 120)
-    $GpBxModules.Size     = New-Object System.Drawing.Size(330, 395)
+    $GpBxModules           = New-Object System.Windows.Forms.GroupBox
+    $GpBxModules.Text      = "Select MODULES TO RUN"
+    $GpBxModules.ForeColor = "#f1f1f1"
+    $GpBxModules.Location  = New-Object System.Drawing.Point(10, 130)
+    $GpBxModules.Size      = New-Object System.Drawing.Size(330, 395)
     $MainForm.Controls.Add($GpBxModules)
 
 
-    $GpBxOpts          = New-Object System.Windows.Forms.GroupBox
-    $GpBxOpts.Text     = "OTHER Opts"
-    $GpBxOpts.Location = New-Object System.Drawing.Point(360, 10)
-    $GpBxOpts.Size     = New-Object System.Drawing.Size(275, 370)
+    $GpBxOpts           = New-Object System.Windows.Forms.GroupBox
+    $GpBxOpts.Text      = "OTHER Options"
+    $GpBxOpts.ForeColor = "#f1f1f1"
+    $GpBxOpts.Location  = New-Object System.Drawing.Point(360, 10)
+    $GpBxOpts.Size      = New-Object System.Drawing.Size(275, 370)
     $MainForm.Controls.Add($GpBxOpts)
 
 
     $ModulesChkLst = @(
-        @{ Name = "DeviceData"; Label = "Get Device Data" }
-        @{ Name = "UserData"; Label = "Parse User(s) Data" }
-        @{ Name = "NetworkData"; Label = "Network Connection Data" }
-        @{ Name = "ProcessData"; Label = "Get Process Data" }
-        @{ Name = "SystemData"; Label = "Get System Data" }
-        @{ Name = "PrefetchData"; Label = "Prefetch Info" }
-        @{ Name = "EventLogData"; Label = "EventLog Info" }
-        @{ Name = "FirewallData"; Label = "Firewall Info" }
-        @{ Name = "EncryptionData"; Label = "BitLocker Data" }
-        @{ Name = "InternetData"; Label = "Internet Usage Data" }
+        @{
+            Name = "DeviceData"
+            Label = "Get Device Data"
+        }
+        @{
+            Name = "UserData"
+            Label = "Parse User(s) Data"
+        }
+        @{
+            Name = "NetworkData"
+            Label = "Network Connection Data"
+        }
+        @{
+            Name = "ProcessData"
+            Label = "Get Process Data"
+        }
+        @{
+            Name = "SystemData"
+            Label = "Get System Data"
+        }
+        @{
+            Name = "PrefetchData"
+            Label = "Prefetch Info"
+        }
+        @{
+            Name = "EventLogData"
+            Label = "EventLog Info"
+        }
+        @{
+            Name = "FirewallData"
+            Label = "Firewall Info"
+        }
+        @{
+            Name = "EncryptionData"
+            Label = "BitLocker Encryption Data"
+        }
+        @{
+            Name = "InternetData"
+            Label = "Internet Usage Data"
+        }
     )
 
     $ModulesChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
@@ -152,7 +186,8 @@ function Get-Gui {
         $TextLbl           = New-Object System.Windows.Forms.Label
         $TextLbl.Text      = $Item.Label
         $TextLbl.Font      = $GlobalFont
-        $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
+        # $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
+        $TextLbl.ForeColor = "#f1f1f1"
 
         # Measure out text metrics using raw engine parameters
         $ProposedSize = New-Object System.Drawing.Size($GpBxLblW, 0)
@@ -190,16 +225,17 @@ function Get-Gui {
     $GpBxSelAllBtnY = ($GpBxColYStart + $GpBxControlPad + 10)
 
     $BtnSelAllModules                            = New-Object System.Windows.Forms.Button
-    $BtnSelAllModules.Text                       = "Sel All Modules"
+    $BtnSelAllModules.Text                       = "Select All Modules"
     $BtnSelAllModules.Font                       = $GlobalFont
     $BtnSelAllModules.Width                      = $GpBxBtnW
     $BtnSelAllModules.Height                     = $GpBxBtnH
     $BtnSelAllModules.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnSelAllModules.Location                   = New-Object Drawing.Point($GpBxCol1XValue, $GpBxSelAllBtnY)
     $BtnSelAllModules.FlatAppearance.BorderSize  = 1
-    $BtnSelAllModules.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnSelAllModules.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
-    $BtnSelAllModules.Forecolor                  = [System.Drawing.Color]::White
+    $BtnSelAllModules.FlatAppearance.BorderColor = "#1b1b1c"
+    # $BtnSelAllModules.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
+    $BtnSelAllModules.BackColor                  = "#2B7FFF"
+    $BtnSelAllModules.Forecolor                  = "#f1f1f1"
     $BtnSelAllModules.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
     $BtnSelAllModules.add_Click({
         foreach ($ChkBox in $ModulesChkBoxes) {
@@ -210,16 +246,16 @@ function Get-Gui {
 
 
     $BtnClearAllModules                            = New-Object System.Windows.Forms.Button
-    $BtnClearAllModules.Text                       = "DeSel All Modules"
+    $BtnClearAllModules.Text                       = "DeSelect All Modules"
     $BtnClearAllModules.Font                       = $GlobalFont
     $BtnClearAllModules.Width                      = $GpBxBtnW
     $BtnClearAllModules.Height                     = $GpBxBtnH
     $BtnClearAllModules.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnClearAllModules.Location                   = New-Object Drawing.Point($GpBxCol1XValue, ($GpBxSelAllBtnY + $GpBxBtnH + 10))
     $BtnClearAllModules.FlatAppearance.BorderSize  = 1
-    $BtnClearAllModules.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnClearAllModules.BackColor                  = [System.Drawing.Color]::White
-    $BtnClearAllModules.Forecolor                  = [System.Drawing.Color]::black
+    $BtnClearAllModules.FlatAppearance.BorderColor = "#1b1b1c"
+    $BtnClearAllModules.BackColor                  = "#f1f1f1"
+    $BtnClearAllModules.Forecolor                  = "#1b1b1c"
     $BtnClearAllModules.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
     $BtnClearAllModules.add_Click({
         foreach ($ChkBox in $ModulesChkBoxes) {
@@ -253,7 +289,8 @@ function Get-Gui {
         $TextLbl           = New-Object System.Windows.Forms.Label
         $TextLbl.Text      = $Item.Label
         $TextLbl.Font      = $GlobalFont
-        $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
+        # $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
+        $TextLbl.ForeColor = "#f1f1f1"
 
         # Measure out text metrics using raw engine parameters
         $ProposedSize     = New-Object System.Drawing.Size($GpBxLblW, 0)
@@ -290,16 +327,17 @@ function Get-Gui {
     $GpBxSelAllBtnY = ($GpBxColYStart + $GpBxControlPad + 10)
 
     $BtnSelAllOpts                            = New-Object System.Windows.Forms.Button
-    $BtnSelAllOpts.Text                       = "Sel All Opts"
+    $BtnSelAllOpts.Text                       = "Select All Options"
     $BtnSelAllOpts.Font                       = $GlobalFont
     $BtnSelAllOpts.Width                      = $GpBxBtnW
     $BtnSelAllOpts.Height                     = $GpBxBtnH
     $BtnSelAllOpts.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnSelAllOpts.Location                   = New-Object Drawing.Point($GpBxCol1XValue, $GpBxSelAllBtnY)
     $BtnSelAllOpts.FlatAppearance.BorderSize  = 1
-    $BtnSelAllOpts.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnSelAllOpts.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
-    $BtnSelAllOpts.Forecolor                  = [System.Drawing.Color]::White
+    $BtnSelAllOpts.FlatAppearance.BorderColor = "#1b1b1c"
+    # $BtnSelAllOpts.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
+    $BtnSelAllOpts.BackColor                  = "#2B7FFF"
+    $BtnSelAllOpts.Forecolor                  = "#f1f1f1"
     $BtnSelAllOpts.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
     $BtnSelAllOpts.add_Click({
         foreach ($ChkBox in $OptsChkBoxes) {
@@ -310,16 +348,16 @@ function Get-Gui {
 
 
     $BtnClearAllOpts                            = New-Object System.Windows.Forms.Button
-    $BtnClearAllOpts.Text                       = "DeSel All Opts"
+    $BtnClearAllOpts.Text                       = "DeSelect All Options"
     $BtnClearAllOpts.Font                       = $GlobalFont
     $BtnClearAllOpts.Width                      = $GpBxBtnW
     $BtnClearAllOpts.Height                     = $GpBxBtnH
     $BtnClearAllOpts.Padding                    = New-Object System.Windows.Forms.Padding(3)
     $BtnClearAllOpts.Location                   = New-Object Drawing.Point($GpBxCol1XValue, ($GpBxSelAllBtnY + $GpBxBtnH + 10))
     $BtnClearAllOpts.FlatAppearance.BorderSize  = 1
-    $BtnClearAllOpts.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnClearAllOpts.BackColor                  = [System.Drawing.Color]::White
-    $BtnClearAllOpts.Forecolor                  = [System.Drawing.Color]::black
+    $BtnClearAllOpts.FlatAppearance.BorderColor = "#1b1b1c"
+    $BtnClearAllOpts.BackColor                  = "#f1f1f1"
+    $BtnClearAllOpts.Forecolor                  = "#1b1b1c"
     $BtnClearAllOpts.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
     $BtnClearAllOpts.add_Click({
         foreach ($ChkBox in $OptsChkBoxes) {
@@ -340,9 +378,9 @@ function Get-Gui {
     $BtnStartTriage.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
     $BtnStartTriage.Location                   = New-Object System.Drawing.Point(360, 410)
     $BtnStartTriage.FlatAppearance.BorderSize  = 1
-    $BtnStartTriage.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
-    $BtnStartTriage.BackColor                  = "#17a589"
-    $BtnStartTriage.Forecolor                  = "#dddddd"
+    $BtnStartTriage.FlatAppearance.BorderColor = "#1b1b1c"
+    $BtnStartTriage.BackColor                  = "#2B7FFF"
+    $BtnStartTriage.Forecolor                  = "#f1f1f1"
 
     $ModuleMap = @{
         DeviceData     = "001_Device";
@@ -495,9 +533,9 @@ function Get-Gui {
     $BtnQuit.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
     $BtnQuit.Location                   = New-Object System.Drawing.Point(360, 450)
     $BtnQuit.FlatAppearance.BorderSize  = 1
-    $BtnQuit.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+    $BtnQuit.FlatAppearance.BorderColor = "#1b1b1c"
     $BtnQuit.BackColor                  = "#c0392b"
-    $BtnQuit.Forecolor                  = "#dddddd"
+    $BtnQuit.Forecolor                  = "#f1f1f1"
     $BtnQuit.Add_Click({
         $MainForm.Close()
         return

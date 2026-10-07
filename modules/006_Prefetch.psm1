@@ -8,8 +8,7 @@ function Get-TriagePrefetchData {
         param(
             [string]$OutputFile = "$PrefetchFolder\prefetch_files.csv"
         )
-        $Command = { Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" |
-                        Select-Object -Property * }
+        $Command = { Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
@@ -25,9 +24,10 @@ function Get-TriagePrefetchData {
         }
 
         $Data = foreach ($F in $Folders) {
-            if (-not (Test-Path -LiteralPath $F)) { continue }
-            Get-ChildItem -LiteralPath $F -Recurse -Force -ErrorAction SilentlyContinue |
-                Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc
+            if (-not (Test-Path -LiteralPath $F)) {
+                continue
+            }
+            Get-ChildItem -LiteralPath $F -Recurse -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc
         }
         Write-OutputToCsv -Data ($Data | Sort-Object LastAccessTimeUtc -Descending) -OutputFile $OutputFile
     }

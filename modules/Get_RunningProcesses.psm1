@@ -10,7 +10,7 @@ function Get-RunningProcesses {
     }
     process {
         try {
-            Show-Message -Message "Starting Process Capture from computer => $( $ComputerName ). Please wait..." -Level INFO -AddToLog
+            Show-Message -Message "Starting Process Capture from computer [ $( $ComputerName )] . Please wait..." -Level INFO -AddToLog
 
             # Make new directory to store the process .dmp files
             $ProcessCaptureFolder = Join-Path -Path $ResultsFolder -ChildPath "Process_Capture"
@@ -30,9 +30,9 @@ function Get-RunningProcesses {
 
             # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-            Show-Message -Message "Process Capture completed successfully from computer => $( $ComputerName )" -Level SUCCESS -AddToLog
+            Show-Message -Message "Process Capture completed successfully from computer => $( $ComputerName )" -Level INFO -AddToLog
 
-            Show-Message -File $(Split-Path -Path $ProcessCaptureFolder -Leaf) -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
+            Show-Message -File $(Split-Path -Path $ProcessCaptureFolder -Leaf) -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
 
             $Stopwatch.Stop()
         }
@@ -41,6 +41,8 @@ function Get-RunningProcesses {
         }
     }
     end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
+        }
     }
 }

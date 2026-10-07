@@ -7,34 +7,21 @@ function Get-TriageInternetData {
     $TempFolder = Join-Path -Path $InternetFolder -ChildPath "temp"
     $null       = New-Item -ItemType Directory -Path $TempFolder
 
-    function Get-TempInternetFiles {
-        param(
-            [string]$OutputFile = "$InternetFolder\001_temp_internet_files.csv"
-            )
-        $Cutoff = (Get-Date).AddDays(-5)
-        $Data = foreach ($U in $global:TriageUserHives) {
-            $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCache"
-            if (-not (Test-Path -LiteralPath $Dir)) { continue }
-            Get-ChildItem -LiteralPath $Dir -Recurse -Force -File -ErrorAction SilentlyContinue |
-                Where-Object { $_.LastWriteTime -gt $Cutoff } |
-                Select-Object @{ N = "UserName"; E = { $U.UserName } }, FullName, CreationTimeUtc, LastWriteTimeUtc, Length
-        }
-        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
-    }
-
     function Get-StoredCookies {
         param(
             [string]$OutputFile = "$InternetFolder\002_stored_cookies.csv"
         )
         $Data = foreach ($U in $global:TriageUserHives) {
             $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
-            if (-not (Test-Path -LiteralPath $Dir)) { continue }
+            if (-not (Test-Path -LiteralPath $Dir)) {
+                continue
+            }
             foreach ($File in Get-ChildItem -LiteralPath $Dir -Recurse -Force -File -ErrorAction SilentlyContinue) {
                 Select-String -LiteralPath $File.FullName -Pattern "/" -ErrorAction SilentlyContinue | ForEach-Object {
                     [pscustomobject]@{
                         UserName = $U.UserName;
-                        File = $File.Name;
-                        Line = $_.Line
+                        File     = $File.Name;
+                        Line     = $_.Line
                     }
                 }
             }
@@ -96,8 +83,12 @@ function Get-TriageInternetData {
                     throw
                 }
                 finally {
-                    if ($In)  { $In.Dispose() }
-                    if ($Out) { $Out.Dispose() }
+                    if ($In) {
+                        $In.Dispose()
+                    }
+                    if ($Out) {
+                        $Out.Dispose()
+                    }
                 }
             }
         }
@@ -167,8 +158,7 @@ function Get-TriageInternetData {
         if ($ProfilePaths.Count -eq 0) {
             Show-Message -Message "No mounted user profiles were found. Falling back to [ $env:SystemDrive\Users ]." -Level WARNING -AddToLog
 
-            $ProfilePaths = @(Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force -ErrorAction SilentlyContinue |
-                ForEach-Object { $_.FullName })
+            $ProfilePaths = @(Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
         }
 
         $Summary   = [System.Collections.Generic.List[object]]::new()
@@ -192,11 +182,9 @@ function Get-TriageInternetData {
                 Show-Message -Message "Profile found => [ $ProfilePath ]" -MessageColor Magenta
                 $UserLeaf = Split-Path -Path $ProfilePath -Leaf
 
-                # foreach ($Browser in (Get-TriageConfig -Key "Browsers")) {
                 foreach ($BrowserName in $Browsers.Keys) {
                     Show-Message -Message "Examining $BrowserName data in [ $ProfilePath ]" -MessageColor Magenta
                     $Browser = $Browsers[$BrowserName]
-                    # $Browser = $Browser.Name
                     $Root    = Join-Path -Path $ProfilePath -ChildPath $Browser.Root
                     if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
                         continue
@@ -233,7 +221,7 @@ function Get-TriageInternetData {
                                         Copy-SharedFile -Source "$Source$Suffix" -Destination "$Db$Suffix"
                                     }
                                     catch {
-                                        Show-Message -Message "Could not copy $( Split-Path "$Source$Suffix" -Leaf ) for $Tag => $( $_.Exception.Message )" -Level WARNING -AddToLog
+                                        Show-Message -Message "Could not copy $( Split-Path -Path "$Source$Suffix" -Leaf ) for $Tag => $( $_.Exception.Message )" -Level WARNING -AddToLog
                                     }
                                 }
                             }
@@ -255,7 +243,7 @@ function Get-TriageInternetData {
                             continue
                         }
 
-                        Show-Message -Message "Browser database copied [ $Tag ]" -Level INFO -AddToLog -MessageColor Green
+                        Show-Message -Message "Browser database copied [ $Tag ]" -Level INFO -AddToLog
 
                         foreach ($Q in $Queries[$Browser.Type].GetEnumerator()) {
                             $OutFile = Join-Path -Path $BrowserDir -ChildPath "$Tag-$( $Q.Key ).csv"
@@ -288,8 +276,12 @@ function Get-TriageInternetData {
                                     # Exact row count from SQLite itself
                                     $CountOut = & $SqlitePath -batch -readonly $Db "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
                                     $Parsed   = 0
-                                    if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) { $Rows = $Parsed }
-                                    else { $Rows = -1 }       # written, but the count was unavailable
+                                    if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
+                                        $Rows = $Parsed
+                                    }
+                                    else {
+                                        $Rows = -1  # Written, but the count was unavailable
+                                    }
                                 }
                                 else {
                                     $Status = "NoData"
@@ -304,10 +296,15 @@ function Get-TriageInternetData {
                             }
 
                             $Summary.Add([pscustomobject]@{
-                                User = $UserLeaf; Browser = $BrowserName; Profile = $ProfileDir.Name
+                                User       = $UserLeaf
+                                Browser    = $BrowserName
+                                Profile    = $ProfileDir.Name
                                 SourceFile = $Source
                                 CopiedTo   = $Db.Substring($InternetFolder.Length).TrimStart("\")
-                                Query = $Q.Key; Rows = $Rows; Status = $Status; Detail = $Detail
+                                Query      = $Q.Key
+                                Rows       = $Rows
+                                Status     = $Status
+                                Detail     = $Detail
                             })
                         }
                     }
@@ -325,7 +322,6 @@ function Get-TriageInternetData {
 
         Write-OutputToCsv -Data $Summary -OutputFile $SummaryFile
         Show-Message -Message "Browser analysis => $DbFound database(s) found, $Failures failure(s)." -Level INFO -AddToLog
-        # Show-Message -Message "Summary => [ $( Split-Path $SummaryFile -Leaf ) ]" -Level INFO -AddToLog
     }
 
     # ----------------------------------
@@ -333,11 +329,6 @@ function Get-TriageInternetData {
     # ----------------------------------
 
     $Tasks = @(
-        @{
-            Action  = { Get-TempInternetFiles }
-            Message = "Getting Temporary Internet Files (Last 5 Days)..."
-            Files   = "001_temp_internet_files.csv"
-        }
         @{
             Action  = { Get-StoredCookies }
             Message = "Getting Stored Cookie Information..."

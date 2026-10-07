@@ -110,6 +110,7 @@ function Get-TriageSystemData {
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
+    #TODO -- Check functionality, getting errors when run.
     function Get-InstalledApps {
         param(
             [string]$InstalledAppsFile = "$SystemFolder\installed_apps_list.csv",
@@ -385,34 +386,136 @@ function Get-TriageSystemData {
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-    #TODO -- `Get-WindowsUpdateLog` writes to the Desktop and pulls symbols over the network. Copy the raw ETLs instead.
+    function Get-OptionalFeatures {
+        param(
+            [string]$OutputFile = "$SystemFolder\optional_features.csv"
+        )
+        $Data = Get-CimInstance -ClassName Win32_OptionalFeature -ErrorAction SilentlyContinue | Select-Object Name, Caption, @{
+                N = "InstallState"
+                E = {
+                    switch ($_.InstallState) {
+                        1 { "Enabled" }
+                        2 { "Disabled" }
+                        3 { "Absent" }
+                        default { $_.InstallState }
+                    }
+                }
+            }
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+    }
 
-    # function Get-WindowsUpdateEtlFiles {
-    #     param(
-    #         [string]$OutputFile = "$SystemFolder\windows_update_log.txt"
-    #     )
-    #     $Command = { Get-WindowsUpdateLog -IncludeAllLogs }
-    #     $Data = &($Command)
-    #     Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-    # }
+    function Get-ServicingPackages {
+        param(
+            [string]$OutputFile = "$SystemFolder\servicing_packages.csv"
+        )
+        $Key  = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\Packages"
+        $Data = Get-ChildItem -LiteralPath $Key -ErrorAction SilentlyContinue | ForEach-Object {
+            $P = Get-ItemProperty -LiteralPath $_.PSPath -ErrorAction SilentlyContinue
+            [pscustomobject]@{
+                PackageKey      = $_.PSChildName
+                CurrentState    = $P.CurrentState
+                InstallClient   = $P.InstallClient
+                InstallName     = $P.InstallName
+                InstallTimeHigh = $P.InstallTimeHigh
+                InstallTimeLow  = $P.InstallTimeLow
+            }
+        }
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+    }
 
-    # function Get-WindowsFeaturesList {
-    #     param(
-    #         [string]$OutputFile = "$SystemFolder\windows_features_list.txt"
-    #     )
-    #     $Command = { dism /online /get-features }
-    #     $Data = &($Command)
-    #     Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-    # }
+    function Get-WmiEventSubscriptions {
+        $Ns  = "root\subscription"
+        $Sid = { if ($_.CreatorSID) {
+                [System.Security.Principal.SecurityIdentifier]::new([byte[]]$_.CreatorSID, 0).Value
+            }
+        }
 
-    # function Get-WindowsCapabilitiesList {
-    #     param(
-    #         [string]$OutputFile = "$SystemFolder\windows_capabilities_list.txt"
-    #     )
-    #     $Command = { dism /online /get-capabilities }
-    #     $Data = &($Command)
-    #     Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-    # }
+        $Filters = Get-CimInstance -Namespace $Ns -ClassName __EventFilter -ErrorAction SilentlyContinue |
+            Select-Object Name, Query, QueryLanguage, EventNamespace, @{ N = "CreatorSID"; E = $Sid }
+
+        $Consumers = Get-CimInstance -Namespace $Ns -ClassName __EventConsumer -ErrorAction SilentlyContinue |
+            Select-Object @{ N = "ConsumerType"; E = { $_.CimClass.CimClassName } }, Name, CommandLineTemplate, ExecutablePath, WorkingDirectory, ScriptingEngine, ScriptFileName, ScriptText, Filename, Text, SourceName, @{ N = "CreatorSID"; E = $Sid }
+
+        $Bindings = Get-CimInstance -Namespace $Ns -ClassName __FilterToConsumerBinding -ErrorAction SilentlyContinue |
+            Select-Object @{ N = "Filter"; E = { $_.Filter.Name } }, @{ N = "Consumer"; E = { $_.Consumer.Name } },
+                @{ N = "ConsumerClass"; E = { $_.Consumer.CimClass.CimClassName } }
+
+        Write-OutputToCsv -Data $Filters -OutputFile "$SystemFolder\wmi_event_filters.csv"
+        Write-OutputToCsv -Data $Consumers -OutputFile "$SystemFolder\wmi_event_consumers.csv"
+        Write-OutputToCsv -Data $Bindings -OutputFile "$SystemFolder\wmi_filter_consumer_bindings.csv"
+    }
+
+    function Get-ImageFileExecutionOptions {
+        param(
+            [string]$OutputFile = "$SystemFolder\image_file_execution_options.csv"
+        )
+        $Roots = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options",
+                "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Image File Execution Options",
+                "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit"
+        $Data = foreach ($Root in $Roots) {
+            if (-not (Test-Path -LiteralPath $Root)) { continue }
+            foreach ($Key in Get-ChildItem -LiteralPath $Root -ErrorAction SilentlyContinue) {
+                $Props = Get-ItemProperty -LiteralPath $Key.PSPath -ErrorAction SilentlyContinue
+                foreach ($P in ($Props.PSObject.Properties | Where-Object { $_.Name -notlike "PS*" })) {
+                    [pscustomobject]@{
+                        Root      = $Root -replace "^HKLM:\\", ""
+                        Image     = $Key.PSChildName
+                        ValueName = $P.Name
+                        Data      = ($P.Value -join "; ")
+                    }
+                }
+            }
+        }
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+    }
+
+    function Get-StartupFolderItems {
+        param(
+            [string]$OutputFile = "$SystemFolder\startup_folder_items.csv"
+        )
+        $Folders = @([pscustomobject]@{
+            User = "ALL USERS"
+            Path = Join-Path -Path $env:ProgramData -ChildPath "Microsoft\Windows\Start Menu\Programs\StartUp"
+        })
+        foreach ($H in ($global:TriageUserHives | Where-Object ProfilePath)) {
+            $Folders += [pscustomobject]@{
+                User = $H.UserName
+                Path = Join-Path -Path $H.ProfilePath -ChildPath "AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
+            }
+        }
+        $Data = foreach ($F in $Folders) {
+            if (-not (Test-Path -LiteralPath $F.Path)) { continue }
+            Get-ChildItem -LiteralPath $F.Path -Recurse -Force -File -ErrorAction SilentlyContinue | ForEach-Object {
+                [pscustomobject]@{
+                    User        = $F.User
+                    FullName    = $_.FullName
+                    Length      = $_.Length
+                    CreatedUtc  = $_.CreationTimeUtc.ToString("o")
+                    ModifiedUtc = $_.LastWriteTimeUtc.ToString("o")
+                    SHA256      = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+                }
+            }
+        }
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+    }
+
+    function Get-BitsJobs {
+        param(
+            [string]$OutputFile = "$SystemFolder\bits_jobs.csv"
+        )
+        # Querying BITS can start the service, which would change the target. Only query it if it is already running.
+        $Svc = Get-Service -Name BITS -ErrorAction SilentlyContinue
+        if (-not $Svc -or $Svc.Status -ne "Running") {
+            Write-OutputToCsv -Data ([pscustomobject]@{
+                Note = "BITS service was not running; jobs not queried. See the BITS database copy in 011_Raw_Artifacts."
+            }) -OutputFile $OutputFile
+            return
+        }
+        $Data = Get-BitsTransfer -AllUsers -ErrorAction Stop |
+            Select-Object -Property *, @{ N = "Files"; E = { @($_.FileList | ForEach-Object { "$($_.RemoteName) -> $($_.LocalName)" }) -join "; " } } -ExcludeProperty FileList
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+    }
+
 
     # ----------------------------------
     # Run the functions from the module
@@ -604,21 +707,37 @@ function Get-TriageSystemData {
             Message = "Listing Executables Without Valid Authenticode Signature..."
             Files   = "non_valid_exe_files.txt"
         }
-        # @{
-        #     Action  = { Get-WindowsUpdateEtlFiles }
-        #     Message = "Gathering Windows Update logs..."
-        #     Files   = "windows_update_log.txt"
-        # }
-        # @{
-        #     Action  = { Get-WindowsFeaturesList }
-        #     Message = "Gathering List of Windows Features..."
-        #     Files   = "windows_features_list.txt"
-        # }
-        # @{
-        #     Action  = { Get-WindowsCapabilitiesList }
-        #     Message = "Gathering List of Windows Capabilities..."
-        #     Files   = "windows_capabilities_list.txt"
-        # }
+        @{
+            Action  = { Get-OptionalFeatures }
+            Message = "Gathering Optional Features..."
+            Files   = "optional_features.csv"
+        }
+        @{
+            Action  = { Get-ServicingPackages }
+            Message = "Gathering Service Packages..."
+            Files   = "servicing_packages.csv"
+        }
+        @{
+            Action = { Get-WmiEventSubscriptions }
+            Message = "Getting WMI event subscriptions..."
+            Files = "wmi_event_filters.csv", "wmi_event_consumers.csv", "wmi_filter_consumer_bindings.csv"
+        }
+        @{
+            Action = { Get-ImageFileExecutionOptions }
+            Message = "Getting Image File Execution Options..."
+            Files = "image_file_execution_options.csv"
+        }
+        @{
+            Action = { Get-StartupFolderItems }
+            Message = "Getting startup folder contents..."
+            Files = "startup_folder_items.csv"
+        }
+        @{
+            Action = { Get-BitsJobs }
+            Message = "Getting BITS jobs..."
+            Files = "bits_jobs.csv"
+        }
+
     )
 
     Invoke-TriageTaskList -Tasks $Tasks -Folder $SystemFolder

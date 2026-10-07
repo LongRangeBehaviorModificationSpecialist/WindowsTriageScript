@@ -46,9 +46,9 @@ function Get-ComputerRam {
             # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
             $SuccessMsg = "RAM capture completed successfully from computer: $( $ComputerName )"
-            Show-Message -Message $SuccessMsg -Level SUCCESS -AddToLog
+            Show-Message -Message $SuccessMsg -Level INFO -AddToLog
 
-            Show-Message -File $RamCaptureFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
+            Show-Message -File $RamCaptureFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
 
             $Stopwatch.Stop()
         }
@@ -57,6 +57,8 @@ function Get-ComputerRam {
         }
     }
     end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
+        }
     }
 }

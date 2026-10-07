@@ -4,7 +4,7 @@
     Branding = @{
         ToolName    = "NOVA ICAC VECTOR Triage Application"
         Author      = "Michael Sponheimer"
-        LastUpdated = "06-Oct-2026"
+        LastUpdated = "07-Oct-2026"
     }
 
     Modules = @(
@@ -17,33 +17,47 @@
         "007_Event_Logs",
         "008_Firewall",
         "009_Encryption",
-        "010_Internet"
+        "010_Internet",
+        "011_Raw_Artifacts"
     )
 
     # Relative to the toolkit root. The loader turns these into full paths.
     Binaries = @{
+        auditpol             = "bin\auditpol.exe"
+        driverquery          = "bin\driverquery.exe"
         EDD                  = "bin\EDDv310.exe"
         ipconfig             = "bin\ipconfig.exe"
         MagnetProcessCapture = "bin\MagnetProcessCapture.exe"
         MagnetRamCapture     = "bin\MagnetRAMCapture.exe"
-        netstat              = "bin\NETSTAT.EXE"
-        PSInfo               = "bin\PsInfo.exe"
-        SQLite3              = "bin\sqlite3.exe"
-        systeminfo           = "bin\systeminfo.exe"
-        whoami               = "bin\whoami.exe"
         net                  = "bin\net.exe"
         netsh                = "bin\netsh.exe"
-        auditpol             = "bin\auditpol.exe"
-        driverquery          = "bin\driverquery.exe"
+        netstat              = "bin\NETSTAT.EXE"
         openfiles            = "bin\openfiles.exe"
+        PSInfo               = "bin\PsInfo.exe"
+        qwinsta              = "bin\qwinsta.exe"
+        RawCopy              = "bin\RawCopy.exe"
         reg                  = "bin\reg.exe"
+        robocopy             = "bin\Robocopy.eve"
+        SQLite3              = "bin\sqlite3.exe"
+        systeminfo           = "bin\systeminfo.exe"
+        wevtutil             = "bin\wevtutil.exe"
+        whoami               = "bin\whoami.exe"
     }
 
     Defaults = @{
         ScratchFolder         = "_scratch"
         HashIncludeMd5        = $true
-        ArchiveExcludeFolders = @("Ram_Capture")
+        ArchiveExcludeFolders = @("Ram_Capture", "011_Raw_Atrifacts\NTFS")
         TimestampFormat       = "yyyy-MM-ddTHH:mm:ss.fffZ"
+    }
+
+    RawArtifacts = @{
+        Enabled = @(
+            "SystemHives", "Amcache", "UserHives", "Prefetch", "Srum", "LnkAndJumpLists", "BrowserDatabases",
+            "StartupFolders", "WmiRepository", "Bits", "WindowsUpdate", "Defender", "Mft", "UsnJrnl"
+        )
+        LargeSets             = @("Mft", "UsnJrnl")
+        MinFreeGbForLargeSets = 10
     }
 
     ExecutableFileTypes = @(
@@ -54,77 +68,54 @@
 
     # An array, because hashtables in a .psd1 are unordered
     EventLogs = @(
-        @{
-            Log  = "Application"
-            File = "application_log.csv"
-        }
-        @{
-            Log  = "Security"
-            File = "security_log.csv"
-        }
-        @{
-            Log  = "System"
-            File = "system_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-PowerShell/Operational"
-            File = "win_powershell_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-Application-Experience/Program-Inventory"
-            File = "win_application_experience_program_inventory_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-DriverFrameworks-UserMode/Operational"
-            File = "win_driveframeworks_usermode_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-Partition/Diagnostic"
-            File = "win_partition_diagnostic_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-PowerShell/Admin"
-            File = "win_powershell_admin_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-Sysmon/Operational"
-            File = "win_sysmon_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-TaskScheduler/Operational"
-            File = "win_taskscheduler_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational"
-            File = "windows_terminalservices_localsessionmanager_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational"
-            File = "win_terminalservices_remoteconnectionmanager_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-TerminalServices-RDPClient/Operational"
-            File = "win_terminalservices_rdpclient_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-Windows Defender/Operational"
-            File = "win_windows_defender_operational_log.csv"
-        }
-        @{
-            Log  = "Microsoft-Windows-Windows Defender/WHC"
-            File = "win_windows_defender_whc_log.csv"
-        }
-        @{
-            Log  = "Windows PowerShell"
-            File = "win_powershell_log.csv"
-        }
+        "Application",
+        "Security",
+        "System",
+        "Windows PowerShell",
+        "Microsoft-Windows-PowerShell/Operational",
+        "Microsoft-Windows-PowerShell/Admin",
+        "Microsoft-Windows-Application-Experience/Program-Inventory",
+        "Microsoft-Windows-DriverFrameworks-UserMode/Operational",
+        "Microsoft-Windows-Partition/Diagnostic",
+        "Microsoft-Windows-Sysmon/Operational",
+        "Microsoft-Windows-TaskScheduler/Operational",
+        "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
+        "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational",
+        "Microsoft-Windows-TerminalServices-RDPClient/Operational",
+        "Microsoft-Windows-Windows Defender/Operational",
+        "Microsoft-Windows-Windows Defender/WHC",
+        "Microsoft-Windows-WMI-Activity/Operational",
+        "Microsoft-Windows-Bits-Client/Operational",
+        "Microsoft-Windows-WinRM/Operational",
+        "Microsoft-Windows-CodeIntegrity/Operational",
+        "Microsoft-Windows-Windows Firewall With Advanced Security/Firewall"
     )
 
     Browsers = @(
-        @{ Name = "Chrome";  Type = "Chromium"; Root = "AppData\Local\Google\Chrome\User Data" }
-        @{ Name = "Edge";    Type = "Chromium"; Root = "AppData\Local\Microsoft\Edge\User Data" }
-        @{ Name = "Brave";   Type = "Chromium"; Root = "AppData\Local\BraveSoftware\Brave-Browser\User Data" }
-        @{ Name = "Firefox"; Type = "Firefox";  Root = "AppData\Roaming\Mozilla\Firefox\Profiles" }
-        @{ Name = "Vivaldi"; Type = "Chromium"; Root = "AppData\Local\Vivaldi\User Data" }
+        @{
+            Name = "Chrome"
+            Type = "Chromium"
+            Root = "AppData\Local\Google\Chrome\User Data"
+        }
+        @{
+            Name = "Edge"
+            Type = "Chromium";
+            Root = "AppData\Local\Microsoft\Edge\User Data"
+        }
+        @{
+            Name = "Brave";
+            Type = "Chromium";
+            Root = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
+        }
+        @{
+            Name = "Firefox";
+            Type = "Firefox";
+            Root = "AppData\Roaming\Mozilla\Firefox\Profiles"
+        }
+        @{
+            Name = "Vivaldi";
+            Type = "Chromium";
+            Root = "AppData\Local\Vivaldi\User Data"
+        }
     )
 }

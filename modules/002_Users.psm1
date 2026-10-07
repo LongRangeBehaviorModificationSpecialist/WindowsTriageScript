@@ -58,24 +58,81 @@ function Get-TriageUserData {
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
-    #TODO -- Check function
     function Get-PowershellConsoleHistoryAllUsers {
         param(
-            [string]$OutputFile = "$UserFolder\powershell_history_all_users.txt"
+            [string]$OutputFile = "$UserFolder\powershell_history_all_users.txt",
+            [string]$CopyFolder = "$UserFolder\PowerShell_History"
         )
-        $Target = Join-Path -Path $env:SystemDrive -ChildPath "Users"
-        $UserDirs = Get-ChildItem -LiteralPath $Target -Directory
+        # Profiles found by the hive step (includes profiles outside C:\Users); fall back to C:\Users
+        $Profiles = @($global:TriageUserHives | Where-Object ProfilePath | ForEach-Object { $_.ProfilePath } | Sort-Object -Unique)
+        if ($Profiles.Count -eq 0) {
+            $Profiles = @(Get-ChildItem -LiteralPath (Join-Path -Path $env:SystemDrive -ChildPath "Users") -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        }
 
-        foreach ($UserDir in $UserDirs) {
-            $UserName = "User.$UserDir"
-            $HistoryFilePath = Join-Path -Path $UserDir.FullName -ChildPath "AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
-            # $PsHistoryFileName = [System.IO.Path]::GetFileName($HistoryFilePath)
-            if (Test-Path -Path $HistoryFilePath -PathType Leaf) {
-                $OutputDir = New-Item -ItemType Directory -Path $UserFolder -Name $UserName -Force
-                Copy-Item -Path $HistoryFilePath -Destination $OutputDir -Force
-                # $File = "$(Split-Path $OutputDir -Leaf)\$PsHistoryFileName"
+        $HistoryDirs = [ordered]@{
+            "AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine" = "WindowsPowerShell_5.1"
+            "AppData\Roaming\Microsoft\PowerShell\PSReadLine"         = "PowerShell_7"
+        }
+
+        $null = New-Item -ItemType Directory -Path $CopyFolder -Force
+        $Rows = [System.Collections.Generic.List[object]]::new()
+
+        foreach ($ProfilePath in $Profiles) {
+            $UserLeaf = Split-Path -Path $ProfilePath -Leaf
+
+            foreach ($Rel in $HistoryDirs.Keys) {
+                $Label = $HistoryDirs[$Rel]
+                $Dir = Join-Path -Path $ProfilePath -ChildPath $Rel
+                if (-not (Test-Path -LiteralPath $Dir -PathType Container)) {
+                    continue
+                }
+
+                # _history.txt also catches the VS Code terminal history file
+                foreach ($File in Get-ChildItem -LiteralPath $Dir -Filter "*_history.txt" -File -Force -ErrorAction SilentlyContinue) {
+                    $RelCopy = "PowerShell_History\$UserLeaf\$Label\$( $File.Name )"
+                    $Dest    = Join-Path -Path $UserFolder -ChildPath $RelCopy
+
+                    $R = Copy-TriageFile -Source $File.FullName -Destination $Dest
+                    $Rows.Add([pscustomobject]@{
+                        User              = $UserLeaf
+                        Edition           = $Label
+                        Source            = $File.FullName
+                        CopiedTo          = $RelCopy
+                        SizeBytes         = $R.SizeBytes
+                        SourceModifiedUtc = $R.SourceModifiedUtc
+                        Method            = $R.Method
+                        Status            = $R.Status
+                        Detail            = $R.Detail
+                    })
+
+                    if ($R.Status -eq "OK") {
+                        # Combined text file, built from the copy and streamed line by line
+                        if (-not (Test-Path -LiteralPath $OutputFile)) {
+                            Set-Content -LiteralPath $OutputFile -Value "PowerShell console history, one section per history file." -Encoding UTF8
+                        }
+                        Add-Content -LiteralPath $OutputFile -Value "`r`n===== $UserLeaf | $Label | $( $File.Name ) =====" -Encoding UTF8
+                        Get-Content -LiteralPath $Dest | Add-Content -LiteralPath $OutputFile -Encoding UTF8
+                    }
+                    else {
+                        Show-Message -Message "Could not copy [ $( $File.FullName ) ] => $( $R.Detail )" -Level ERROR -AddToLog
+                    }
+                }
             }
         }
+
+        if (-not (Test-Path -LiteralPath $OutputFile)) {
+            Set-Content -LiteralPath $OutputFile -Value "No PowerShell history files were found." -Encoding UTF8
+        }
+        Write-OutputToCsv -Data $Rows -OutputFile (Join-Path -Path $UserFolder -ChildPath "powershell_history_manifest.csv")
+    }
+
+    function Get-TerminalSessions {
+        param(
+            [string]$OutputFile = "$UserFolder\terminal_sessions.txt"
+        )
+        $Command = { & (Get-TriageBinary "qwinsta") 2>&1 | ForEach-Object { "$_" } }
+        $Data = &($Command)
+        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
     # ----------------------------------
@@ -116,10 +173,14 @@ function Get-TriageUserData {
         @{
             Action  = { Get-PowershellConsoleHistoryAllUsers }
             Message = "Getting PowerShell History (All Users)..."
-            Files   = "powershell_history_all_users.txt"
+            Files   = "powershell_history_all_users.txt", "powershell_history_manifest.csv"
+        }
+        @{
+            Action  = { Get-TerminalSessions }
+            Message = "Getting terminal sessions..."
+            Files   = "terminal_sessions.txt"
         }
     )
 
     Invoke-TriageTaskList -Tasks $Tasks -Folder $UserFolder
-
 }

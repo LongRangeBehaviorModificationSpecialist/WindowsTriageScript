@@ -36,8 +36,7 @@ function Invoke-EDD {
 
             $Stopwatch.Stop()
 
-            # Read the contents of the EDD text file and show the results
-            # on the screen
+            # Read the contents of the EDD text file and show the results on the screen
             $EddResults = (Get-Content -Path $EddResultsFilePath -Force) -join "`r`n"
 
             # Guard against an empty result file
@@ -47,14 +46,16 @@ function Invoke-EDD {
 
             Write-LogMessage -Message $EddResults
 
-            # Show-Message -Message "Encrypted Disk Detector was run successfully on computer [ $( $ComputerName ) ]" -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
-            Show-Message -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
+            # Show-Message -Message "Encrypted Disk Detector was run successfully on computer [ $( $ComputerName ) ]" -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
+            Show-Message -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
         }
         catch {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
     end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
+        }
     }
 }

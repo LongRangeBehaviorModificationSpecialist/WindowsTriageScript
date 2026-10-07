@@ -36,30 +36,31 @@ function Get-TriageProcessData {
         ($ProcessList | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput -Encoding UTF8
     }
 
-    function Get-SvcHostsAndProcess {
+    function Get-AllServices {
         param(
-            [string]$OutputFile = "$ProcessFolder\svc_host_and_processes.txt"
+            [string]$OutputFile = "$ProcessFolder\all_services.csv"
         )
-        $Command =  { Get-CimInstance -ClassName Win32_Process |
-                        Where-Object { $_.name -eq "svchost.exe" } |
-                        Select-Object ProcessId |
-                        ForEach-Object { $P = $_.ProcessID; Get-CimInstance -ClassName Win32_Service |
-                        Where-Object { $_.processId -eq $P } |
-                        Select-Object ProcessID, Name, DisplayName, State, ServiceType, StartMode, PathName, Status } }
-        $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-    }
-
-    function Get-RunningServices {
-        param(
-            [string]$OutputFile    = "$ProcessFolder\running_services.txt",
-            [string]$CsvOutputFile = "$ProcessFolder\running_services.csv"
-        )
-        $Command = { Get-CimInstance -ClassName Win32_Service | Where-Object State -eq "Running" | Select-Object -Property * | Sort-Object -Property Name }
-        $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
-        Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
+        $Data = Get-CimInstance -ClassName Win32_Service | ForEach-Object {
+            $Dll = $null
+            $Params = "HKLM:\SYSTEM\CurrentControlSet\Services\$( $_.Name )\Parameters"
+            if (Test-Path -LiteralPath $Params) {
+                $Dll = (Get-ItemProperty -LiteralPath $Params -ErrorAction SilentlyContinue).ServiceDll
+            }
+            [pscustomobject]@{
+                Name             = $_.Name
+                DisplayName      = $_.DisplayName
+                State            = $_.State
+                StartMode        = $_.StartMode
+                DelayedAutoStart = $_.DelayedAutoStart
+                StartName        = $_.StartName
+                ServiceType      = $_.ServiceType
+                ProcessId        = $_.ProcessId
+                PathName         = $_.PathName
+                ServiceDll       = $Dll
+                Description      = $_.Description
+            }
+        }
+        Write-OutputToCsv -Data ($Data | Sort-Object Name) -OutputFile $OutputFile
     }
 
     function Get-RunningDriverInfo {
@@ -93,14 +94,9 @@ function Get-TriageProcessData {
             Files   = "running_processes.txt", "running_processes.csv", "unique_process_hashes.csv", "process_list.csv"
         }
         @{
-            Action  = { Get-SvcHostsAndProcess }
-            Message = "Getting SVCHost & Associated Process..."
-            Files   = "svc_host_and_processes.txt"
-        }
-        @{
-            Action  = { Get-RunningServices }
-            Message = "Getting Running Services..."
-            Files   = "running_services.txt", "running_services.csv"
+            Action = { Get-AllServices }
+            Message = "Getting All Services..."
+            Files = "all_services.csv"
         }
         @{
             Action  = { Get-RunningDriverInfo }

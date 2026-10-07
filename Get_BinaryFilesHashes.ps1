@@ -41,7 +41,7 @@ function Get-BinaryFilesHashes {
     $Manifest | ConvertTo-Json -Depth 5 |
         Set-Content -LiteralPath (Join-Path -Path $Root -ChildPath "__hashes.json") -Encoding UTF8
 
-    Write-Host "Function run succesfully..." -ForegroundColor Green
+    Write-Host "`nFunction run succesfully. The `"__hashes.json`" file has been saved in the .\bin\ directory" -ForegroundColor Green
 }
 
 Get-BinaryFilesHashes

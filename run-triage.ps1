@@ -2,10 +2,15 @@
 .SYNOPSIS
     Launcher for the VECTOR Windows triage suite.
 .DESCRIPTION
-    Interactive by default: asks every question up front, then collects with no
+    Interactive by default: asks every question up front, then collects data with no
     further prompts.
+
     With `-Unattended` (or when no console is available) nothing is ever
-    prompted; supply `-Operator` and `-CaseNumber` plus any collection switches wanted.
+    prompted; supply `-Operator` and `-CaseNumber` plus any desired collection options.
+
+    Can launch the application by using the `.\run-triage.cmd` command and passing the
+    parameters as normal.  This will ensure that the script is run with the `-NoProfile`
+    option.
 .PARAMETER Modules
     Any of:
         001_Device,
@@ -22,12 +27,13 @@
 .EXAMPLE
     .\run-triage.ps1
 .EXAMPLE
-    .\run-triage.ps1 -Unattended -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -CaptureRam -CreateArchive
+    .\run-triage.ps1 -Unattended -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -CaptureRam -CreateArchive -Modules ("006_Prefetch", "010_Internet")
+.EXAMPLE
+    .\run-triage.cmd -GUI
 .NOTES
     Exit codes: 0 = completed,
                 1 = completed with logged errors,
-                2 = could not start (not admin, bad parameters, module load
-                failed),
+                2 = could not start (not admin, bad parameters, module load failed),
                 3 = unexpected fatal error.
 
     Last Updated: 06-Oct-2026
@@ -66,8 +72,7 @@ begin {
     }
 
     # Validate parameters
-    # Under `-File`, a comma list can arrive as ONE string, so split
-    # it ourselves.
+    # Under `-File`, a comma list can arrive as ONE string, so split it ourselves.
     $Modules = if ($Modules) {
         @($Modules -split "[,;\s]+" | Where-Object { $_ })
     }
@@ -122,8 +127,12 @@ begin {
     }
     else {
         $Missing = @()
-        if (-not $Operator)   { $Missing += "-Operator" }
-        if (-not $CaseNumber) { $Missing += "-CaseNumber" }
+        if (-not $Operator) {
+            $Missing += "-Operator"
+        }
+        if (-not $CaseNumber) {
+            $Missing += "-CaseNumber"
+        }
         if ($Missing) {
             Show-Message -Message "Unattended run requires => $( $Missing -join ', ' )" -Level ERROR
             exit 2
@@ -146,7 +155,9 @@ process {
     try {
         if ($Gui) {
             $Result = Get-Gui -OutputRoot $OutputRoot
-            if (-not $Result) { exit 0 }
+            if (-not $Result) {
+                exit 0
+            }
         }
         else {
 
@@ -154,7 +165,7 @@ process {
             Write-LaunchContext
             Disable-PSReadLineHistory
 
-            Show-Message -Message "Results folder => [ $global:ResultsFolder ]" -Level INFO -AddToLog -MessageColor Green
+            Show-Message -Message "Results folder => [ $global:ResultsFolder ]" -Level INFO -AddToLog
             $null = Invoke-DfirTriageScan -ResultsFolder $global:ResultsFolder @Options
             $Result = $global:TriageResult
         }
@@ -163,28 +174,10 @@ process {
         Show-Message -Message "FATAL ERROR => $( $_.Exception.Message )" -Level ERROR -AddToLog
         exit 3
     }
-    if (-not $Result) { exit 3 }
+    if (-not $Result) {
+        exit 3
+    }
     exit $Result.ExitCode
 }
-
-
-# Structure
-
-#TODO -- Event logs. Export native .evtx with wevtutil epl instead of Get-WinEvent | Select * | Sort | CSV, which loads the whole Security log into RAM and loses fidelity. Add WMI-Activity, BITS-Client, WinRM, CodeIntegrity and Firewall logs.
-
-#TODO -- Persistence.  Add WMI event subscriptions (root\subscription), IFEO, all services (not just running ones), startup folders and BITS jobs. Get-IeExtensions and Temporary Internet Files are rarely useful now.
-
-#TODO -- `Get-WindowsUpdateLog` writes to the Desktop and pulls symbols over the network. Copy the raw ETLs instead.
-
-#TODO -- `dism /online` starts TrustedInstaller and writes logs.
-
-#  Collection gaps and quality
-
-#TODO -- Raw artifacts. You have listings and text dumps but few originals. Add raw copies of SYSTEM/SOFTWARE/SAM/SECURITY/Amcache.hve, each user's NTUSER.DAT and UsrClass.dat, the .pf files (you only export their metadata), SRUM, $MFT/$UsnJrnl, LNK and jump lists, and browser DBs with WAL files.
-
-
-#TODO -- Volatile extras. ARP, routes, qwinsta, Get-SmbSession/Get-SmbOpenFile, Defender detections and quarantine. Firefox is missing, and the browser SQL hardcodes "GMT+3 IL" columns and has a %H:%M:S typo. Stay in UTC.
-
-# Manifest and README.
 
 #TODO -- Tooling. Add PSScriptAnalyzer and a few Pester tests with mocked collectors. Either would have caught most of the table above.

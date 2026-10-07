@@ -33,7 +33,7 @@ function Get-TriageEncryptionData {
                         # The password goes to the output file ONLY
                         Add-Content -LiteralPath $KeyFile -Encoding UTF8 -Value "Drive $DriveLetter => ProtectorId => $( $K.KeyProtectorId ) => RecoveryPassword => $( $K.RecoveryPassword )"
                         # Console and log get the protector ID, which is not secret
-                        Show-Message -Message "Drive $DriveLetter => recovery password saved to => $( Split-Path $KeyFile -Leaf ) (protector ID $( $K.KeyProtectorId ))" -Level INFO -AddToLog
+                        Show-Message -Message "Drive $DriveLetter => recovery password saved to => $( Split-Path -Path $KeyFile -Leaf ) (protector ID $( $K.KeyProtectorId ))" -Level INFO -AddToLog
                     }
 
                     $Data1 = "Drive $DriveLetter => Recovery Key => $( $RecoveryKey.RecoveryPassword )"

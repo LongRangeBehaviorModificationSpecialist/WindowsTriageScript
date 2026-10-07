@@ -39,6 +39,20 @@ function Get-TriageFirewallData {
         }
     }
 
+    function Get-DefenderDetections {
+        $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
+        $Det = Get-MpThreatDetection -ErrorAction SilentlyContinue | Select-Object -Property *, @{ N = "ResourceList"; E = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
+
+        $Thr = Get-MpThreat -ErrorAction SilentlyContinue | Select-Object -Property *, @{ N = "ResourceList"; E = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
+
+        Write-OutputToCsv -Data $Det -OutputFile "$FirewallFolder\defender_threat_detections.csv"
+        Write-OutputToCsv -Data $Thr -OutputFile "$FirewallFolder\defender_threats.csv"
+
+        $Status = Get-MpComputerStatus -ErrorAction SilentlyContinue | Out-String -Width 4096
+
+        Write-OutputToFile -Command { Get-MpComputerStatus } -Data $Status -OutputFile "$FirewallFolder\defender_computer_status.txt"
+    }
+
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
@@ -58,6 +72,11 @@ function Get-TriageFirewallData {
             Action  = { Copy-DefenderLogs }
             Message = "Copying Windows Defender Log Files..."
             Files   = "defender_log_files.txt"
+        }
+        @{
+            Action  = { Get-DefenderDetections }
+            Message = "Listing Windows Defender Detections..."
+            Files   = "defender_threat_detections.csv", "defender_threats.csv", "defender_computer_status.txt"
         }
     )
 

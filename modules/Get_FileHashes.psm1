@@ -53,7 +53,7 @@ function Get-FileHashes {
             $LogsDir    = Join-Path -Path $Root -ChildPath "Logs"
             $HashFolder = Join-Path -Path $Root -ChildPath "Hash_Results"
             $null       = New-Item -ItemType Directory -Path $HashFolder -Force
-            $OutFile    = Join-Path -Path $HashFolder -ChildPath "$( Split-Path $Root -Leaf )_hash_values.csv"
+            $OutFile    = Join-Path -Path $HashFolder -ChildPath "$( Split-Path -Path $Root -Leaf )_hash_values.csv"
 
             if ($IncludeMd5) {
                 try { [System.Security.Cryptography.MD5]::Create().Dispose() }
@@ -71,7 +71,9 @@ function Get-FileHashes {
             Show-Message -Message "Hashing $( $Files.Count ) files (log files are hashed when the log is closed)..." -Level INFO -AddToLog
 
             $Rows = foreach ($File in $Files) {
-                $Sha = $null; $Md5 = $null; $Err = ""
+                $Sha = $null
+                $Md5 = $null
+                $Err = ""
                 try {
                     $H   = Get-StreamHash -LiteralPath $File.FullName -IncludeMd5:$IncludeMd5
                     $Sha = $H.SHA256
@@ -95,14 +97,16 @@ function Get-FileHashes {
             }
 
             Write-OutputToCsv -Data $Rows -OutputFile $OutFile
-            Show-Message -Message "Hashed $( $Files.Count ) files" -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level SUCCESS -AddToLog
+            Show-Message -Message "Hashed $( $Files.Count ) files" -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
         }
         catch {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
     end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
+        }
     }
 }
 

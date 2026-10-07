@@ -65,6 +65,7 @@
         "008_Firewall.psm1",
         "009_Encryption.psm1",
         "010_Internet.psm1",
+        "011_RawArtifacts.psm1",
         "Get_CaseArchive.psm1",
         "Get_ComputerDetails.psm1",
         "Get_ComputerRam.psm1",
@@ -101,6 +102,7 @@
         "Get-TriageNetworkData",
         "Get-TriagePrefetchData",
         "Get-TriageProcessData",
+        "Get-TriageRawArtifactsData",
         "Get-TriageSystemData",
         "Get-TriageUserData",
         "Initialize-TriageSystemTools",
@@ -122,7 +124,11 @@
         "Read-Required",
         "Show-TriageBanner",
         "Write-CaseInfo",
-        "Invoke-RegistryCommand"
+        "Invoke-RegistryCommand",
+        "Copy-TriageFile",
+        "Copy-TriageRawFile",
+        "Save-TriageRegistryHive",
+        "Copy-TriageFolderBackup"
     )
 
     # Kept clean to maximize triage stability and performance
@@ -132,8 +138,7 @@
     DscResourcesToExport = @()
     ModuleList = @()
 
-    # Empty during development to prevent spelling mismatches or missing comma
-    # errors
+    # Empty during development to prevent spelling mismatches or missing comma errors
     FileList = @()
 
     # Private data to pass to the module specified in RootModule/

@@ -16,11 +16,11 @@ function Get-CaseArchive {
             Add-Type -AssemblyName System.IO.Compression.FileSystem
 
             $Root = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
-            $Name = Split-Path $Root -Leaf
-            $ZipPath = Join-Path -Path (Split-Path $Root -Parent) -ChildPath "$Name.zip"
+            $Name = Split-Path -Path $Root -Leaf
+            $ZipPath = Join-Path -Path (Split-Path -Path $Root -Parent) -ChildPath "$Name.zip"
 
             if (Test-Path -LiteralPath $ZipPath) {
-                throw "Archive already exists => $ZipPath"
+                throw "Archive already exists [ $ZipPath ]"
             }
 
             Show-Message -Message "Creating case archive => $Name.zip; excluding: [ $( $ExcludeFolders -join ', ' ) ]" -Level INFO
@@ -40,10 +40,11 @@ function Get-CaseArchive {
                     $Added++
                 }
                 catch {
-                    Show-Message -Message "Not added to archive => $Rel => $( $_.Exception.Message )" -Level ERROR
+                    Show-Message -Message "Not added to archive [ $Rel ] => $( $_.Exception.Message )" -Level ERROR
                 }
             }
-            $Zip.Dispose(); $Zip = $null
+            $Zip.Dispose()
+            $Zip = $null
 
             # Sanity check => re-open and count entries
             $Check = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
@@ -60,13 +61,13 @@ function Get-CaseArchive {
             # Hash the zip and write a sidecar file next to it (outside of
             # the archive)
             $Sha = (Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash
-            "$Sha *$( Split-Path $ZipPath -Leaf )" | Set-Content -LiteralPath "$ZipPath.sha256" -Encoding ASCII
+            "$Sha *$( Split-Path -Path $ZipPath -Leaf )" | Set-Content -LiteralPath "$ZipPath.sha256" -Encoding ASCII
 
             Show-Message -Message "Archive complete => $Added files in $( [int]$Stopwatch.Elapsed.TotalSeconds )s." -Level INFO
 
             [pscustomobject]@{
-                ZipPath = $ZipPath;
-                Sha256 = $Sha;
+                ZipPath  = $ZipPath;
+                Sha256   = $Sha;
                 Excluded = $ExcludeFolders
             }
         }
@@ -74,10 +75,14 @@ function Get-CaseArchive {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR
         }
         finally {
-            if ($Zip) { $Zip.Dispose() }
+            if ($Zip) {
+                $Zip.Dispose()
+            }
         }
     }
     end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+        if ($Stopwatch.IsRunning) {
+            $Stopwatch.Stop()
+        }
     }
 }

@@ -47,9 +47,13 @@ function Get-TriageNetworkData {
             $F = ($_.Line -split "\s+") | Where-Object { $_ }  # Proto, Local, Remote, State, PID
             $P = $Procs[[int]$F[4]]
             [pscustomobject]@{
-                Local = $F[1]; Remote = $F[2]; PID = $F[4]
-                ProcessName = $P.Name; Path = $P.ExecutablePath
-                CommandLine = $P.CommandLine; Created = $P.CreationDate
+                Local       = $F[1]
+                Remote      = $F[2]
+                PID         = $F[4]
+                ProcessName = $P.Name
+                Path        = $P.ExecutablePath
+                CommandLine = $P.CommandLine
+                Created     = $P.CreationDate
             }
         }
         Write-OutputToCsv -Data $Rows -OutputFile $OutputFile
@@ -109,6 +113,39 @@ function Get-TriageNetworkData {
         Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
     }
 
+function Get-ArpCache {
+        param(
+            [string]$OutputFile = "$NetworkFolder\arp_neighbor_cache.csv"
+        )
+        $Data = Get-NetNeighbor -ErrorAction SilentlyContinue | Select-Object InterfaceAlias, InterfaceIndex, AddressFamily, IPAddress, LinkLayerAddress, State
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+    }
+
+    function Get-RoutingTable {
+        param(
+            [string]$OutputFile = "$NetworkFolder\routing_table.csv"
+        )
+        $Data = Get-NetRoute -ErrorAction SilentlyContinue | Select-Object InterfaceAlias, InterfaceIndex, AddressFamily, DestinationPrefix, NextHop, RouteMetric, Protocol, Store
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+    }
+
+    function Get-SmbActivity {
+        $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
+        if ((Get-Service -Name LanmanServer -ErrorAction SilentlyContinue).Status -eq "Running") {
+            $Sessions = Get-SmbSession  -ErrorAction SilentlyContinue | Select-Object -Property * -ExcludeProperty $Skip
+            $Opens    = Get-SmbOpenFile -ErrorAction SilentlyContinue | Select-Object -Property * -ExcludeProperty $Skip
+        }
+        else {
+            $Sessions = $Opens = [pscustomobject]@{
+                Note = "Server service (LanmanServer) not running; no inbound SMB sessions."
+            }
+        }
+        Write-OutputToCsv -Data $Sessions -OutputFile "$NetworkFolder\smb_sessions.csv"
+        Write-OutputToCsv -Data $Opens -OutputFile "$NetworkFolder\smb_open_files.csv"
+        Write-OutputToCsv -Data (Get-SmbConnection -ErrorAction SilentlyContinue | Select-Object -Property * -ExcludeProperty $Skip) -OutputFile "$NetworkFolder\smb_client_connections.csv"
+    }
+
+
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
@@ -163,6 +200,21 @@ function Get-TriageNetworkData {
             Action  = { Get-SmbShareData }
             Message = "Parsing SMB Shares..."
             Files   = "smb_shares.txt"
+        }
+        @{
+            Action = { Get-ArpCache }
+            Message = "Getting ARP/neighbor cache..."
+            Files = "arp_neighbor_cache.csv"
+        }
+        @{
+            Action = { Get-RoutingTable }
+            Message = "Getting routing table..."
+            Files = "routing_table.csv"
+        }
+        @{
+            Action = { Get-SmbActivity }
+            Message = "Getting SMB sessions and open files..."
+            Files = "smb_sessions.csv", "smb_open_files.csv", "smb_client_connections.csv"
         }
     )
 

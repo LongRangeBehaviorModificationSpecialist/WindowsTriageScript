@@ -115,13 +115,14 @@ function Get-TriageDeviceData {
         )
 
         foreach($Key in $RunKeys) {
-            "From : $Key`n" | Out-File -FilePath $OutputFile -Append -Encoding UTF8
+            "`n`nFrom : $Key`n" | Out-File -FilePath $OutputFile -Append -Encoding UTF8
             $KeyData = Invoke-RegistryCommand -Command { Get-ItemProperty $Key | Select-Object * -ExcludeProperty PS* }
             if ($KeyData) {
                 $KeyData | Out-File -FilePath $OutputFile -Append -Encoding UTF8
             }
             else {
-                "No data found for registry key => $Key" | Out-File -FilePath $OutputFile -Append -Encoding UTF8
+                $Msg = "No data found for registry key [ $( $Key ) ]"
+                $Key | Out-File -FilePath $OutputFile -Append -Encoding UTF8
             }
         }
     }
@@ -140,7 +141,6 @@ function Get-TriageDeviceData {
     # ----------------------------------
 
     $Tasks = @(
-
         @{
             Action  = { Get-MiscDeviceData }
             Message = "Gathering Overall Device Information..."
