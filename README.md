@@ -36,23 +36,21 @@ A PowerShell toolkit for fast, live triage of a Windows computer. It is run from
 - Browser history, searches and downloads for Chrome, Edge, Brave, Vivaldi, and Firefox (all profiles).
 - Three ways to run it: interactive console, fully unattended (for EDR or remote shells), and a GUI.
 - Meaningful exit codes for automation.
-- Trusted-binary checks: tools in `/bin/` are verified against a SHA-256 manifest and refused if they do not match.
-- UTC timestamps in a single log file
-- A `case_info.json` record of how the run was started
-- SHA-256 (and MD5) hashes of all evidence
+- Trusted-binary checks : tools in `/bin/` are verified against a SHA-256 manifest and refused if they do not match.
+- UTC timestamps in a single log file.
+- A `case_info.json` record of how the run was started.
+- SHA-256 (and MD5) hashes of all evidence.
 - Optional zip archive with its own hash.
 
 ---
 
 ## 2. Requirements
 
-| Item             | Requirement                                                                                                                                         |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Operating system | Windows 10 / 11 or Windows Server                                                                                                                   |
-| PowerShell       | Windows PowerShell 5.1 (the tested platform)                                                                                                        |
-| Privileges       | Local Administrator (the tool exits with code 2 otherwise)                                                                                          |
-| Collection drive | NTFS or exFAT. Do not use FAT32 (4 GB file limit breaks RAM images). When capturing RAM, free space should exceed installed RAM by about 10 percent |
-| Binaries         | The files listed in[Setup](#4-setup), placed in `/bin/`                                                                                            |
+1. Operating System : Windows 10 / 11 or Windows Server.
+2. PowerShell : Windows PowerShell 5.1 (the tested platform).
+3. Privileges : Local Administrator (the tool exits with code 2 otherwise).
+4. Collection drive : NTFS or exFAT. Do not use FAT32 (4 GB file limit breaks RAM images). When capturing RAM, free space should exceed installed RAM by about 10 percent.
+5. Binaries : The files listed in[Setup](#4-setup), placed in the `/bin/` directory.
 
 ---
 
@@ -116,7 +114,19 @@ Download these directly from their publishers and place them in `/bin/` at the r
 
 To avoid running executables from the computer being examined, copy these from a **known-clean machine of the same Windows build and architecture** into the `/bin/` directory:
 
-`ipconfig.exe`, `NETSTAT.EXE`, `systeminfo.exe`, `whoami.exe`, `net.exe` (and `net1.exe`), `netsh.exe`, `auditpol.exe`, `driverquery.exe`, `openfiles.exe`, `reg.exe`, `wevtutil.exe`, `robocopy.exe`, and `qwinsta.exe`.
+- `auditpol.exe`
+- `driverquery.exe`
+- `ipconfig.exe`
+- `net.exe` (and `net1.exe`)
+- `netsh.exe`
+- `NETSTAT.EXE`
+- `openfiles.exe`
+- `qwinsta.exe`
+- `reg.exe`
+- `robocopy.exe`
+- `systeminfo.exe`
+- `wevtutil.exe`
+- `whoami.exe`
 
 Also copy each tool's resource file from `/en-US/` (for example `/en-US/netstat.exe.mui`) if it has one. The list is defined under `Binaries` in `/config/TriageConfig.psd1`.
 
@@ -132,67 +142,55 @@ Record the SHA-256 of `__hashes.json` in your SOP so you can detect tampering wi
 
 ## 5. Running the tool
 
-### 5.1 Launcher (recommended)
+### 5.1 Command Line (recommended)
 
 Right-click `run-triage.cmd` and choose **Run as administrator**.
 
 The launcher then:
 
-1. Checks for administrator rights,
-2. Starts PowerShell with `-NoLogo -NoProfile -ExecutionPolicy Bypass` (the target's profile scripts are not run, and the launch command is not recorded in PowerShell history),
+1. Checks for administrator rights.
+2. Starts PowerShell with `-NoLogo -NoProfile -ExecutionPolicy Bypass` (the target's profile scripts are not run, and the launch command is not recorded in PowerShell history).
 3. Passes any arguments through to `run-triage.ps1`.
+
+### 5.2 Parameters
+
+1. `-Gui`: Show the graphical interface.
+2. `-Operator`: Examiner name recorded in the log and`case_info.json`.
+3. `-Agency`: Agency name (optional).
+4. `-CaseNumber`: Case number recorded in the log and`case_info.json`.
+5. `-Modules`: One or more of the following: `001_Device`, `002_Users`, `003_Network`, `004_Process`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet` and `011_RawArtufacts`.  Default:  all.
+6. `-RunEdd`: Run Encrypted Disk Detector.
+7. `-CaptureProcesses`: Run Magnet Process Capture.
+8. `-CaptureRam`: Run Magnet RAM Capture.
+9. `-CreateArchive`: Create a zip of the case folder when finished.
+10. `-OutputRoot`: Folder in which the case folder is created.  Default:  the toolkit folder.
+11. The following parameters have aliases to keep the length of the command line as short as possible:.
+
+| Parameter             | Alias     |
+| --------------------- | --------- |
+| `-Operator`         | `-Op`   |
+| `-Agency`           | `-A`    |
+| `-CaseNumber`       | `-CN`   |
+| `-Modules`          | `-Mods` |
+| `-RunEdd`           | `-Edd`  |
+| `-CaptureProcesses` | `-Proc` |
+| `-CaptureRam`       | `-Ram`  |
+| `-CreateArchive`    | `-Zip`  |
+
+5. Command line examples:
 
 ```bat
 run-triage.cmd
 run-triage.cmd -Gui
-run-triage.cmd -Unattended -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -CaptureRam -CreateArchive -RunEdd -Modules [<Modules>]
+run-triage.cmd -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -RunEdd N -CaptureRam N -CreateArchive N -RunEdd N -Modules [<Modules>]
+
+# Using the parameter aliases:
+run-triage.cmd -Op "Operator" -A "Agency" -CN 26-00001 -Edd N -Proc N -Ram N -Zip N -Mods "001","005"
 ```
 
-### 5.2 Interactive console
+Run `Get-Help .\run-triage.ps1 -full` for the built-in help.
 
-From an elevated PowerShell prompt:
-
-```powershell
-.\run-triage.ps1
-```
-
-All questions are asked up front (operator, agency, case number, and which optional captures to run). After you confirm, collection runs with no further prompts. Any value supplied as a parameter is not asked again.
-
-### 5.3 Unattended
-
-For EDR, remote shells, or scheduled use, add `-Unattended`. Nothing is ever prompted. `-Operator` and `-CaseNumber` are required, and optional captures run only if their switch is given.
-
-```powershell
-.\run-triage.ps1 -Unattended -Operator "J. Smith" -CaseNumber 2026-0142 -Modules 001_Device,003_Network -OutputRoot D:\Cases
-```
-
-The tool also behaves as unattended when no console is available (redirected input or `-NonInteractive`).
-
-### 5.4 GUI
-
-```powershell
-.\run-triage.ps1 -Gui
-```
-
-Enter the operator, agency, and case number, tick the modules and options, and press **Start Triage**. Collection runs in a background runspace so the window stays responsive, and the log is shown live. The window cannot be closed while a run is in progress. Options that are not implemented yet are refused with a message instead of being ignored.
-
-### 5.5 Parameters
-
-1. `-Gui` -- Show the graphical interface
-2. `-Unattended` -- Never prompt; requires`-Operator` and `-CaseNumber`
-3. `-Operator` -- Examiner name recorded in the log and`case_info.json`
-4. `-Agency` -- Agency name (optional)
-5. `-CaseNumber` -- Case number recorded in the log and`case_info.json`
-6. `-Modules` -- One or more of :  `001_Device`, `002_Users`, `003_Network`, `004_Process`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet` and `011_RawArtufacts`.  Default :  all
-7. `-RunEdd` -- Run Encrypted Disk Detector
-8. `-CaptureProcesses` -- Run Magnet Process Capture
-9. `-CaptureRam` -- Run Magnet RAM Capture
-10. `-CreateArchive` -- Create a zip of the case folder when finished
-11. `-OutputRoot` -- Folder in which the case folder is created.  Default :  the toolkit folder
-
-Run `Get-Help .\run-triage.ps1 -Full` for the built-in help.
-
-### 5.6 Exit codes
+### 5.3 Exit codes
 
 | Code | Meaning                                                                                           |
 | ---- | ------------------------------------------------------------------------------------------------- |
@@ -250,15 +248,16 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 <case folder>/
 |-- case_info.json              How the run was started (operator, case, options, versions)
 |-- 001_Device/                 Contents varies on which modules were selected and which functions ran
-|-- 002_Users.psm1/             "
-|-- 003_Network.psm1/           "
-|-- 004_Processes.psm1/         "
-|-- 005_System.psm1/            "
-|-- 006_Prefetch.psm1/          "
-|-- 007_EventLogs.psm1/         "
-|-- 008_Firewall.psm1/          "
-|-- 009_Encryption.psm/         "
+|-- 002_Users/                  "
+|-- 003_Network/                "
+|-- 004_Processes/              "
+|-- 005_System/                 "
+|-- 006_Prefetch/               "
+|-- 007_EventLogs/              "
+|-- 008_Firewall/               "
+|-- 009_Encryptio/              "
 |-- 010_Internet/               "
+|-- 011_RawArtifacts/           "
 |-- EDD/                        (if selected)
 |-- Logs/
 |   |-- <name>_Script.log       UTC log of everything the tool did
@@ -281,25 +280,24 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 2. **Case record.**  `case_info.json` stores operator, agency, case number, computer, the account that ran the tool, start time in UTC with the local offset, PowerShell version, the full command line, the options selected, and the SHA-256 of the configuration file used.
 3. **Evidence hashes.**  After collection, every file outside `/Logs/` and `/Hash_Results/` is hashed (SHA-256 and MD5, one read per file) into `/Hash_Results/<name>_hash_values.csv`. Paths are relative to the case folder, so the CSV stays valid after the folder is copied.
 4. **Closing the log.**  The log is then closed, and nothing more is written to it. `final_hashes.csv` records the SHA-256 of every file in `/Logs/` and of the evidence hash CSV.
-5. **Archive.**  With `-CreateArchive`, the case folder is zipped (without `/Ram_Capture/`), re-opened to confirm the entry count, and hashed into `<name>.zip.sha256`.
-6. **Record two values.**  The tool prints the SHA-256 of `final_hashes.csv` and of the zip when it finishes. Write both in your case notes.
-
-To verify later, hash each file listed in the CSV and compare it with the recorded value.
+5. **Archive.**  With `-CreateArchive`, the case folder is zipped (without the `/Ram_Capture/` directory), re-opened to confirm the entry count, and hashed into `<name>.zip.sha256`.
+6. **Record two values.**  The tool prints the SHA-256 of `final_hashes.csv` and of the zip when it finishes. ***Write both in your case notes.***
+   To verify later, hash each file listed in the CSV and compare it with the recorded value.
 
 ---
 
 ## 9. Configuration
 
-Shared settings are in `/config/TriageConfig.psd1` and are read through `Get-TriageConfig`. The file is a PowerShell **data file**: it can contain only literal values (strings, numbers, `$true`, `$false`, `$null`, arrays and hashtables). Variables such as `$PSScriptRoot` or `$env:...` are not allowed and cause the tool to exit with code 2.
+Shared settings are in `/config/TriageConfig.psd1` and are read through `Get-TriageConfig`. The file is a PowerShell **data file**: it can contain only literal values (strings, numbers, `$true`, `$false`, `$null`, arrays and hashtables). Variables such as `$PSScriptRoot` or `$env:...` are not allowed and cause the tool to exit with code `2`.
 
-1. `SchemaVersion` -- Version of the configuration layout.
-2. `Branding` -- Tool name, author, and last-updated date shown in the banner.
-3. `Modules` -- Module names, in run order.
-4. `Binaries` -- Tool name to path (relative to the toolkit root).
-5. `Defaults` -- `ScratchFolder`, `HashIncludeMd5`, `ArchiveExcludeFolders`, `TimestampFormat`.
-6. `ExecutableFileTypes` -- File patterns used by the executable searches.
-7. `EventLogs` -- List of log channel names to export. File names are derived from the channel name.
-8. `Browsers` -- Browser name, type (`Chromium` or `Firefox`) and profile root.
+1. `SchemaVersion`: Version of the configuration layout.
+2. `Branding`: Tool name, author, and last-updated date shown in the banner.
+3. `Modules`: Module names, in run order.
+4. `Binaries`: Tool name to path (relative to the toolkit root).
+5. `Defaults`: `ScratchFolder`, `HashIncludeMd5`, `ArchiveExcludeFolders`, `TimestampFormat`.
+6. `ExecutableFileTypes`: File patterns used by the executable searches.
+7. `EventLogs`: List of log channel names to export. File names are derived from the channel name.
+8. `Browsers`: Browser name, type (`Chromium` or `Firefox`) and profile root.
 
 The loader adds `ToolkitRoot`, the full binary paths, and the SHA-256 of the configuration file itself.
 
@@ -321,7 +319,7 @@ The tool is designed to change as little as possible, but running any program ch
 10. Defender quarantine could contains live malware, in an obfuscated form. Keep it away from other people's machines, and expect antivirus on your workstation to react to it. The `robocopy /B` approach relies on the backup privilege that an elevated administrator token holds. Confirm on a lab VM that the Quarantine folder actually copies.
 11. Reading files can update last-access times on volumes where that tracking is turned on. The manifest records the source's times first, but add it to your footprint notes.
 12. History is copied twice. `010_Internet` copies browser History to query it, and `BrowserDatabases` keeps an untouched copy.
-13. GUI. The new module has no checkbox yet, so GUI runs skip it until you add one in `GuiMain.psm1`. This is also a natural place to wire the unimplemented options (copy registry hives, Prefetch, NTUSER.DAT, SRUDB).
+13. **GUI.** The new module has no checkbox yet, so GUI runs skip it until you add one in `GuiMain.psm1`. This is also a natural place to wire the unimplemented options (copy registry hives, Prefetch, NTUSER.DAT, SRUDB).
 
 ---
 

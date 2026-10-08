@@ -17,13 +17,15 @@ exit /b %ERRORLEVEL%
 
 REM ----- TO TEST APP USING THE PARAMETERS -----
 
-REM powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\run-triage.ps1 -Unattended -Operator test -CaseNumber T1 -Modules 001_Device
+REM powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\run-triage.ps1 -Operator test -CaseNumber T1 -Modules 001_Device
 REM echo %ERRORLEVEL%
 
 REM Expect 0 (or 1, which means a collector logged an error and tells you to read the log). Re-run without -CaseNumber and expect 2. Then run .\run-triage.ps1 interactively and .\run-triage.ps1 -Gui to check the other two paths.
-REM For remote or EDR runs, always pass -Unattended and an explicit -OutputRoot pointing at a local path or share, since the default is the toolkit folder.
 
-REM .\run-triage.ps1 -Operator "M. Sponheimer" -CaseNumber 26-0001 -Agency "VA State Police" -Modules 010_Internet -RunEdd
+REM .\run-triage.ps1 -Operator "Operator" -CaseNumber 26-0001 -Agency "Agency" -Modules 010_Internet -RunEdd
+
+REM .\run-triage.cmd -Op "Operator" -A "Agency" -CN 26-00001 -Edd N -Proc N -Ram N -Zip N -Mods "001","005"
+
 REM To unload the reg hives, use =>
-REM
+
 REM reg unload HKU\TRIAGE_S-1-5-21-2365395819-2293360843-1847361048-1001

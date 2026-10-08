@@ -22,7 +22,7 @@ function Invoke-DfirTriageScan {
         Show-Message -Message "[ $( $MyInvocation.MyCommand.Name ) ] execution started." -Level INFO -AddToLog
     }
     process {
-        Show-IsAdmin
+        # Show-IsAdmin
         Show-Message -Message "Operator: $Operator | Agency: $Agency | Case: $CaseNumber" -Level INFO -AddToLog
 
         Write-CaseInfo -ResultsFolder $ResultsFolder -Operator $Operator -Agency $Agency -CaseNumber $CaseNumber -Selected ([ordered]@{

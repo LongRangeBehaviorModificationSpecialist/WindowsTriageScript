@@ -88,13 +88,8 @@ function Get-TriageSystemData {
             [string]$OutputFile     = "$SystemFolder\scheduled_task_events.txt",
             [string]$InfoOutputFile = "$SystemFolder\scheduled_task_info.txt"
         )
-        $Command1 = { Get-ScheduledTask |
-                Select-Object -Property * |
-                Where-Object { $_.State -ne "Disabled" } |
-                Format-List }
-        $Command2 = { Get-ScheduledTask |
-                Where-Object { $_.State -ne "Disabled" } |
-                Get-ScheduledTaskInfo }
+        $Command1 = { Get-ScheduledTask | Select-Object -Property * | Where-Object { $_.State -ne "Disabled" } | Format-List }
+        $Command2 = { Get-ScheduledTask | Where-Object { $_.State -ne "Disabled" } | Get-ScheduledTaskInfo }
         $Data1 = &$Command1
         $Data2 = &$Command2
         Write-OutputToFile -Command $Command1 -Data $Data1 -OutputFile $OutputFile
@@ -110,36 +105,95 @@ function Get-TriageSystemData {
         Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
-    #TODO -- Check functionality, getting errors when run.
     function Get-InstalledApps {
         param(
-            [string]$InstalledAppsFile = "$SystemFolder\installed_apps_list.csv",
-            [string]$InstalledAppsProps = "$SystemFolder\installed_apps_props.csv",
-            [string]$InstalledAppsWow64 = "$SystemFolder\installed_apps_list_wow64.csv",
-            [string]$InstalledAppsWow64Props = "$SystemFolder\installed_apps_props_wow64.csv"
+            [string]$OutputFile = "$SystemFolder\installed_apps.csv"
         )
 
-        $Props = [ordered]@{
-            "a" = ( { Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" |
-                Select-Object -Property * |
-                ConvertTo-Csv -NoTypeInformation |
-                Out-File -FilePath $InstalledAppsFile })
-            "b" = ( { Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" |
-                Select-Object -Property * |
-                ConvertTo-Csv -NoTypeInformation |
-                Out-File -FilePath $InstalledAppsProps })
-            "c" = ( { Get-ChildItem "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" |
-                Select-Object -Property * |
-                ConvertTo-Csv -NoTypeInformation |
-                Out-File -FilePath $InstalledAppsWow64 })
-            "d" = ( { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" |
-                Select-Object -Property * |
-                ConvertTo-Csv -NoTypeInformation |
-                Out-File -FilePath $InstalledAppsWow64Props })
+        # Fixed column list: Export-Csv takes its columns from the FIRST object,
+        # so every row must have exactly the same shape
+        $Columns = "DisplayName", "DisplayVersion", "Publisher", "InstallDate", "InstallLocation", "InstallSource",
+                "EstimatedSize", "UninstallString", "QuietUninstallString", "ModifyPath", "DisplayIcon",
+                "URLInfoAbout", "HelpLink", "ParentKeyName", "SystemComponent", "WindowsInstaller", "ReleaseType"
+
+        $Locations = [System.Collections.Generic.List[object]]::new()
+        $Locations.Add([pscustomobject]@{
+            Scope = "Machine (64-bit)"
+            User  = ""
+            Sid   = ""
+            Path  = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+        })
+        $Locations.Add([pscustomobject]@{
+            Scope = "Machine (32-bit)"
+            User  = ""
+            Sid   = ""
+            Path  = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+        })
+
+        # Per-user installs, from the hives the hive step mounted (logged on or not)
+        foreach ($H in ($global:TriageUserHives | Where-Object Root)) {
+            $Locations.Add([pscustomobject]@{
+                Scope = "User"
+                User  = $H.UserName
+                Sid   = $H.Sid
+                Path  = "$( $H.Root )\Software\Microsoft\Windows\CurrentVersion\Uninstall"
+            })
+            $Locations.Add([pscustomobject]@{
+                Scope = "User (32-bit)"
+                User  = $H.UserName
+                Sid   = $H.Sid
+                Path  = "$( $H.Root )\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+            })
         }
-        foreach ($Entry in $Props.GetEnumerator()) {
-            $Entry.Value[0]
+
+        $Rows = foreach ($L in $Locations) {
+            if (-not (Test-Path -LiteralPath $L.Path)) { continue }
+
+            foreach ($Key in (Get-ChildItem -LiteralPath $L.Path -ErrorAction SilentlyContinue)) {
+                $P   = Get-ItemProperty -LiteralPath $Key.PSPath -ErrorAction SilentlyContinue
+                $Row = [ordered]@{
+                    Scope = $L.Scope
+                    User = $L.User
+                    Sid = $L.Sid
+                    KeyName = $Key.PSChildName
+                }
+
+                foreach ($C in $Columns) {
+                    $V = $P.$C
+                    $Row[$C] = if ($V -is [array]) {
+                        $V -join "; "
+                    } else {
+                        $V
+                    }
+                }
+
+                # InstallDate is stored as text (yyyyMMdd); keep it as found and add a parsed copy
+                $Parsed = ""
+                if ("$( $P.InstallDate )" -match "^\d{8}$") {
+                    try {
+                        $Parsed = [datetime]::ParseExact("$( $P.InstallDate )", "yyyyMMdd", [System.Globalization.CultureInfo]::InvariantCulture).ToString("yyyy-MM-dd")
+                    }
+                    catch { }
+                }
+                $Row["InstallDateParsed"] = $Parsed
+                $Row["RegistryPath"]      = $Key.Name
+
+                [pscustomobject]$Row
+            }
         }
+
+        # Entries without a DisplayName (patches, components) are kept, because dropping rows from
+        # evidence is a decision for the examiner. They sort to the bottom.
+        $Sorted = @($Rows) | Sort-Object -Property @{ Expression = { [string]::IsNullOrEmpty($_.DisplayName) } }, DisplayName
+        Write-OutputToCsv -Data $Sorted -OutputFile $OutputFile
+    }
+
+    function Get-AppxPackages {
+        param(
+            [string]$OutputFile = "$SystemFolder\appx_packages.csv"
+            )
+        $Data = Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue | Select-Object Name, Version, Publisher, Architecture, PackageFullName, InstallLocation, SignatureKind, IsFramework, NonRemovable, @{ N = "Users"; E = { @($_.PackageUserInformation | ForEach-Object { "$( $_.UserSecurityId.Username ):$( $_.InstallState )" }) -join "; " } }
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
     function Get-VolumeShadowCopies {
@@ -567,11 +621,16 @@ function Get-TriageSystemData {
             Message = "Listing Applied HotFixes..."
             Files   = "hot_fixes.csv"
         }
-        # @{
-        #     Action  =  { Get-InstalledApps }
-        #     Message = "Getting Installed Applications (Default & Wow6432Node)..."
-        #     Files   = "installed_apps_list.csv", "installed_apps_props.csv", "installed_apps_list_wow64.csv", "installed_apps_props_wow64.csv"
-        # }
+        @{
+            Action  =  { Get-InstalledApps }
+            Message = "Getting Installed Applications..."
+            Files   = "installed_apps.csv"
+        }
+        @{
+            Action = { Get-AppxPackages }
+            Message = "Getting AppX packages..."
+            Files = "appx_packages.csv"
+        }
         @{
             Action  = { Get-VolumeShadowCopies }
             Message = "Listing Volume Shadow Copies..."
@@ -741,5 +800,4 @@ function Get-TriageSystemData {
     )
 
     Invoke-TriageTaskList -Tasks $Tasks -Folder $SystemFolder
-    Get-InstalledApps
 }

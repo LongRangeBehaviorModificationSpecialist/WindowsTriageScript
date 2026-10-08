@@ -49,23 +49,23 @@ function Write-OutputToCsv {
     }
 }
 
-function Show-IsAdmin {
-    try {
-        $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+# function Show-IsAdmin {
+#     try {
+#         $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-        if ($IsAdmin) {
-            Show-Message -Message "DFIR Session starting as Administrator..." -Level INFO -AddToLog
-        }
-        else {
-            Show-Message "CRITICAL ACCESS ERROR => This triage tool must be run as Administrator." -Level ERROR
-            exit 2
-        }
-    }
-    catch {
-        $ErrorMsg = "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )"
-        Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
-    }
-}
+#         if ($IsAdmin) {
+#             Show-Message -Message "DFIR Session starting as Administrator..." -Level INFO -AddToLog
+#         }
+#         else {
+#             Show-Message "CRITICAL ACCESS ERROR => This triage tool must be run as Administrator." -Level ERROR
+#             exit 2
+#         }
+#     }
+#     catch {
+#         $ErrorMsg = "Execution failed during $( $MyInvocation.MyCommand.Name ).  Error => $( $_.Exception.Message )"
+#         Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+#     }
+# }
 
 function Show-Message {
     <#
@@ -550,54 +550,6 @@ function Initialize-TriageSystemTools {
     }
 
     Show-Message -Message "Trusted tools => $Verified files verified, $Failed failed. Callable => $( $global:TriageSys.Keys -join ', ' )" -Level INFO -AddToLog
-}
-
-function Test-TriageInteractive {
-    <#
-    .SYNOPSIS
-        False under EDR/remote shells, SYSTEM sessions, redirected stdin, or
-        powershell.exe -NonInteractive
-    #>
-    if (-not [Environment]::UserInteractive) {
-        return $false
-    }
-    if ([Environment]::GetCommandLineArgs() -match "^-NonI") {
-        return $false
-    }
-    try {
-        if ([Console]::IsInputRedirected) { return $false }
-    }
-    catch { }
-    return $true
-}
-
-function Read-YesNo {
-    param(
-        [Parameter(Mandatory)][string]$Prompt,
-        [bool]$Default = $false
-    )
-    $Suffix = if ($Default) { "(Y/n)" } else { "(y/N)" }
-    while ($true) {
-        $Answer = (Read-LogHost -Prompt "$Prompt $Suffix : ").Trim()
-        if ($Answer -eq "") {
-            return $Default
-        }
-        if ($Answer -match "^(y|yes)$") {
-            return $true
-        }
-        if ($Answer -match "^(n|no)$") {
-            return $false
-        }
-        Show-Message -Message "Please enter y or n." -Level WARNING
-    }
-}
-
-function Read-Required {
-    param(
-        [Parameter(Mandatory)][string]$Prompt
-    )
-    do { $Value = (Read-LogHost -Prompt $Prompt).Trim() } while (-not $Value)
-    $Value
 }
 
 function Show-TriageBanner {
