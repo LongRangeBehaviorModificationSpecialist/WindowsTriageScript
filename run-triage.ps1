@@ -6,7 +6,8 @@
     passing the parameters as normal.  This will ensure that the script is run 
     with the `-NoProfile` option.
 .PARAMETER Operator
-    Examiner name (required unless -Gui). Alias: "-Op".
+    Examiner name (required unless -Gui).
+    Alias: "-Op".
 .PARAMETER Agency
     Agency name (optional).
     Alias: "-A".
