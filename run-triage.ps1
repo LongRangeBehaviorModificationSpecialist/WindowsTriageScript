@@ -8,28 +8,37 @@
 .PARAMETER Operator
     Examiner name (required unless -Gui). Alias: "-Op".
 .PARAMETER Agency
-    Agency name (optional). Alias: "-A".
+    Agency name (optional).
+    Alias: "-A".
 .PARAMETER CaseNumber
-    Case number (required unless -Gui). Alias: "-CN".
+    Case number (required unless -Gui).
+    Alias: "-CN".
 .PARAMETER CaseFile
     Optional JSON file holding Operator, Agency and CaseNumber, so they stay off
     the command line.
 .PARAMETER Modules
     A comma-separated list of module names or 3-digit prefixes, e.g.:
     "001","003","010_Internet".
-
-    Alias: "-Mods". Default: "all"
+    Alias: "-Mods".
+    Default: "all"
 .PARAMETER RunEdd
-    Y or N (also Yes/No/True/False/1/0). Alias: "-Edd". Default: "N"
+    Y or N (also Yes/No/True/False/1/0).
+    Alias: "-Edd".
+    Default: "N"
 .PARAMETER CaptureProcesses
-    Y or N (also Yes/No/True/False/1/0). Alias: "-Proc". Default: "N"
+    Y or N (also Yes/No/True/False/1/0).
+    Alias: "-Proc".
+    Default: "N"
 .PARAMETER CaptureRam
-    Y or N (also Yes/No/True/False/1/0). Alias: "-Ram". Default: "N"
+    Y or N (also Yes/No/True/False/1/0). 
+    Alias: "-Ram".
+    Default: "N"
 .PARAMETER CreateArchive
-    Y or N (also Yes/No/True/False/1/0). Alias: "-Zip". Default: "N"
+    Y or N (also Yes/No/True/False/1/0).
+    Alias: "-Zip".
+    Default: "N"
 .PARAMETER OutputRoot
     Folder in which the case folder is created (no trailing backslash).
-
     Default: the toolkit folder.
 .PARAMETER DryRun
     Validate the options, print what would run, and exit without collecting 
@@ -51,10 +60,10 @@
     Exit codes: 0 = completed,
                 1 = completed with logged errors,
                 2 = could not start (not admin, bad parameters, module load 
-                     failed),
+                    failed),
                 3 = unexpected fatal error.
 
-    Last Updated: 06-Oct-2026
+    Last Updated: 10-Oct-2026
 #>
 
 [CmdletBinding()]
