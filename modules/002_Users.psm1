@@ -116,7 +116,7 @@ function Get-TriageUserData {
                     if ($R.Status -eq "OK") {
                         # Combined text file, built from the copy and streamed
                         # line by line
-                        if (-not (Test-Path -LiteralPath $OutputFile)) {
+                        if (-not (Test-Path -LiteralPath $TxtFile)) {
                             Set-Content -LiteralPath $TxtFile -Value "PowerShell console history, one section per history file." -Encoding UTF8
                         }
                         Add-Content -LiteralPath $TxtFile -Value "`r`n===== $UserLeaf | $Label | $( $File.Name ) =====" -Encoding UTF8
