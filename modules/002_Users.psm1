@@ -47,7 +47,7 @@ function Get-TriageUserData {
 
     function Get-Win32LocalLogons {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath win32_local_logons.txt"
+            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "win32_local_logons.txt"
         )
         $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
         $Data = &($Command)
