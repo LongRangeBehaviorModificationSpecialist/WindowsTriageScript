@@ -168,14 +168,14 @@ if ($CaseFile) {
 
 if (-not $Gui) {
     if (-not $Operator) {
-        $Problems.Add('-Operator is required.')
+        $Problems.Add("-Operator is required.")
     }
     if (-not $CaseNumber) {
-        $Problems.Add('-CaseNumber is required.')
+        $Problems.Add("-CaseNumber is required.")
     }
 }
 
-$Flags    = [ordered]@{
+$Flags = [ordered]@{
     RunEdd           = $RunEdd
     CaptureProcesses = $CaptureProcesses
     CaptureRam       = $CaptureRam
@@ -194,7 +194,8 @@ foreach ($Name in $Flags.Keys) {
     }
 }
 
-# Modules: "all", full names, or 3-digit prefixes. The config order decides the run order.
+# Modules: "all", full names, or 3-digit prefixes.
+# The config order decides the run order.
 $Tokens = @(($Modules -join ",") -split "[,;\s]+" | Where-Object { $_ })
 if ($Tokens.Count -eq 0 -or $Tokens -contains "all") {
     $Selected = $AllModules
@@ -225,14 +226,14 @@ if (-not $Gui) {
     Show-TriageBanner
     $Yn = { param($b) if ($b) { "YES" } else { "NO" } }
     Show-Message -Message "---------------------------------------------------------" -NoTime -MessageColor Cyan
-    Show-Message -Message "Operator          : $Operator"                             -NoTime -MessageColor Cyan
-    Show-Message -Message "Agency            : $Agency"                               -NoTime -MessageColor Cyan
-    Show-Message -Message "Case Number       : $CaseNumber"                           -NoTime -MessageColor Cyan
-    Show-Message -Message "Modules           : $( $Selected -join ', ' )"             -NoTime -MessageColor Cyan
-    Show-Message -Message "EDD               : $( & $Yn $Resolved.RunEdd )"           -NoTime -MessageColor Cyan
-    Show-Message -Message "Process Capture   : $( & $Yn $Resolved.CaptureProcesses )" -NoTime -MessageColor Cyan
-    Show-Message -Message "RAM Capture       : $( & $Yn $Resolved.CaptureRam )"       -NoTime -MessageColor Cyan
-    Show-Message -Message "Create Archive    : $( & $Yn $Resolved.CreateArchive )"    -NoTime -MessageColor Cyan
+    Show-Message -Message "Operator: $Operator" -NoTime -MessageColor Cyan
+    Show-Message -Message "Agency: $Agency" -NoTime -MessageColor Cyan
+    Show-Message -Message "Case Number: $CaseNumber" -NoTime -MessageColor Cyan
+    Show-Message -Message "Modules: $( $Selected -join ', ' )" -NoTime -MessageColor Cyan
+    Show-Message -Message "EDD: $( & $Yn $Resolved.RunEdd )" -NoTime -MessageColor Cyan
+    Show-Message -Message "Process Capture: $( & $Yn $Resolved.CaptureProcesses )" -NoTime -MessageColor Cyan
+    Show-Message -Message "RAM Capture: $( & $Yn $Resolved.CaptureRam )" -NoTime -MessageColor Cyan
+    Show-Message -Message "Create Archive: $( & $Yn $Resolved.CreateArchive )" -NoTime -MessageColor Cyan
     Show-Message -Message "---------------------------------------------------------" -NoTime -MessageColor Cyan
 }
 if ($DryRun) {
