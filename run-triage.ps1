@@ -2,23 +2,22 @@
 .SYNOPSIS
     Launcher for the NOVA ICAC VECTOR Windows triage suite.
 .DESCRIPTION
-    Interactive by default: asks every question up front, then collects data with no
-    further prompts.
-
-    Can launch the application by using the `.\run-triage.cmd` command and passing the
-    parameters as normal.  This will ensure that the script is run with the `-NoProfile`
-    option.
+    Can launch the application by using the `.\run-triage.cmd` command and 
+    passing the parameters as normal.  This will ensure that the script is run 
+    with the `-NoProfile` option.
 .PARAMETER Operator
-    Examiner name (required unless -Gui). Alias = "-Op".
+    Examiner name (required unless -Gui). Alias: "-Op".
 .PARAMETER Agency
-    Agency name (optional). Alias = "-A".
+    Agency name (optional). Alias: "-A".
 .PARAMETER CaseNumber
-    Case number (required unless -Gui). Alias = "-CN".
+    Case number (required unless -Gui). Alias: "-CN".
 .PARAMETER CaseFile
     Optional JSON file holding Operator, Agency and CaseNumber, so they stay off
     the command line.
 .PARAMETER Modules
-    A comma-separated list of module names or 3-digit prefixes, e.g. 001,003,010_Internet.
+    A comma-separated list of module names or 3-digit prefixes, e.g.:
+    "001","003","010_Internet".
+
     Alias: "-Mods". Default: "all"
 .PARAMETER RunEdd
     Y or N (also Yes/No/True/False/1/0). Alias: "-Edd". Default: "N"
@@ -29,9 +28,12 @@
 .PARAMETER CreateArchive
     Y or N (also Yes/No/True/False/1/0). Alias: "-Zip". Default: "N"
 .PARAMETER OutputRoot
-    Folder in which the case folder is created (no trailing backslash). Default: the toolkit folder.
+    Folder in which the case folder is created (no trailing backslash).
+
+    Default: the toolkit folder.
 .PARAMETER DryRun
-    Validate the options, print what would run, and exit without collecting anything.
+    Validate the options, print what would run, and exit without collecting 
+    anything.
 .EXAMPLE
     .\run-triage.ps1
 .EXAMPLE
@@ -48,7 +50,8 @@
 .NOTES
     Exit codes: 0 = completed,
                 1 = completed with logged errors,
-                2 = could not start (not admin, bad parameters, module load failed),
+                2 = could not start (not admin, bad parameters, module load 
+                     failed),
                 3 = unexpected fatal error.
 
     Last Updated: 06-Oct-2026
@@ -77,9 +80,15 @@ $ComputerName = $env:COMPUTERNAME
 function ConvertTo-YesNo {
     param([string]$Value)
     switch -Regex ("$Value".Trim()) {
-        '^(y|yes|true|1)$' { return $true }
-        '^(n|no|false|0)$' { return $false }
-        default            { return $null }  # For values that are not understood
+        "^(y|yes|true|1)$" {
+            return $true
+        }
+        "^(n|no|false|0)$" {
+            return $false
+        }
+        default {
+            return $null  # For values that are not understood
+        }
     }
 }
 
