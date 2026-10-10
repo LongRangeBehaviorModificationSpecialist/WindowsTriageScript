@@ -33,6 +33,7 @@ function Get-InitialSetup {
     $null           = New-Item -ItemType File -Path $global:LogFile -Force
 }
 
+
 function Write-OutputToCsv {
     param(
         [Parameter(Mandatory)][AllowNull()][AllowEmptyCollection()][object]$Data,
@@ -48,6 +49,7 @@ function Write-OutputToCsv {
         }
     }
 }
+
 
 # function Show-IsAdmin {
 #     try {
@@ -66,6 +68,7 @@ function Write-OutputToCsv {
 #         Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
 #     }
 # }
+
 
 function Show-Message {
     <#
@@ -158,6 +161,7 @@ function Show-Message {
     }
 }
 
+
 function Write-LogMessage {
     [CmdletBinding()]
     param(
@@ -171,7 +175,7 @@ function Write-LogMessage {
         }
 
         $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-        " [$Timestamp ] $Message" | Out-File -FilePath $LogFile -Append -Encoding UTF8
+        " [$Timestamp] $Message" | Out-File -FilePath $LogFile -Append -Encoding UTF8
     }
 }
 
@@ -179,7 +183,7 @@ function Write-LogMessage {
 function Write-OutputToFile {
     <#
     .SYNOPSIS
-        Writes the results of the commands to the $OutputFile
+        Writes the results of the commands to the $OutputFile.
     #>
     param(
         [string]$Command,
@@ -209,15 +213,13 @@ function Write-OutputToFile {
     }
 }
 
+
 function Read-LogHost {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory, Position = 0)]
-        [string]$Prompt,
-
+        [Parameter(Mandatory)][string]$Prompt,
         [ConsoleColor]$TimeStampColor = "Cyan",
         [ConsoleColor]$PromptColor = "Gray",
-
         # Pass through standard Read-Host parameters
         [switch]$AsSecureString
     )
@@ -233,6 +235,7 @@ function Read-LogHost {
         Read-Host
     }
 }
+
 
 function Test-IfExists {
     param(
@@ -261,6 +264,7 @@ function Test-IfExists {
     }
 }
 
+
 function Get-PerUserRegistryValue {
     param(
         [Parameter(Mandatory)][string]$SubKey
@@ -285,6 +289,7 @@ function Get-PerUserRegistryValue {
         }
     }
 }
+
 
 function Get-PerUserRegistrySubKey {
     <#
@@ -312,6 +317,7 @@ function Get-PerUserRegistrySubKey {
     }
 }
 
+
 function Export-PerUserRegistry {
     # One-stop wrapper: gather from every user hive and write a CSV
     param(
@@ -329,6 +335,7 @@ function Export-PerUserRegistry {
     }
     Write-OutputToCsv -Data $Data -OutputFile $OutputFile
 }
+
 
 function Mount-TriageUserHives {
     [CmdletBinding()]
@@ -385,7 +392,7 @@ function Mount-TriageUserHives {
             else {
                 $Src = Join-Path -Path $ProfilePath -ChildPath "NTUSER.DAT"
                 if (-not (Test-Path -LiteralPath $Src)) {
-                    $Out.Note = "no NTUSER.DAT"
+                    $Out.Note = "No NTUSER.DAT"
                 }
                 else {
                     # 1) Pristine copy and transaction logs go into the evidence folder
@@ -429,6 +436,7 @@ function Mount-TriageUserHives {
     }
 }
 
+
 function Dismount-TriageUserHives {
     # $Hives is kept so existing calls still work
     param(
@@ -446,8 +454,11 @@ function Dismount-TriageUserHives {
     }
 }
 
+
 function Get-TriageBinary {
-    param([Parameter(Mandatory)][string]$Name)
+    param(
+        [Parameter(Mandatory)][string]$Name
+    )
 
     $Bins = (Get-TriageConfig -Key "Binaries")
     if (-not $Bins.ContainsKey($Name)) {
@@ -460,6 +471,7 @@ function Get-TriageBinary {
     }
     $global:TriageSys[$Key]
 }
+
 
 function Disable-PSReadLineHistory {
     <#
@@ -481,10 +493,14 @@ function Disable-PSReadLineHistory {
     }
 }
 
+
 function Write-LaunchContext {
-    # Records how the tool was started and the state of the operator's history
-    # file, so an examiner can later separate tool-caused changes from the
-    # subject's activity.
+    <#
+    .SYNOPSIS
+        Records how the tool was started and the state of the operator's history
+        file, so an examiner can later separate tool-caused changes from the
+        subject's activity.
+    #>
     $Args    = [Environment]::GetCommandLineArgs()
     $NoProf  = [bool]($Args | Where-Object { $_ -like "-NoProf*" })
     $Hist    = Join-Path -Path $env:APPDATA -ChildPath "Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
@@ -504,6 +520,7 @@ function Write-LaunchContext {
         Show-Message -Message "Operator PSReadLine history file not present at start." -Level INFO -AddToLog
     }
 }
+
 
 function Initialize-TriageSystemTools {
     param(
@@ -556,6 +573,7 @@ function Initialize-TriageSystemTools {
     Show-Message -Message "Trusted tools => $Verified files verified, $Failed failed. Callable => $( $global:TriageSys.Keys -join ', ' )" -Level INFO -AddToLog
 }
 
+
 function Show-TriageBanner {
 
     $Brand = Get-TriageConfig -Key "Branding"
@@ -591,8 +609,11 @@ function Show-TriageBanner {
 }
 
 function Write-CaseInfo {
-    # Stores the operator/case details as data (they were only logged before).
-    # Written before hashing, so it is covered by the hash manifest.
+    <#
+    .SYNOPSIS
+        Stores the operator/case details as data (they were only logged before).
+        Written before hashing, so it is covered by the hash manifest.
+    #>
     param(
         [Parameter(Mandatory)][string]$ResultsFolder,
         [Parameter(Mandatory)][string]$Operator,
@@ -622,6 +643,7 @@ function Write-CaseInfo {
     $Info | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path -Path $ResultsFolder -ChildPath "case_info.json") -Encoding UTF8
 }
 
+
 function Invoke-RegistryCommand {
     <#
     .SYNOPSIS
@@ -650,8 +672,12 @@ function Invoke-RegistryCommand {
     $Data
 }
 
+
 function Clear-TriageHives {
-    # Unloads every TRIAGE_* hive, including ones left behind by a crashed or interrupted run.
+    <#
+    .SYNOPSIS
+        Unloads every TRIAGE_* hive, including ones left behind by a crashed or interrupted run.
+    #>
     [CmdletBinding()]
     param()
 
@@ -677,6 +703,7 @@ function Clear-TriageHives {
         }
     }
 }
+
 
 function Import-TriageConfig {
     <#
@@ -717,6 +744,7 @@ function Import-TriageConfig {
     $global:ToolkitRoot  = $ToolkitRoot
 }
 
+
 function Get-TriageConfig {
     [CmdletBinding()]
     param(
@@ -732,6 +760,7 @@ function Get-TriageConfig {
     $script:TriageConfig
 }
 
+
 function Format-TriageDuration {
     param(
         [Parameter(Mandatory)][TimeSpan]$Span
@@ -745,6 +774,7 @@ function Format-TriageDuration {
     }
     [string]::Format($Inv, "{0} hr {1:00} min {2:00} sec", [int][math]::Floor($Span.TotalHours), $Span.Minutes, $Span.Seconds)
 }
+
 
 function Invoke-TriageTask {
     [CmdletBinding()]
@@ -768,6 +798,7 @@ function Invoke-TriageTask {
         $Status = "Failed"
         Show-Message -Message "Execution failed during [ $Message ] => $( $_.Exception.Message )" -Level ERROR -AddToLog
     }
+
     $Sw.Stop()
     $Time = Format-TriageDuration -Span $Sw.Elapsed
 
@@ -816,6 +847,7 @@ function Invoke-TriageTask {
     }
 }
 
+
 function Invoke-TriageTaskList {
     param(
         [Parameter(Mandatory)][object[]]$Tasks,
@@ -827,8 +859,12 @@ function Invoke-TriageTaskList {
     }
 }
 
+
 function New-TriageCopyResult {
-    param([string]$Source, [string]$Destination)
+    param(
+        [string]$Source, 
+        [string]$Destination
+    )
     [pscustomobject]@{
         Source            = $Source
         Destination       = $Destination
@@ -842,6 +878,7 @@ function New-TriageCopyResult {
     }
 }
 
+
 function Invoke-TriageRawCopy {
     param(
         [Parameter(Mandatory)][string]$Source,
@@ -853,14 +890,17 @@ function Invoke-TriageRawCopy {
     $Name = Split-Path -Path $Destination -Leaf
     $null = New-Item -ItemType Directory -Path $Dir -Force
     # Start-Process -Wait: RawCopy may be a GUI-subsystem program, which "&" would not wait for.
+
     # WorkingDirectory keeps any log file it writes next to the output.
     $ArgList = @("/FileNamePath:`"$Source`"", "/OutputPath:`"$Dir`"", "/OutputName:`"$Name`"")
     $null = Start-Process -FilePath $Exe -ArgumentList $ArgList -WorkingDirectory $Dir -Wait -PassThru -WindowStyle Hidden
+
     $Out = Get-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
     if (-not $Out -or $Out.Length -eq 0) {
         throw "RawCopy produced no output for [ $Source ]."
     }
 }
+
 
 function Copy-TriageFile {
     [CmdletBinding()]
@@ -925,8 +965,12 @@ function Copy-TriageFile {
     $R
 }
 
+
 function Copy-TriageRawFile {
-    # Always uses RawCopy (for $MFT, $UsnJrnl)
+    <#
+    .SYNOPSIS
+        Always uses RawCopy (for $MFT, $UsnJrnl)
+    #>
     param(
         [Parameter(Mandatory)][string]$Source,
         [Parameter(Mandatory)][string]$Destination
@@ -943,6 +987,7 @@ function Copy-TriageRawFile {
     }
     $R
 }
+
 
 function Save-TriageRegistryHive {
     # reg save: a consolidated export of a loaded hive
@@ -969,8 +1014,12 @@ function Save-TriageRegistryHive {
     $R
 }
 
+
 function Copy-TriageFolderBackup {
-    # Robocopy in backup mode: reads folders whose ACL excludes administrators
+    <#
+    .SYNOPSIS
+        Robocopy in backup mode: reads folders whose ACL excludes administrators
+    #>
     param(
         [Parameter(Mandatory)][string]$Source,
         [Parameter(Mandatory)][string]$Destination
