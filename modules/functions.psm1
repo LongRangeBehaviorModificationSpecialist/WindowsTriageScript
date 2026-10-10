@@ -175,8 +175,12 @@ function Write-LogMessage {
     }
 }
 
+
 function Write-OutputToFile {
-    # Writes the results of the commands to the $OutputFile
+    <#
+    .SYNOPSIS
+        Writes the results of the commands to the $OutputFile
+    #>
     param(
         [string]$Command,
         [System.Object]$Data,
