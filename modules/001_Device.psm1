@@ -14,7 +14,9 @@ function Get-TriageDeviceData {
     }
 
     function Get-SystemProcesses {
-        param([string]$OutputFile = "$DeviceFolder\PS_info.txt")
+        param(
+            [string]$OutputFile = "$DeviceFolder\PS_info.txt"
+        )
 
         & (Get-TriageBinary "PSInfo") -accepteula -s -h -d > $OutputFile 2>&1
 
@@ -24,7 +26,9 @@ function Get-TriageDeviceData {
     }
 
     function Get-FullFileList {
-        param([string]$OutputFile = "$DeviceFolder\full_dir_list.csv")
+        param(
+            [string]$OutputFile = "$DeviceFolder\full_dir_list.csv"
+        )
         Get-ChildItem -LiteralPath "$env:SystemDrive\" -Recurse -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc | Export-Csv -LiteralPath $OutputFile -NoTypeInformation -Encoding UTF8
     }
 
