@@ -6,108 +6,108 @@ function Get-TriageDeviceData {
 
     function Get-MiscDeviceData {
         param (
-            [string]$OutputFile = "$DeviceFolder\device_info.txt"
+            [string]$TxtFile = Join-Path -Path $DeviceFolder -ChildPath "device_info.txt"
         )
         $Command =  { Get-ComputerDetails }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-SystemProcesses {
         param(
-            [string]$OutputFile = "$DeviceFolder\PS_info.txt"
+            [string]$TxtFile = "$DeviceFolder\PS_info.txt"
         )
 
-        & (Get-TriageBinary "PSInfo") -accepteula -s -h -d > $OutputFile 2>&1
+        & (Get-TriageBinary "PSInfo") -accepteula -s -h -d > $TxtFile 2>&1
 
         $Msg = "`n`nPsInfo was run with `-accepteula`, which creates `HKCU\Software\Sysinternals\PsInfo\EulaAccepted (DWORD = 1)` in the `NTUSER.DAT` of the account used to run the tool (<DOMAIN\user>). This change was made by the examiner's tool, not by the subject. In the current execution order, the snapshot of that account's registry hive is taken before PsInfo runs, so the collected copy will not contain the value."
 
-        Add-Content -Path $OutputFile -Value $Msg -Encoding UTF8
+        Add-Content -Path $TxtFile -Value $Msg -Encoding UTF8
     }
 
     function Get-FullFileList {
         param(
-            [string]$OutputFile = "$DeviceFolder\full_dir_list.csv"
+            [string]$CsvFile = "$DeviceFolder\full_dir_list.csv"
         )
-        Get-ChildItem -LiteralPath "$env:SystemDrive\" -Recurse -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc | Export-Csv -LiteralPath $OutputFile -NoTypeInformation -Encoding UTF8
+        Get-ChildItem -LiteralPath "$env:SystemDrive\" -Recurse -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc | Export-Csv -LiteralPath $CsvFile -NoTypeInformation -Encoding UTF8
     }
 
     function Get-CurrentComputerInfo {
         param(
-            [string]$OutputFile = "$DeviceFolder\computer_info.txt"
+            [string]$TxtFile = "$DeviceFolder\computer_info.txt"
         )
         $Command =  { Get-ComputerInfo }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-SystemInfo {
         param(
-            [string]$OutputFile = "$DeviceFolder\system_info.txt"
+            [string]$TxtFile = "$DeviceFolder\system_info.txt"
         )
         $Command1 = { & (Get-TriageBinary "systeminfo") /FO LIST }
         $Data1 = &($Command1)
-        Write-OutputToFile -Command $Command1 -Data $Data1 -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data1 -OutputFile $TxtFile
 
         $Command2 = { Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -Property * }
         $Data2 = &($Command2)
-        Write-OutputToFile -Command $Command2 -Data $Data2 -OutputFile $OutputFile -Append
+        Write-OutputToFile -Data $Data2 -OutputFile $TxtFile -Append
     }
 
     function Get-PhysicalMemory {
         param(
-            [string]$OutputFile = "$DeviceFolder\physical_memory.txt"
+            [string]$TxtFile = "$DeviceFolder\physical_memory.txt"
         )
         $Command = { Get-CimInstance -ClassName Win32_PhysicalMemory | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-EnvVars {
         param(
-            [string]$OutputFile = "$DeviceFolder\env_vars.txt"
+            [string]$TxtFile = "$DeviceFolder\env_vars.txt"
         )
         $Command = { Get-ChildItem -LiteralPath env: | Format-List }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-DiskPart {
         param(
-            [string]$OutputFile = "$DeviceFolder\disk_partitions.csv"
+            [string]$CsvFile = "$DeviceFolder\disk_partitions.csv"
         )
         $Command = { Get-CimInstance -ClassName Win32_DiskPartition | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
     function Get-UserAccounts {
         param(
-            [string]$OutputFile = "$DeviceFolder\user_accounts.txt"
+            [string]$TxtFile = "$DeviceFolder\user_accounts.txt"
         )
         $Command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object LocalPath, SID, @{ N = "last used"; E = { $_.lastusetime } } }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-LogonSessions {
         param(
-            [string]$OutputFile = "$DeviceFolder\logon_sessions.txt"
+            [string]$TxtFile = "$DeviceFolder\logon_sessions.txt"
         )
         $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-StartUpApps {
         param(
-            [string]$OutputFile    = "$DeviceFolder\start_up_apps.txt",
-            [string]$CsvOutputFile = "$DeviceFolder\start_up_apps.csv"
+            [string]$TxtFile = "$DeviceFolder\start_up_apps.txt",
+            [string]$CsvFile = "$DeviceFolder\start_up_apps.csv"
         )
         $Command = { Get-CimInstance -ClassName Win32_StartupCommand | Select-Object -Property * | Sort-Object Caption }
         $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
 
         $RunKeys = @(
             "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
@@ -122,22 +122,22 @@ function Get-TriageDeviceData {
             "`n`nFrom : $Key`n" | Out-File -FilePath $OutputFile -Append -Encoding UTF8
             $KeyData = Invoke-RegistryCommand -Command { Get-ItemProperty $Key | Select-Object * -ExcludeProperty PS* }
             if ($KeyData) {
-                $KeyData | Out-File -FilePath $OutputFile -Append -Encoding UTF8
+                $KeyData | Out-File -FilePath $TxtFile -Append -Encoding UTF8
             }
             else {
                 $Msg = "No data found for registry key [ $( $Key ) ]"
-                $Key | Out-File -FilePath $OutputFile -Append -Encoding UTF8
+                $Key | Out-File -FilePath $TxtFile -Append -Encoding UTF8
             }
         }
     }
 
     function Get-MotherboardInfo {
         param(
-            [string]$OutputFile = "$DeviceFolder\motherboard.txt"
+            [string]$TxtFile = "$DeviceFolder\motherboard.txt"
         )
         $Command = { Get-CimInstance -ClassName Win32_BaseBoard | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     # ----------------------------------
