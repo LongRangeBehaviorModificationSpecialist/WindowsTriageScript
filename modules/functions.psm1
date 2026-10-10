@@ -37,7 +37,7 @@ function Get-InitialSetup {
 function Write-OutputToCsv {
     param(
         [Parameter(Mandatory)][AllowNull()][AllowEmptyCollection()][object]$Data,
-        [Parameter(Mandatory = $true)][string]$OutputFile
+        [Parameter(Mandatory)][string]$OutputFile
     )
 
     process {
