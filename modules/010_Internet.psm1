@@ -1,7 +1,7 @@
 function Get-TriageInternetData {
     [CmdletBinding()]
     param(
-        [string]$InternetFolder
+        [Parameter(Mandatory)][string]$InternetFolder
     )
 
     $TempFolder = Join-Path -Path $InternetFolder -ChildPath "temp"
@@ -9,7 +9,7 @@ function Get-TriageInternetData {
 
     function Get-StoredCookies {
         param(
-            [string]$OutputFile = "$InternetFolder\002_stored_cookies.csv"
+            [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "002_stored_cookies.csv")
         )
         $Data = foreach ($U in $global:TriageUserHives) {
             $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
@@ -18,7 +18,7 @@ function Get-TriageInternetData {
             }
             foreach ($File in Get-ChildItem -LiteralPath $Dir -Recurse -Force -File -ErrorAction SilentlyContinue) {
                 Select-String -LiteralPath $File.FullName -Pattern "/" -ErrorAction SilentlyContinue | ForEach-Object {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         UserName = $U.UserName;
                         File     = $File.Name;
                         Line     = $_.Line
@@ -26,33 +26,33 @@ function Get-TriageInternetData {
                 }
             }
         }
-        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
     function Get-TypedUrls {
         param(
-            [string]$OutputFile = "$InternetFolder\003_typed_urls.csv"
+            [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "003_typed_urls.csv")
         )
-        Export-PerUserRegistry -OutputFile $OutputFile -SubKey "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
+        Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
     }
 
     function Get-InternetSettings {
         param(
-            [string]$OutputFile = "$InternetFolder\004_internet_settings.csv"
+            [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "004_internet_settings.csv")
         )
-        Export-PerUserRegistry -OutputFile $OutputFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
+        Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
     }
 
     function Get-TrustedInternetDomains {
         param(
-            [string]$OutputFile = "$InternetFolder\005_trusted_internet_domains.csv"
+            [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "005_trusted_internet_domains.csv")
         )
-        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $OutputFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
+        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
     }
 
     function Get-BrowserAnalysis {
         param(
-            [string]$SummaryFile = (Join-Path -Path $InternetFolder -ChildPath "006_browser_analysis_summary.csv")
+            [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "006_browser_analysis_summary.csv")
             )
 
         function Copy-SharedFile {
@@ -229,7 +229,7 @@ function Get-TriageInternetData {
                         catch {
                             $Failures++
                             Show-Message -Message "Could not copy [ $BrowserName ] database for [ $Tag ] => $( $_.Exception.Message )" -Level ERROR -AddToLog
-                            $Summary.Add([pscustomobject]@{
+                            $Summary.Add([PSCustomObject]@{
                                 User       = $UserLeaf
                                 Browser    = $BrowserName
                                 Profile    = $ProfileDir.Name
@@ -295,7 +295,7 @@ function Get-TriageInternetData {
                                 Show-Message -Message "Query '$( $Q.Key )' failed for $Tag => $Detail" -Level ERROR -AddToLog
                             }
 
-                            $Summary.Add([pscustomobject]@{
+                            $Summary.Add([PSCustomObject]@{
                                 User       = $UserLeaf
                                 Browser    = $BrowserName
                                 Profile    = $ProfileDir.Name
@@ -320,7 +320,7 @@ function Get-TriageInternetData {
             }
         }
 
-        Write-OutputToCsv -Data $Summary -OutputFile $SummaryFile
+        Write-OutputToCsv -Data $Summary -OutputFile $CsvFile
         Show-Message -Message "Browser analysis => $DbFound database(s) found, $Failures failure(s)." -Level INFO -AddToLog
     }
 

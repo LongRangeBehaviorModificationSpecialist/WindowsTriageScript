@@ -41,9 +41,7 @@ function Get-ComputerDetails {
                 param($SourceInstance)
 
                 if ($SourceInstance) {
-
                     foreach ($Prop in $SourceInstance.CimInstanceProperties) {
-
                         if (-not $DataProps.Contains($Prop.Name)) {
                             $DataProps[$Prop.Name] = $Prop.Value
                         }
@@ -77,7 +75,9 @@ function Get-ComputerDetails {
                 $NetOut = @(& (Get-TriageBinary "net") accounts 2>&1 | ForEach-Object { "$_" })
                 if ($LASTEXITCODE -eq 0) {
                     $NetLine = $NetOut | Select-String -Pattern "Minimum password length"
-                    if ($NetLine) { $DataProps["MinimumPasswordLength"] = $NetLine.ToString().Split()[-1] }
+                    if ($NetLine) {
+                        $DataProps["MinimumPasswordLength"] = $NetLine.ToString().Split()[-1]
+                    }
                 }
                 else {
                     Show-Message -Message "The `"net accounts`" command returned exit code $($LASTEXITCODE); minimum password length not recorded. First output line => $( $NetOut | Select-Object -First 1 )" -Level WARNING -AddToLog
@@ -91,7 +91,12 @@ function Get-ComputerDetails {
             # $DataProps["MinimumPasswordLength"] = if ($NetAccountsLine) { $NetAccountsLine.ToString().Split()[-1] } else { $null }
 
             $UsbStor = Get-ItemProperty -Path "HKLM:SYSTEM\CurrentControlSet\Services\USBStor" -Name "Start" -ErrorAction SilentlyContinue
-            $DataProps["USBStorageLock"] = if ($UsbStor) { $UsbStor.Start } else { $null }
+            $DataProps["USBStorageLock"] = if ($UsbStor) {
+                    $UsbStor.Start
+                }
+                else {
+                    $null
+                }
 
             if ($SoftwareLicensingProduct) {
                 $DataProps["LicenseType"] = ($SoftwareLicensingProduct.Description).Split(",")[1].Trim()

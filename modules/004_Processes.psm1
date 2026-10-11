@@ -1,20 +1,20 @@
 function Get-TriageProcessData {
     [CmdletBinding()]
     param(
-        [string]$ProcessFolder
+        [Parameter(Mandatory)][string]$ProcessFolder
     )
 
     function Get-RunningProcessList {
         param(
-            [string]$OutputFile = "$ProcessFolder\running_processes.txt",
-            [string]$CsvOutputFile = "$ProcessFolder\running_processes.csv",
-            [string]$UniqueProcessHashOutput = "$ProcessFolder\unique_process_hashes.csv",
-            [string]$ProcessListOutput = "$ProcessFolder\process_list.csv"
+            [string]$TxtFile = (Join-Path -Path $ProcessFolder -ChildPath "running_processes.txt"),
+            [string]$CsvFile = (Join-Path -Path $ProcessFolder -ChildPath "running_processes.csv"),
+            [string]$UniqueProcessHashOutput = (Join-Path -Path $ProcessFolder -ChildPath "unique_process_hashes.csv"),
+            [string]$ProcessListOutput = (Join-Path -Path $ProcessFolder -ChildPath "process_list.csv")
         )
         $Command = { Get-CimInstance -ClassName Win32_Process | Select-Object -Property * | Sort-Object ParentProcessId -Descending }
         $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $CsvOutputFile
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
         $ProcessList = @()
 
         foreach ($Process in (Get-CimInstance -ClassName Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId)) {
@@ -38,7 +38,7 @@ function Get-TriageProcessData {
 
     function Get-AllServices {
         param(
-            [string]$OutputFile = "$ProcessFolder\all_services.csv"
+            [string]$CsvFile = (Join-Path -Path $ProcessFolder -ChildPath "all_services.csv")
         )
         $Data = Get-CimInstance -ClassName Win32_Service | ForEach-Object {
             $Dll = $null
@@ -46,7 +46,7 @@ function Get-TriageProcessData {
             if (Test-Path -LiteralPath $Params) {
                 $Dll = (Get-ItemProperty -LiteralPath $Params -ErrorAction SilentlyContinue).ServiceDll
             }
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Name             = $_.Name
                 DisplayName      = $_.DisplayName
                 State            = $_.State
@@ -60,26 +60,26 @@ function Get-TriageProcessData {
                 Description      = $_.Description
             }
         }
-        Write-OutputToCsv -Data ($Data | Sort-Object Name) -OutputFile $OutputFile
+        Write-OutputToCsv -Data ($Data | Sort-Object Name) -OutputFile $CsvFile
     }
 
     function Get-RunningDriverInfo {
         param(
-            [string]$OutputFile = "$ProcessFolder\driver_query.csv"
+            [string]$CsvFile = (Join-Path -Path $ProcessFolder -ChildPath "driver_query.csv")
         )
         $Command = { & (Get-TriageBinary "driverquery") .exe /v /FO CSV }
         $Data = &($Command)
-        Set-Content -Path $OutputFile -Value $Data -Encoding UTF8
+        Set-Content -Path $CsvFile -Value $Data -Encoding UTF8
         Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
     }
 
     function Get-SystemDrivers {
         param(
-            [string]$OutputFile = "$ProcessFolder\system_drivers.csv"
+            [string]$CsvFile = (Join-Path -Path $ProcessFolder -ChildPath "system_drivers.csv")
         )
         $Command = { Get-CimInstance -ClassName Win32_SystemDriver | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
     }
 

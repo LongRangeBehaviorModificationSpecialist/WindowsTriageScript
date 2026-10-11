@@ -36,7 +36,6 @@ function Get-ComputerRam {
                 throw "RAM capture failed (exit $( $P.ExitCode ), $( $Raw.Count ) .raw file(s))."
             }
 
-
             # Once the RAM has been acquired, move the file to the "RAM" folder
             #TODO -- Double check where the output is written when run from elevated command prompt
             Move-Item -Path .\bin\*.raw -Destination $RamCaptureFolder -Force
@@ -45,7 +44,7 @@ function Get-ComputerRam {
 
             # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
 
-            $SuccessMsg = "RAM capture completed successfully from computer: $( $ComputerName )"
+            $SuccessMsg = "RAM capture completed successfully from computer => $( $ComputerName )"
             Show-Message -Message $SuccessMsg -Level INFO -AddToLog
 
             Show-Message -File $RamCaptureFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog

@@ -112,7 +112,6 @@
         "Invoke-TriageTaskList",
         "Mount-TriageUserHives",
         "Read-LogHost",
-        # "Show-IsAdmin",
         "Show-Message",
         "Test-IfExists",
         "Write-LogMessage",

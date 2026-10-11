@@ -13,23 +13,35 @@ function Get-StreamHash {
         $Buffer = New-Object byte[] 1048576
         while (($Read = $Fs.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
             [void]$Sha.TransformBlock($Buffer, 0, $Read, $null, 0)
-            if ($Md5) { [void]$Md5.TransformBlock($Buffer, 0, $Read, $null, 0) }
+            if ($Md5) {
+                [void]$Md5.TransformBlock($Buffer, 0, $Read, $null, 0)
+            }
         }
         [void]$Sha.TransformFinalBlock($Buffer, 0, 0)
-        if ($Md5) { [void]$Md5.TransformFinalBlock($Buffer, 0, 0) }
+        if ($Md5) {
+            [void]$Md5.TransformFinalBlock($Buffer, 0, 0)
+        }
 
-        [pscustomobject]@{
+        [PSCustomObject]@{
             SHA256 = [System.BitConverter]::ToString($Sha.Hash).Replace("-", "")
-            MD5    = if ($Md5) { [System.BitConverter]::ToString($Md5.Hash).Replace("-", "") } else { $null }
+            MD5    = if ($Md5) {
+                [System.BitConverter]::ToString($Md5.Hash).Replace("-", "")
+            }
+            else {
+                $null
+            }
         }
     }
     finally {
-        if ($Fs) { $Fs.Dispose() }
+        if ($Fs) {
+            $Fs.Dispose()
+        }
         $Sha.Dispose()
-        if ($Md5) { $Md5.Dispose() }
+        if ($Md5) {
+            $Md5.Dispose()
+        }
     }
 }
-
 
 function Get-FileHashes {
     [CmdletBinding()]
@@ -56,7 +68,9 @@ function Get-FileHashes {
             $OutFile    = Join-Path -Path $HashFolder -ChildPath "$( Split-Path -Path $Root -Leaf )_hash_values.csv"
 
             if ($IncludeMd5) {
-                try { [System.Security.Cryptography.MD5]::Create().Dispose() }
+                try {
+                    [System.Security.Cryptography.MD5]::Create().Dispose()
+                }
                 catch {
                     $IncludeMd5 = $false
                     Show-Message -Message "MD5 is unavailable here (FIPS mode?). Hashing SHA-256 only." -Level WARNING -AddToLog
@@ -75,15 +89,15 @@ function Get-FileHashes {
                 $Md5 = $null
                 $Err = ""
                 try {
-                    $H   = Get-StreamHash -LiteralPath $File.FullName -IncludeMd5:$IncludeMd5
-                    $Sha = $H.SHA256
-                    $Md5 = $H.MD5
+                    $Hash = Get-StreamHash -LiteralPath $File.FullName -IncludeMd5:$IncludeMd5
+                    $Sha  = $Hash.SHA256
+                    $Md5  = $Hash.MD5
                 }
                 catch {
                     $Err = $_.Exception.Message
                     Show-Message -Message "Could not hash => $( $File.FullName ) => $Err" -Level ERROR -AddToLog
                 }
-                [pscustomobject]@{
+                [PSCustomObject]@{
                     RelativePath      = $File.FullName.Substring($Root.Length + 1)
                     SizeBytes         = $File.Length
                     SHA256            = $Sha
@@ -110,7 +124,6 @@ function Get-FileHashes {
     }
 }
 
-
 function Close-TriageLog {
     <#
     .SYNOPSIS
@@ -134,7 +147,7 @@ function Close-TriageLog {
             @(Get-ChildItem -LiteralPath $HashFolder -Filter "*_hash_values.csv" -File)
 
     $Rows = foreach ($F in $Targets) {
-        [pscustomobject]@{
+        [PSCustomObject]@{
             RelativePath = $F.FullName.Substring($Root.Length + 1)
             SizeBytes    = $F.Length
             SHA256       = (Get-FileHash -LiteralPath $F.FullName -Algorithm SHA256).Hash
@@ -143,7 +156,7 @@ function Close-TriageLog {
     $FinalFile = Join-Path -Path $HashFolder -ChildPath "final_hashes.csv"
     $Rows | Export-Csv -LiteralPath $FinalFile -NoTypeInformation -Encoding UTF8
 
-    [pscustomobject]@{
+    [PSCustomObject]@{
         LogFile           = $LogPath
         FinalHashesFile   = $FinalFile
         FinalHashesSha256 = (Get-FileHash -LiteralPath $FinalFile -Algorithm SHA256).Hash

@@ -19,12 +19,12 @@ function Get-BinaryFilesHashes {
     $Files = Get-ChildItem -LiteralPath $Root -File -Recurse | Where-Object { $_.Name -ne "__hashes.json" }
 
     # Hash first, so the count reflects what was actually hashed
-    $Entries = @(foreach ($F in $Files) {
+    $Entries = @(foreach ($File in $Files) {
         [ordered]@{
-            Path        = $F.FullName.Substring($Root.Length).TrimStart("\")
-            SHA256      = (Get-FileHash -LiteralPath $F.FullName -Algorithm SHA256).Hash
-            Length      = $F.Length
-            FileVersion = $F.VersionInfo.FileVersion
+            Path        = $File.FullName.Substring($Root.Length).TrimStart("\")
+            SHA256      = (Get-FileHash -LiteralPath $File.FullName -Algorithm SHA256).Hash
+            Length      = $File.Length
+            FileVersion = $File.VersionInfo.FileVersion
         }
     })
 

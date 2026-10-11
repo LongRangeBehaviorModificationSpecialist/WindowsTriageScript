@@ -1,74 +1,67 @@
 function Get-TriageUserData {
     [CmdletBinding()]
     param(
-        [string]$UserFolder
+        [Parameter(Mandatory)][string]$UserFolder
     )
-
 
     function Get-WhoAmI {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "who_am_I.txt"
+            [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "who_am_I.txt")
         )
         $Command = { & (Get-TriageBinary "whoami") /ALL /FO LIST }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-Win32UserProfile {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "win32_user_profile.txt"
+            [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_user_profile.txt")
         )
         $Command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-LocalUserData {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "local_users.txt"
+            [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "local_users.txt")
         )
         $Command = { Get-LocalUser | Select-Object -Property * | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-UserGroups {
         param(
-            [string]$CsvFile = Join-Path -Path $UserFolder -ChildPath "user_groups.csv"
+            [string]$CsvFile = (Join-Path -Path $UserFolder -ChildPath "user_groups.csv")
         )
         $Command = { Get-CimInstance -ClassName Win32_Group | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
-
     function Get-Win32LocalLogons {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "win32_local_logons.txt"
+            [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_local_logons.txt")
         )
         $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-Win32UserAccount {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "win32_user_account.txt"
+            [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_user_account.txt")
         )
         $Command = { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-PowershellConsoleHistoryAllUsers {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "powershell_history_all_users.txt",
-            [string]$CopyFolder = Join-Path -Path $UserFolder -ChildPath PowerShell_History"
+            [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "powershell_history_all_users.txt"),
+            [string]$CopyFolder = (Join-Path -Path $UserFolder -ChildPath "PowerShell_History")
         )
         # Profiles found by the hive step (includes profiles outside C:\Users)
         # Fall back to C:\Users
@@ -101,7 +94,7 @@ function Get-TriageUserData {
                     $Dest = Join-Path -Path $UserFolder -ChildPath $RelCopy
 
                     $R = Copy-TriageFile -Source $File.FullName -Destination $Dest
-                    $Rows.Add([pscustomobject]@{
+                    $Rows.Add([PSCustomObject]@{
                         User              = $UserLeaf
                         Edition           = $Label
                         Source            = $File.FullName
@@ -129,22 +122,20 @@ function Get-TriageUserData {
             }
         }
 
-        if (-not (Test-Path -LiteralPath $OutputFile)) {
+        if (-not (Test-Path -LiteralPath $TxtFile)) {
             Set-Content -LiteralPath $TxtFile -Value "No PowerShell history files were found." -Encoding UTF8
         }
         Write-OutputToCsv -Data $Rows -OutputFile (Join-Path -Path $UserFolder -ChildPath "powershell_history_manifest.csv")
     }
 
-
     function Get-TerminalSessions {
         param(
-            [string]$TxtFile = Join-Path -Path $UserFolder -ChildPath "terminal_sessions.txt"
+            [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "terminal_sessions.txt")
         )
         $Command = { & (Get-TriageBinary "qwinsta") 2>&1 | ForEach-Object { "$_" } }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
-
 
     # ----------------------------------
     # Run the functions from the module

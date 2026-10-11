@@ -1,19 +1,19 @@
 function Get-TriageEventLogData {
     [CmdletBinding()]
     param (
-        [string]$EventLogFolder
+        [Parameter(Mandatory)][string]$EventLogFolder
     )
 
     function Get-AvailableLogFiles {
         param(
-            [string]$OutputFile = "$EventLogFolder\available_log_files.txt"
+            [string]$TxtFile = (Join-Path -Path $EventLogFolder -ChildPath "available_log_files.txt")
         )
         $Command = { Get-WinEvent -ListLog * |
                         Where-Object { $_.IsEnabled } |
                         Select-Object LogName, RecordCount, FileSize, LogMode, LogFilePath, LastWriteTime |
                         Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true } }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-EventLogEntryCount {
@@ -89,13 +89,13 @@ function Get-TriageEventLogData {
         }
 
         $Label = if ($Count -lt 0) {
-            "entry count unavailable"
+            "Entry Count Unavailable"
         }
             elseif ($Count -eq 1) {
-                "1 entry"
+                "1 Entry"
             }
             else {
-                [string]::Format([System.Globalization.CultureInfo]::InvariantCulture, "{0:N0} entries", $Count)
+                [string]::Format([System.Globalization.CultureInfo]::InvariantCulture, "{0:N0} Entries", $Count)
             }
 
         $Out = Join-Path -Path $EventLogFolder -ChildPath (($LogName -replace "[\\/]", "%4") + ".evtx")

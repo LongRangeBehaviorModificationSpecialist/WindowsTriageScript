@@ -12,7 +12,6 @@ function Get-Gui {
     # Add-Type -AssemblyName Microsoft.VisualBasic
 
     $script:OutputRoot   = $OutputRoot
-    # $script:ManifestPath = Join-Path -Path $global:ToolkitRoot -ChildPath "modules\triage.psd1"
     $script:ManifestPath = Join-Path -Path (Get-TriageConfig -Key "ToolkitRoot") -ChildPath "modules\triage.psd1"
     $script:LastResult   = $null
     $script:Async        = $null
@@ -504,7 +503,11 @@ function Get-Gui {
                 $script:Rs.Dispose();
                 $script:Async = $null
             }
-            if (-not $script:LastResult) { $script:LastResult = [pscustomobject]@{ ExitCode = 3 } }
+            if (-not $script:LastResult) {
+                $script:LastResult = [PSCustomObject]@{
+                    ExitCode = 3
+                }
+            }
 
             & $script:PumpLog  # pick up the last lines
             & $script:SetBusy $false

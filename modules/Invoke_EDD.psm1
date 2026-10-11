@@ -32,8 +32,6 @@ function Invoke-EDD {
                 -Wait `
                 -RedirectStandardOutput $EddResultsFilePath
 
-            # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
-
             $Stopwatch.Stop()
 
             # Read the contents of the EDD text file and show the results on the screen
@@ -46,7 +44,6 @@ function Invoke-EDD {
 
             Write-LogMessage -Message $EddResults
 
-            # Show-Message -Message "Encrypted Disk Detector was run successfully on computer [ $( $ComputerName ) ]" -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
             Show-Message -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
         }
         catch {

@@ -2,8 +2,8 @@
 .SYNOPSIS
     Launcher for the NOVA ICAC VECTOR Windows triage suite.
 .DESCRIPTION
-    Can launch the application by using the `.\run-triage.cmd` command and 
-    passing the parameters as normal.  This will ensure that the script is run 
+    Can launch the application by using the `.\run-triage.cmd` command and
+    passing the parameters as normal.  This will ensure that the script is run
     with the `-NoProfile` option.
 .PARAMETER Operator
     Examiner name (required unless -Gui).
@@ -31,7 +31,7 @@
     Alias: "-Proc".
     Default: "N"
 .PARAMETER CaptureRam
-    Y or N (also Yes/No/True/False/1/0). 
+    Y or N (also Yes/No/True/False/1/0).
     Alias: "-Ram".
     Default: "N"
 .PARAMETER CreateArchive
@@ -42,7 +42,7 @@
     Folder in which the case folder is created (no trailing backslash).
     Default: the toolkit folder.
 .PARAMETER DryRun
-    Validate the options, print what would run, and exit without collecting 
+    Validate the options, print what would run, and exit without collecting
     anything.
 .EXAMPLE
     .\run-triage.ps1
@@ -60,11 +60,11 @@
 .NOTES
     Exit codes: 0 = completed,
                 1 = completed with logged errors,
-                2 = could not start (not admin, bad parameters, module load 
+                2 = could not start (not admin, bad parameters, module load
                     failed),
                 3 = unexpected fatal error.
 
-    Last Updated: 10-Oct-2026
+    Last Updated: 11-Oct-2026
 #>
 
 [CmdletBinding()]
@@ -88,7 +88,9 @@ $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Contin
 $ComputerName = $env:COMPUTERNAME
 
 function ConvertTo-YesNo {
-    param([string]$Value)
+    param(
+        [string]$Value
+    )
     switch -Regex ("$Value".Trim()) {
         "^(y|yes|true|1)$" {
             return $true
@@ -201,10 +203,14 @@ if ($Tokens.Count -eq 0 -or $Tokens -contains "all") {
     $Selected = $AllModules
 }
 else {
-    $Chosen = foreach ($T in $Tokens) {
-        $Hit = @($AllModules | Where-Object { $_ -eq $T -or $_ -like ($T + "_*") })
-        if ($Hit.Count -eq 0) { $Problems.Add("Unknown module [ $T ]. Valid: all, $( $AllModules -join ', ' )") }
-        else { $Hit }
+    $Chosen = foreach ($Token in $Tokens) {
+        $Hit = @($AllModules | Where-Object { $_ -eq $Token -or $_ -like ($Token + "_*") })
+        if ($Hit.Count -eq 0) {
+            $Problems.Add("Unknown module [ $Token ]. Valid: all, $( $AllModules -join ', ' )")
+        }
+        else {
+            $Hit
+        }
     }
     $Selected = @($AllModules | Where-Object { $_ -in $Chosen })
 }
@@ -214,8 +220,8 @@ if ($OutputRoot -and -not (Test-Path -LiteralPath $OutputRoot -PathType Containe
 }
 
 if ($Problems.Count -gt 0) {
-    foreach ($P in $Problems) {
-        Show-Message -Message $P -Level ERROR
+    foreach ($Problem in $Problems) {
+        Show-Message -Message $Problem -Level ERROR
     }
     Show-Usage
     exit 2
@@ -224,16 +230,16 @@ if ($Problems.Count -gt 0) {
 # Show exactly what will happen (the command line is also recorded in case_info.json)
 if (-not $Gui) {
     Show-TriageBanner
-    $Yn = { param($b) if ($b) { "YES" } else { "NO" } }
+    $YesNo = { param($b) if ($b) { "YES" } else { "NO" } }
     Show-Message -Message "---------------------------------------------------------" -NoTime -MessageColor Cyan
     Show-Message -Message "Operator: $Operator" -NoTime -MessageColor Cyan
     Show-Message -Message "Agency: $Agency" -NoTime -MessageColor Cyan
     Show-Message -Message "Case Number: $CaseNumber" -NoTime -MessageColor Cyan
     Show-Message -Message "Modules: $( $Selected -join ', ' )" -NoTime -MessageColor Cyan
-    Show-Message -Message "EDD: $( & $Yn $Resolved.RunEdd )" -NoTime -MessageColor Cyan
-    Show-Message -Message "Process Capture: $( & $Yn $Resolved.CaptureProcesses )" -NoTime -MessageColor Cyan
-    Show-Message -Message "RAM Capture: $( & $Yn $Resolved.CaptureRam )" -NoTime -MessageColor Cyan
-    Show-Message -Message "Create Archive: $( & $Yn $Resolved.CreateArchive )" -NoTime -MessageColor Cyan
+    Show-Message -Message "EDD: $( & $YesNo $Resolved.RunEdd )" -NoTime -MessageColor Cyan
+    Show-Message -Message "Process Capture: $( & $YesNo $Resolved.CaptureProcesses )" -NoTime -MessageColor Cyan
+    Show-Message -Message "RAM Capture: $( & $YesNo $Resolved.CaptureRam )" -NoTime -MessageColor Cyan
+    Show-Message -Message "Create Archive: $( & $YesNo $Resolved.CreateArchive )" -NoTime -MessageColor Cyan
     Show-Message -Message "---------------------------------------------------------" -NoTime -MessageColor Cyan
 }
 if ($DryRun) {

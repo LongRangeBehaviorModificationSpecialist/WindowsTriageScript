@@ -1,60 +1,57 @@
 function Get-TriageNetworkData {
     [CmdletBinding()]
     param(
-        [string]$NetworkFolder
+        [Parameter(Mandatory)][string]$NetworkFolder
     )
-
 
     function Get-LocalIpInfoAsTxt {
         param(
-            [string]$TxtFile = "$NetworkFolder\local_ip_info.txt"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "local_ip_info.txt")
         )
         $Command = { Get-NetIPAddress | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-IpConfig {
         param(
-            [string]$TxtFile = "$NetworkFolder\ip_config_all.txt"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "ip_config_all.txt")
         )
         $Command = { & (Get-TriageBinary "ipconfig") /all }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-LocalIpInfoAsCsv {
         param(
-            [string]$CsvFile = "$NetworkFolder\local_ip_info.csv"
+            [string]$CsvFile = (Join-Path -Path $NetworkFolder -ChildPath "local_ip_info.csv")
         )
         $Command = { Get-NetIPAddress | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
-
     function Get-NetworkConfig {
         param(
-            [string]$TxtFile = "$NetworkFolder\network_config.txt"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "network_config.txt")
         )
-        $Command = { Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq "True" } | Select-Object -Property * | Format-List }
+        $Command = { Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration |
+            Where-Object { $_.IPEnabled -eq "True" } |
+            Select-Object -Property * | Format-List }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-EstablishedConnections {
         param(
-            [string]$CsvFile = "$NetworkFolder\netstat_established_connections.csv"
+            [string]$CsvFile = (Join-Path -Path $NetworkFolder -ChildPath "established_connections.csv")
         )
         $Procs = @{}
         Get-CimInstance Win32_Process | ForEach-Object { $Procs[[int]$_.ProcessId] = $_ }
         $Data = & (Get-TriageBinary "netstat") -nao | Select-String "ESTABLISHED" | ForEach-Object {
             $F = ($_.Line -split "\s+") | Where-Object { $_ }  # Proto, Local, Remote, State, PID
             $P = $Procs[[int]$F[4]]
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 Local       = $F[1]
                 Remote      = $F[2]
                 PID         = $F[4]
@@ -67,21 +64,19 @@ function Get-TriageNetworkData {
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
-
     function Get-AllConnections {
         param(
-            [string]$TxtFile = "$NetworkFolder\netstat_all_connections.txt"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "netstat_all_connections.txt")
         )
         $Command = { & (Get-TriageBinary "netstat") -nao }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-NetTcpConnections {
         param(
-            [string]$TxtFile = "$NetworkFolder\net_tcp_connections.txt",
-            [string]$CsvFile = "$NetworkFolder\net_tcp_connections.csv"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "net_tcp_connections.txt"),
+            [string]$CsvFile = (Join-Path -Path $NetworkFolder -ChildPath "net_tcp_connections.csv")
         )
         $Command = { Get-NetTCPConnection | Select-Object -Property * | Sort-Object LocalAddress -Desc }
         $Data = &($Command)
@@ -89,62 +84,55 @@ function Get-TriageNetworkData {
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
-
     function Get-DnsCache {
         param(
-            [string]$TxtFile = "$NetworkFolder\dns_cache.txt"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "dns_cache.txt")
         )
         $Command = { & (Get-TriageBinary "ipconfig") /displaydns }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-DnsCacheByRecordName {
         param(
-            [string]$TxtFile = "$NetworkFolder\dns_cache_by_record_name.txt"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "dns_cache_by_record_name.txt")
         )
         $Command = { & (Get-TriageBinary "ipconfig") /displaydns | Select-String "Record Name" | Sort-Object }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-NetworkShares {
         param(
-            [string]$CsvFile = "$NetworkFolder\network_shares.csv"
+            [string]$CsvFile = (Join-Path -Path $NetworkFolder -ChildPath "network_shares.csv")
         )
         Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2"
     }
 
-
     function Get-SmbShareData {
         param(
-            [string]$TxtFile = "$NetworkFolder\smb_shares.txt"
+            [string]$TxtFile = (Join-Path -Path $NetworkFolder -ChildPath "smb_shares.txt")
         )
         $Command =  { Get-SmbShare | Select-Object -Property * }
         $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-
     function Get-ArpCache {
         param(
-            [string]$CsvFile = "$NetworkFolder\arp_neighbor_cache.csv"
+            [string]$CsvFile = (Join-Path -Path $NetworkFolder -ChildPath "arp_neighbor_cache.csv")
         )
         $Data = Get-NetNeighbor -ErrorAction SilentlyContinue | Select-Object InterfaceAlias, InterfaceIndex, AddressFamily, IPAddress, LinkLayerAddress, State
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
-
     function Get-RoutingTable {
         param(
-            [string]$CsvFile = "$NetworkFolder\routing_table.csv"
+            [string]$CsvFile = (Join-Path -Path $NetworkFolder -ChildPath "routing_table.csv")
         )
         $Data = Get-NetRoute -ErrorAction SilentlyContinue | Select-Object InterfaceAlias, InterfaceIndex, AddressFamily, DestinationPrefix, NextHop, RouteMetric, Protocol, Store
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
-
 
     function Get-SmbActivity {
         $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
@@ -153,7 +141,7 @@ function Get-TriageNetworkData {
             $Opens = Get-SmbOpenFile -ErrorAction SilentlyContinue | Select-Object -Property * -ExcludeProperty $Skip
         }
         else {
-            $Sessions = $Opens = [pscustomobject]@{
+            $Sessions = $Opens = [PSCustomObject]@{
                 Note = "Server service (LanmanServer) not running; no inbound SMB sessions."
             }
         }
@@ -161,7 +149,6 @@ function Get-TriageNetworkData {
         Write-OutputToCsv -Data $Opens -OutputFile "$NetworkFolder\smb_open_files.csv"
         Write-OutputToCsv -Data (Get-SmbConnection -ErrorAction SilentlyContinue | Select-Object -Property * -ExcludeProperty $Skip) -OutputFile "$NetworkFolder\smb_client_connections.csv"
     }
-
 
     # ----------------------------------
     # Run the functions from the module
@@ -191,7 +178,7 @@ function Get-TriageNetworkData {
         @{
             Action  = { Get-EstablishedConnections }
             Message = "Gathering Established Connections..."
-            Files   = "netstat_established_connections.csv"
+            Files   = "established_connections.csv"
         }
         @{
             Action  = { Get-AllConnections }

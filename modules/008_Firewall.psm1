@@ -1,30 +1,30 @@
 function Get-TriageFirewallData {
     [CmdletBinding()]
     param(
-        [string]$FirewallFolder
+        [Parameter(Mandatory)][string]$FirewallFolder
     )
 
     function Get-FirewallRules {
         param(
-            [string]$OutputFile = "$FirewallFolder\firewall_rules.txt"
+            [string]$TxtFile = (Join-Path -Path $FirewallFolder -ChildPath "firewall_rules.txt")
         )
-        $Command = { & (Get-TriageBinary "netsh")  advfirewall firewall show rule name=all verbose }
+        $Command = { & (Get-TriageBinary "netsh") advfirewall firewall show rule name=all verbose }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Get-DefenderPreferences {
         param(
-            [string]$OutputFile = "$FirewallFolder\defender_preferences.txt"
+            [string]$TxtFile = (Join-Path -Path $FirewallFolder -ChildPath "defender_preferences.txt")
         )
         $Command = { Get-MpPreference | Select-Object -Property * }
         $Data = &($Command)
-        Write-OutputToFile -Command $Command -Data $Data -OutputFile $OutputFile
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
     function Copy-DefenderLogs {
         param(
-            [string]$OutputFile = "$FirewallFolder\defender_log_files.txt"
+            [string]$TxtFile = (Join-Path -Path $FirewallFolder -ChildPath "defender_log_files.txt")
         )
 
         $MpOutputFolder = Join-Path -Path $FirewallFolder -ChildPath "Defender_Log_Files"
@@ -35,22 +35,27 @@ function Get-TriageFirewallData {
 
         foreach ($File in $MpLogFiles) {
             Copy-Item -LiteralPath $File.FullName -Destination $MpOutputFolder
-            Add-Content -Path $OutputFile -Value $File.FullName -Encoding UTF8 -Force
+            Add-Content -Path $TxtFile -Value $File.FullName -Encoding UTF8 -Force
         }
     }
 
     function Get-DefenderDetections {
+        param(
+            [string]$ThreatDetectionsFile = (Join-Path -Path $FirewallFolder -ChildPath "defender_threat_detections.csv"),
+            [string]$ThreatsFile = (Join-Path -Path $FirewallFolder -ChildPath "defender_threats.csv"),
+            [string]$StatusFile = (Join-Path -Path $FirewallFolder -ChildPath "defender_status.txt")
+        )
         $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
-        $Det = Get-MpThreatDetection -ErrorAction SilentlyContinue | Select-Object -Property *, @{ N = "ResourceList"; E = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
+        $Detections = Get-MpThreatDetection -ErrorAction SilentlyContinue | Select-Object -Property *, @{ N = "ResourceList"; E = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
 
-        $Thr = Get-MpThreat -ErrorAction SilentlyContinue | Select-Object -Property *, @{ N = "ResourceList"; E = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
+        $Threats = Get-MpThreat -ErrorAction SilentlyContinue | Select-Object -Property *, @{ N = "ResourceList"; E = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
 
-        Write-OutputToCsv -Data $Det -OutputFile "$FirewallFolder\defender_threat_detections.csv"
-        Write-OutputToCsv -Data $Thr -OutputFile "$FirewallFolder\defender_threats.csv"
+        Write-OutputToCsv -Data $Detections -OutputFile $ThreatDetectionsFile
+        Write-OutputToCsv -Data $Threats -OutputFile $ThreatsFile
 
         $Status = Get-MpComputerStatus -ErrorAction SilentlyContinue | Out-String -Width 4096
 
-        Write-OutputToFile -Command { Get-MpComputerStatus } -Data $Status -OutputFile "$FirewallFolder\defender_computer_status.txt"
+        Write-OutputToFile -Data $Status -OutputFile $StatusFile
     }
 
     # ----------------------------------
@@ -76,7 +81,7 @@ function Get-TriageFirewallData {
         @{
             Action  = { Get-DefenderDetections }
             Message = "Listing Windows Defender Detections..."
-            Files   = "defender_threat_detections.csv", "defender_threats.csv", "defender_computer_status.txt"
+            Files   = "defender_threat_detections.csv", "defender_threats.csv", "defender_status.txt"
         }
     )
 

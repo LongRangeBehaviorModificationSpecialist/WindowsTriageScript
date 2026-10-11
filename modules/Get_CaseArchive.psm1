@@ -33,10 +33,10 @@ function Get-CaseArchive {
 
             $Zip = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
             $Added = 0
-            foreach ($F in $Files) {
-                $Rel = $F.FullName.Substring($Root.Length + 1).Replace("\", "/")
+            foreach ($File in $Files) {
+                $Rel = $File.FullName.Substring($Root.Length + 1).Replace("\", "/")
                 try {
-                    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($Zip, $F.FullName, "$Name/$Rel", [System.IO.Compression.CompressionLevel]::Optimal)
+                    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($Zip, $File.FullName, "$Name/$Rel", [System.IO.Compression.CompressionLevel]::Optimal)
                     $Added++
                 }
                 catch {
@@ -65,7 +65,7 @@ function Get-CaseArchive {
 
             Show-Message -Message "Archive complete => $Added files in $( [int]$Stopwatch.Elapsed.TotalSeconds )s." -Level INFO
 
-            [pscustomobject]@{
+            [PSCustomObject]@{
                 ZipPath  = $ZipPath;
                 Sha256   = $Sha;
                 Excluded = $ExcludeFolders

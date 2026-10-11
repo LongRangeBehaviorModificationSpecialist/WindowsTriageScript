@@ -5,7 +5,7 @@ function Invoke-DfirTriageScan {
         [Parameter(Mandatory)][string]$Operator,
         [Parameter(Mandatory)][string]$CaseNumber,
         [string]$Agency = "",
-        [string[]]$Modules = @("001_Device","002_Users","003_Network","004_Process","005_System","006_Prefetch","007_Event_Logs","008_Firewall","009_Encryption","010_Internet"),
+        [string[]]$Modules = @("001_Device","002_Users","003_Network","004_Process","005_System","006_Prefetch","007_Event_Logs","008_Firewall","009_Encryption","010_Internet","011_RawArtifacts"),
         [switch]$RunEdd,
         [switch]$CaptureProcesses,
         [switch]$CaptureRam,
@@ -22,8 +22,7 @@ function Invoke-DfirTriageScan {
         Show-Message -Message "[ $( $MyInvocation.MyCommand.Name ) ] execution started." -Level INFO -AddToLog
     }
     process {
-        # Show-IsAdmin
-        Show-Message -Message "Operator: $Operator | Agency: $Agency | Case: $CaseNumber" -Level INFO -AddToLog
+        Show-Message -Message "[ Operator: $Operator | Agency: $Agency | Case: $CaseNumber ]" -Level INFO -AddToLog
 
         Write-CaseInfo -ResultsFolder $ResultsFolder -Operator $Operator -Agency $Agency -CaseNumber $CaseNumber -Selected ([ordered]@{
             Modules          = $Modules
@@ -118,8 +117,8 @@ function Invoke-DfirTriageScan {
         try {
             $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path -Path $ResultsFolder -ChildPath "Registry_Hives") -ScratchFolder $Scratch)
 
-            foreach ($H in $global:TriageUserHives) {
-                Show-Message -Message "User hive: $( $H.UserName ) [ $( $H.Sid ) ] - $( $H.Note )" -Level INFO -AddToLog
+            foreach ($Hive in $global:TriageUserHives) {
+                Show-Message -Message "User hive: $( $Hive.UserName ) [ $( $Hive.Sid ) ] - $( $Hive.Note )" -Level INFO -AddToLog
             }
 
             Initialize-TriageScan -ResultsFolder $ResultsFolder -Modules $Modules
@@ -158,7 +157,7 @@ function Invoke-DfirTriageScan {
 
         $Code = if ($global:TriageErrorCount -gt 0) { 1 } else { 0 }
 
-        $global:TriageResult = [pscustomobject]@{
+        $global:TriageResult = [PSCustomObject]@{
             ExitCode      = $Code
             Errors        = $global:TriageErrorCount
             Warnings      = $global:TriageWarningCount
