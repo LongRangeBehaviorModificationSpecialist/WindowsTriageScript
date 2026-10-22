@@ -7,9 +7,9 @@ function Invoke-DfirTriageScan {
         [string]$Agency = "",
         [string[]]$Modules = @("001_Device","002_Users","003_Network","004_Process","005_System","006_Prefetch","007_Event_Logs","008_Firewall","009_Encryption","010_Internet","011_RawArtifacts"),
         [switch]$RunEdd,
-        [switch]$CaptureProcesses,
+        [switch]$GetProcesses,
         [switch]$CaptureRam,
-        [switch]$CreateArchive
+        [switch]$Archive
     )
 
     begin {
@@ -22,41 +22,39 @@ function Invoke-DfirTriageScan {
         Show-Message -Message "[ $( $MyInvocation.MyCommand.Name ) ] execution started." -Level INFO -AddToLog
     }
     process {
-        Show-Message -Message "[ Operator: $Operator | Agency: $Agency | Case: $CaseNumber ]" -Level INFO -AddToLog
-
         Write-CaseInfo -ResultsFolder $ResultsFolder -Operator $Operator -Agency $Agency -CaseNumber $CaseNumber -Selected ([ordered]@{
-            Modules          = $Modules
-            RunEdd           = [bool]$RunEdd
-            CaptureProcesses = [bool]$CaptureProcesses
-            CaptureRam       = [bool]$CaptureRam
-            CreateArchive    = [bool]$CreateArchive
+            Modules      = $Modules
+            RunEdd       = [bool]$RunEdd
+            GetProcesses = [bool]$GetProcesses
+            CaptureRam   = [bool]$CaptureRam
+            Archive      = [bool]$Archive
         })
 
         Initialize-TriageSystemTools -ToolkitRoot $global:ToolkitRoot
 
         # Optional captures: the decision was made up front, so just branch
-        if ($RunEdd) {
-            Invoke-EDD -ResultsFolder $ResultsFolder
-        }
-        else {
+        if (-not $RunEdd) {
             Show-Message -Message "Skipped [ Encrypted Disk Detector ] (not selected)." -Level INFO -AddToLog
         }
-
-        if ($CaptureProcesses) {
-            Get-RunningProcesses -ResultsFolder $ResultsFolder
-        }
         else {
+            Invoke-EDD -ResultsFolder $ResultsFolder
+        }
+
+        if (-not $GetProcesses) {
             Show-Message -Message "Skipped [ Magnet Process Capture ] (not selected)." -Level INFO -AddToLog
         }
-
-        if ($CaptureRam) {
-            Get-ComputerRam -ResultsFolder $ResultsFolder
-        }
         else {
+            Get-RunningProcesses -ResultsFolder $ResultsFolder
+        }
+
+        if (-not $CaptureRam) {
             Show-Message -Message "Skipped [ Magnet RAM Capture ] (not selected)." -Level INFO -AddToLog
         }
+        else {
+            Get-ComputerRam -ResultsFolder $ResultsFolder
+        }
 
-        if (-not $CreateArchive) {
+        if (-not $Archive) {
             Show-Message -Message "Skipped [ Creating Case Archive ] (not selected)." -Level INFO -AddToLog
         }
 
@@ -139,7 +137,7 @@ function Invoke-DfirTriageScan {
 
         $Archive = $null
         if ($CreateArchive) {
-            $Archive = Get-CaseArchive -ResultsFolder $ResultsFolder
+            $Archive = Invoke-CaseArchive -ResultsFolder $ResultsFolder
         }
         else {
             continue

@@ -4,7 +4,7 @@
     Branding = @{
         ToolName    = "NOVA ICAC VECTOR Triage Application"
         Author      = "Michael Sponheimer"
-        LastUpdated = "07-Oct-2026"
+        LastUpdated = "22-Oct-2026"
     }
 
     Modules = @(
@@ -99,22 +99,22 @@
         }
         @{
             Name = "Edge"
-            Type = "Chromium";
+            Type = "Chromium"
             Root = "AppData\Local\Microsoft\Edge\User Data"
         }
         @{
-            Name = "Brave";
-            Type = "Chromium";
+            Name = "Brave"
+            Type = "Chromium"
             Root = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
         }
         @{
-            Name = "Firefox";
-            Type = "Firefox";
+            Name = "Firefox"
+            Type = "Firefox"
             Root = "AppData\Roaming\Mozilla\Firefox\Profiles"
         }
         @{
-            Name = "Vivaldi";
-            Type = "Chromium";
+            Name = "Vivaldi"
+            Type = "Chromium"
             Root = "AppData\Local\Vivaldi\User Data"
         }
     )

@@ -2,11 +2,11 @@
 .SYNOPSIS
     Launcher for the NOVA ICAC VECTOR Windows triage suite.
 .DESCRIPTION
-    Can launch the application by using the `.\run-triage.cmd` command and
-    passing the parameters as normal.  This will ensure that the script is run
-    with the `-NoProfile` option.
+    Can launch the application by using the '.\run-triage.cmd'
+    command and passing the parameters as normal.  This will
+    ensure that the script is run with the `-NoProfile` option.
 .PARAMETER Operator
-    Examiner name (required unless -Gui).
+    Examiner's name (required unless -Gui).
     Alias: "-Op".
 .PARAMETER Agency
     Agency name (optional).
@@ -15,29 +15,21 @@
     Case number (required unless -Gui).
     Alias: "-CN".
 .PARAMETER CaseFile
-    Optional JSON file holding Operator, Agency and CaseNumber, so they stay off
-    the command line.
+    Optional JSON file holding Operator, Agency and CaseNumber, so
+    they stay off the command line.
 .PARAMETER Modules
     A comma-separated list of module names or 3-digit prefixes, e.g.:
     "001","003","010_Internet".
     Alias: "-Mods".
     Default: "all"
 .PARAMETER RunEdd
-    Y or N (also Yes/No/True/False/1/0).
-    Alias: "-Edd".
-    Default: "N"
-.PARAMETER CaptureProcesses
-    Y or N (also Yes/No/True/False/1/0).
-    Alias: "-Proc".
-    Default: "N"
+    Alias: "-Edd"
+.PARAMETER GetProcesses
+    Alias: "-Proc"
 .PARAMETER CaptureRam
-    Y or N (also Yes/No/True/False/1/0).
-    Alias: "-Ram".
-    Default: "N"
-.PARAMETER CreateArchive
-    Y or N (also Yes/No/True/False/1/0).
-    Alias: "-Zip".
-    Default: "N"
+    Alias: "-Ram"
+.PARAMETER Archive
+    Alias: "-Zip"
 .PARAMETER OutputRoot
     Folder in which the case folder is created (no trailing backslash).
     Default: the toolkit folder.
@@ -47,14 +39,19 @@
 .EXAMPLE
     .\run-triage.ps1
 .EXAMPLE
-    run-triage.cmd -DryRun -Operator "MAS" -Agency "Agency" -CaseNumber "12345" -RunEdd Y -CaptureProcesses N -CaptureRam N -CreateArchive N -Modules "001","002","003"
+    run-triage.cmd -DryRun -Operator "MAS" -Agency "Agency" -CaseNumber
+    "12345" [-RunEdd|-Edd] [-GetProcesses|-Proc] [-CaptureRam|-Ram]
+    [-Archive|-Zip] -Modules "001","002","003"
 .EXAMPLE
     (Using aliases)
-    run-triage.cmd -DryRun -Op "MAS" -A "Agency" -CN "12345" -Edd Y -Proc N -Ram N -Zip N -Modules "001","002","003"
+    run-triage.cmd -DryRun -Op "MAS" -A "Agency" -CN "12345" -Edd -Proc
+    -Ram -Zip -Modules "001","002","003"
 .EXAMPLE
-    run-triage.cmd -Operator "MAS" -Agency "Agency" -CaseNumber "12345" -RunEdd Y -CaptureProcesses N -CaptureRam N -CreateArchive N -Modules all
+    run-triage.cmd -Operator "MAS" -Agency "Agency" -CaseNumber "12345"
+    -RunEdd -GetProcesses -CaptureRam -Archive -Modules all
 .EXAMPLE
-    .\run-triage.ps1 -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -CaptureRam -CreateArchive -Modules ("006_Prefetch", "010_Internet")
+    .\run-triage.ps1 -Operator "J. Smith" -Agency "Example PD" -CaseNumber
+    2026-0142 -CaptureRam -Archive -Modules ("006_Prefetch", "010_Internet")
 .EXAMPLE
     .\run-triage.cmd -GUI
 .NOTES
@@ -64,7 +61,7 @@
                     failed),
                 3 = unexpected fatal error.
 
-    Last Updated: 11-Oct-2026
+    Last Updated: 22-Oct-2026
 #>
 
 [CmdletBinding()]
@@ -75,10 +72,10 @@ param(
     [Alias("CN")][string]$CaseNumber,
     [string]$CaseFile,
     [Alias("Mods")][string[]]$Modules = @("all"),
-    [Alias("Edd")][string]$RunEdd = "N",
-    [Alias("Proc")][string]$CaptureProcesses = "N",
-    [Alias("Ram")][string]$CaptureRam = "N",
-    [Alias("Zip")][string]$CreateArchive = "N",
+    [Alias("Edd")][switch]$RunEdd,
+    [Alias("Proc")][switch]$GetProcesses,
+    [Alias("Ram")][switch]$CaptureRam,
+    [Alias("Zip")][switch]$Archive,
     [string]$OutputRoot,
     [switch]$DryRun
 )
@@ -111,19 +108,21 @@ Usage:
     run-triage.cmd -Operator <name> -CaseNumber <number> [options]
 
 Options (Y/N values default to N):
-    -Agency <name>          Agency name
-    -Modules <list>         all (default) or e.g. 001,003,010_Internet
-    -RunEdd Y|N             Encrypted Disk Detector
-    -CaptureProcesses Y|N   Magnet Process Capture  (alias: -CaptureProcess)
-    -CaptureRam Y|N         Magnet RAM Capture
-    -CreateArchive Y|N      Zip the case folder when finished
-    -OutputRoot <folder>    Where to create the case folder (no trailing backslash)
-    -CaseFile <file.json>   Read Operator, Agency and CaseNumber from a file
-    -DryRun                 Check the options and show the plan; collect nothing
-    -Gui                    Use the graphical interface
+    -Agency <name>         Agency name
+    -Modules <list>        all (default) or e.g. 001,003,010_Internet
+    -RunEdd                Encrypted Disk Detector
+    -GetProcesses          Magnet Process Capture
+    -CaptureRam            Magnet RAM Capture
+    -Archive               Zip the case folder when finished
+    -OutputRoot <folder>   Where to create the case folder (no trailing backslash)
+    -CaseFile <file.json>  Read Operator, Agency and CaseNumber from a file
+    -DryRun                Check the options and show the plan; collect nothing
+    -Gui                   Use the graphical interface
 
 Example:
-        run-triage.cmd -Operator "<Name>" -Agency "<Agency>" -CaseNumber "<12345>" -RunEdd <Y/N> -CaptureProcesses <Y/N> -CaptureRam <Y/N> -CreateArchive <Y/N> -Modules [<all>|"001_Device","003_Network"[etc...]]
+        run-triage.cmd -Operator "<Name>" -Agency "<Agency>" -CaseNumber "<12345>"
+        [-RunEdd|-Edd] [-GetProcesses|-Proc] [-CaptureRam|-Ram] [-Archive|-.Zip]
+        -Modules [<all>|"001_Device","003_Network"[etc...]]
 
 "@
 }
@@ -178,10 +177,10 @@ if (-not $Gui) {
 }
 
 $Flags = [ordered]@{
-    RunEdd           = $RunEdd
-    CaptureProcesses = $CaptureProcesses
-    CaptureRam       = $CaptureRam
-    CreateArchive    = $CreateArchive
+    RunEdd       = $RunEdd
+    GetProcesses = $GetProcesses
+    CaptureRam   = $CaptureRam
+    Archive      = $Archive
 }
 
 $Resolved = @{}
@@ -236,11 +235,11 @@ if (-not $Gui) {
     Show-Message -Message "Agency: $Agency" -NoTime -MessageColor Cyan
     Show-Message -Message "Case Number: $CaseNumber" -NoTime -MessageColor Cyan
     Show-Message -Message "Modules: $( $Selected -join ', ' )" -NoTime -MessageColor Cyan
-    Show-Message -Message "EDD: $( & $YesNo $Resolved.RunEdd )" -NoTime -MessageColor Cyan
-    Show-Message -Message "Process Capture: $( & $YesNo $Resolved.CaptureProcesses )" -NoTime -MessageColor Cyan
-    Show-Message -Message "RAM Capture: $( & $YesNo $Resolved.CaptureRam )" -NoTime -MessageColor Cyan
-    Show-Message -Message "Create Archive: $( & $YesNo $Resolved.CreateArchive )" -NoTime -MessageColor Cyan
-    Show-Message -Message "---------------------------------------------------------" -NoTime -MessageColor Cyan
+    Show-Message -Message "EDD: $( & $YesNo $RunEdd )" -NoTime -MessageColor Cyan
+    Show-Message -Message "Process Capture: $( & $YesNo $GetProcesses )" -NoTime -MessageColor Cyan
+    Show-Message -Message "RAM Capture: $( & $YesNo $CaptureRam )" -NoTime -MessageColor Cyan
+    Show-Message -Message "Create Archive: $( & $YesNo $Archive )" -NoTime -MessageColor Cyan
+    Show-Message -Message "---------------------------------------------------------`n" -NoTime -MessageColor Cyan
 }
 if ($DryRun) {
     Show-Message -Message "Dry run => nothing was collected." -Level INFO -MessageColor DarkGreen
@@ -248,14 +247,14 @@ if ($DryRun) {
 }
 
 $Options = @{
-    Operator         = $Operator
-    Agency           = $Agency
-    CaseNumber       = $CaseNumber
-    Modules          = $Selected
-    RunEdd           = $Resolved.$RunEdd
-    CaptureProcesses = $Resolved.$CaptureProcesses
-    CaptureRam       = $Resolved.$CaptureRam
-    CreateArchive    = $Resolved.$CreateArchive
+    Operator     = $Operator
+    Agency       = $Agency
+    CaseNumber   = $CaseNumber
+    Modules      = $Selected
+    RunEdd       = $RunEdd
+    GetProcesses = $GetProcesses
+    CaptureRam   = $CaptureRam
+    Archive      = $Archive
 }
 
 try {

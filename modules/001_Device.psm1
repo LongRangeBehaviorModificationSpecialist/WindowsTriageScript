@@ -8,8 +8,7 @@ function Get-TriageDeviceData {
         param (
             [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "device_info.txt")
         )
-        $Command =  { Get-ComputerDetails }
-        $Data = &($Command)
+        $Data = & { Get-ComputerDetails }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -29,28 +28,32 @@ function Get-TriageDeviceData {
         param(
             [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "full_dir_list.csv")
         )
-        Get-ChildItem -LiteralPath "$env:SystemDrive\" -Recurse -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc | Export-Csv -LiteralPath $CsvFile -NoTypeInformation -Encoding UTF8
+        Get-ChildItem -LiteralPath "$env:SystemDrive\" -Recurse -Force -ErrorAction SilentlyContinue |
+            Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc |
+            Export-Csv -LiteralPath $CsvFile -NoTypeInformation -Encoding UTF8
     }
 
     function Get-CurrentComputerInfo {
         param(
             [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "computer_info.txt")
         )
-        $Command =  { Get-ComputerInfo }
-        $Data = &($Command)
+        $Data = & { Get-ComputerInfo }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
-    function Get-SystemInfo {
+    function Get-SystemInfo1 {
         param(
-            [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "system_info.txt")
+            [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "system_info1.txt")
         )
-        $Command1 = { & (Get-TriageBinary "systeminfo") /FO LIST }
-        $Data1 = &($Command1)
-        Write-OutputToFile -Data $Data1 -OutputFile $TxtFile
+        $Data = & { & (Get-TriageBinary "systeminfo") /FO LIST }
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+    }
 
-        $Command2 = { Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -Property * }
-        $Data2 = &($Command2)
+    function Get-SystemInfo2 {
+        param(
+            [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "system_info2.txt")
+        )
+        $Data2 = & { Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -Property * }
         Write-OutputToFile -Data $Data2 -OutputFile $TxtFile -Append
     }
 
@@ -58,8 +61,7 @@ function Get-TriageDeviceData {
         param(
             [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "physical_memory.txt")
         )
-        $Command = { Get-CimInstance -ClassName Win32_PhysicalMemory | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_PhysicalMemory | Select-Object -Property * }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -67,8 +69,7 @@ function Get-TriageDeviceData {
         param(
             [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "env_vars.txt")
         )
-        $Command = { Get-ChildItem -LiteralPath env: | Format-List }
-        $Data = &($Command)
+        $Data = & { Get-ChildItem -LiteralPath env: | Format-List }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -76,26 +77,24 @@ function Get-TriageDeviceData {
         param(
             [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "disk_partitions.csv")
         )
-        $Command = { Get-CimInstance -ClassName Win32_DiskPartition | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_DiskPartition | Select-Object -Property * | Sort-Object -Property Name }
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
     function Get-UserAccounts {
         param(
-            [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "user_accounts.txt")
+            [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "user_accounts.csv")
         )
-        $Command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object LocalPath, SID, @{ N = "last used"; E = { $_.lastusetime } } }
-        $Data = &($Command)
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        $Data = & { Get-CimInstance -ClassName Win32_UserProfile | Select-Object *, @{ N = "last used"; E = { $_.lastusetime } } }
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
     function Get-LogonSessions {
         param(
             [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "logon_sessions.txt")
         )
-        $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
+        # $Data = &($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -104,8 +103,7 @@ function Get-TriageDeviceData {
             [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "start_up_apps.txt"),
             [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "start_up_apps.csv")
         )
-        $Command = { Get-CimInstance -ClassName Win32_StartupCommand | Select-Object -Property * | Sort-Object Caption }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_StartupCommand | Select-Object -Property * | Sort-Object Caption }
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
 
@@ -135,8 +133,7 @@ function Get-TriageDeviceData {
         param(
             [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "motherboard.txt")
         )
-        $Command = { Get-CimInstance -ClassName Win32_BaseBoard | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_BaseBoard | Select-Object -Property * }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -166,9 +163,14 @@ function Get-TriageDeviceData {
             Files   = "computer_info.txt"
         }
         @{
-            Action  = { Get-SystemInfo }
-            Message = "Parsing System Information..."
-            Files   = "system_info.txt"
+            Action  = { Get-SystemInfo1 }
+            Message = "Parsing System Information (first)..."
+            Files   = "system_info1.txt"
+        }
+        @{
+            Action  = { Get-SystemInfo2 }
+            Message = "Parsing System Information (second)..."
+            Files   = "system_info2.txt"
         }
         @{
             Action  = { Get-PhysicalMemory }
@@ -188,7 +190,7 @@ function Get-TriageDeviceData {
         @{
             Action  = { Get-UserAccounts }
             Message = "Getting User Accounts & Current Login Information..."
-            Files   = "user_accounts.txt"
+            Files   = "user_accounts.csv"
         }
         @{
             Action  = { Get-LogonSessions }

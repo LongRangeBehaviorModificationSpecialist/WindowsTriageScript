@@ -6,7 +6,6 @@ function Get-InitialSetup {
     )
 
     if (-not $OutputRoot) {
-        # $OutputRoot = $global:ToolkitRoot
         $OutputRoot = Get-TriageConfig -Key "ToolkitRoot"
     }
     if (-not (Test-Path -LiteralPath $OutputRoot -PathType Container)) {
@@ -52,10 +51,10 @@ function Write-OutputToCsv {
 
 
 function Show-Message {
-    <#
-    .SYNOPSIS
-        Handles the display of messages to the terminal (with varions options)
-    #>
+<#
+.SYNOPSIS
+    Handles the display of messages to the terminal (with varions options)
+#>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $false)]
@@ -86,7 +85,7 @@ function Show-Message {
         # Handle SUCCESS auto-message
         if ($Level -eq "SUCCESS" -and $File) {
             $Names   = @($File | ForEach-Object { [System.IO.Path]::GetFileName($_) })
-            $Joined  = $Names -join "', '"
+            $Joined  = $Names -join ", "
             $Message = "Process completed. Output saved to [ $Joined ]"
             if ($ExecutionTime) {
                 $Message += " ($ExecutionTime)."
@@ -162,14 +161,14 @@ function Write-LogMessage {
 
 
 function Write-OutputToFile {
-    <#
-    .SYNOPSIS
-        Writes the results of the commands to the $OutputFile.
-    #>
+<#
+.SYNOPSIS
+    Writes the results of the commands to the $OutputFile.
+#>
     param(
+        [Parameter(Mandatory)][string]$OutputFile,
         [string]$Command,
         [System.Object]$Data,
-        [Parameter(Mandatory)][string]$OutputFile,
         [switch]$Append
     )
 
@@ -273,11 +272,11 @@ function Get-PerUserRegistryValue {
 
 
 function Get-PerUserRegistrySubKey {
-    <#
-    .SYNOPSIS
-        Same idea as Get-PerUserRegistryValue, but lists the *subkeys*
-        (MountPoints2, EscDomains)
-    #>
+<#
+.SYNOPSIS
+    Same idea as Get-PerUserRegistryValue, but lists the *subkeys*
+    (MountPoints2, EscDomains)
+#>
     param(
         [Parameter(Mandatory)][string]$SubKey
     )
@@ -376,7 +375,7 @@ function Mount-TriageUserHives {
                     $Out.Note = "No NTUSER.DAT"
                 }
                 else {
-                    # 1) Pristine copy and transaction logs go into the evidence folder
+                    # Pristine copy and transaction logs go into the evidence folder
                     foreach ($File in "NTUSER.DAT", "NTUSER.DAT.LOG1", "NTUSER.DAT.LOG2") {
                         $UserProfile = Join-Path -Path $ProfilePath -ChildPath $File
                         if (Test-Path -LiteralPath $UserProfile) {
@@ -384,7 +383,7 @@ function Mount-TriageUserHives {
                         }
                     }
 
-                    # 2) Load a disposable working copy (logs beside it so Windows replays them)
+                    # Load a disposable working copy (logs beside it so Windows replays them)
                     $Work = Join-Path -Path $ScratchFolder -ChildPath "$Sid.DAT"
                     Copy-Item -LiteralPath (Join-Path -Path $RawDir -ChildPath "NTUSER.DAT") -Destination $Work -Force -ErrorAction Stop
                     foreach ($Log in "LOG1", "LOG2") {
@@ -461,11 +460,11 @@ function Get-TriageBinary {
 
 
 function Disable-PSReadLineHistory {
-    <#
-    .SYNOPSIS
-        Best effort. Only affects the current session, and the launch line
-        has normally already been written by the time the script runs.
-    #>
+<#
+.SYNOPSIS
+    Best effort. Only affects the current session, and the launch line
+    has normally already been written by the time the script runs.
+#>
     try {
         if (Get-Module -Name PSReadLine) {
             Set-PSReadLineOption -HistorySaveStyle SaveNothing -ErrorAction Stop
@@ -482,12 +481,12 @@ function Disable-PSReadLineHistory {
 
 
 function Write-LaunchContext {
-    <#
-    .SYNOPSIS
-        Records how the tool was started and the state of the operator's history
-        file, so an examiner can later separate tool-caused changes from the
-        subject's activity.
-    #>
+<#
+.SYNOPSIS
+    Records how the tool was started and the state of the operator's history
+    file, so an examiner can later separate tool-caused changes from the
+    subject's activity.
+#>
     begin {
         $ArgList = [Environment]::GetCommandLineArgs()
         $NoProf  = [bool]($ArgList | Where-Object { $_ -like "-NoProf*" })
@@ -585,8 +584,8 @@ function Show-TriageBanner {
 [3] The results will automatically be stored in a directory that
     is automatically created in the same directory from where this
     script is run.
-[4] You will be asked a few questions now. After you confirm, collection runs
-    with no further prompts.
+[4] You will be asked a few questions now. After you confirm,
+    collection runs with no further prompts.
 [5] **IMPORTANT** DO NOT VIEW THE RESULTS OF THE SCAN ON THE TARGET
     MACHINE. MOVE THE COLLECTION DEVICE TO A FORENSIC MACHINE BEFORE
     OPENING ANY FILES!
@@ -601,11 +600,11 @@ function Show-TriageBanner {
 }
 
 function Write-CaseInfo {
-    <#
-    .SYNOPSIS
-        Stores the operator/case details as data (they were only logged before).
-        Written before hashing, so it is covered by the hash manifest.
-    #>
+<#
+.SYNOPSIS
+    Stores the operator/case details as data (they were only logged before).
+    Written before hashing, so it is covered by the hash manifest.
+#>
     param(
         [Parameter(Mandatory)][string]$ResultsFolder,
         [Parameter(Mandatory)][string]$Operator,
@@ -640,11 +639,11 @@ function Write-CaseInfo {
 
 
 function Invoke-RegistryCommand {
-    <#
-    .SYNOPSIS
-        Runs a registry read. A missing key/path is logged as "no data";
-        any other problem (access denied, etc.) is logged as an ERROR.
-    #>
+<#
+.SYNOPSIS
+    Runs a registry read. A missing key/path is logged as "no data";
+    any other problem (access denied, etc.) is logged as an ERROR.
+#>
     param(
         [Parameter(Mandatory)][scriptblock]$Command
     )
@@ -671,10 +670,10 @@ function Invoke-RegistryCommand {
 
 
 function Clear-TriageHives {
-    <#
-    .SYNOPSIS
-        Unloads every TRIAGE_* hive, including ones left behind by a crashed or interrupted run.
-    #>
+<#
+.SYNOPSIS
+    Unloads every TRIAGE_* hive, including ones left behind by a crashed or interrupted run.
+#>
     [CmdletBinding()]
     param()
     begin {
@@ -706,10 +705,10 @@ function Clear-TriageHives {
 
 
 function Import-TriageConfig {
-    <#
-    .SYNOPSIS
-        This function stays private.  Do not add to the `triage.psd1` file.
-    #>
+<#
+.SYNOPSIS
+    This function stays private.  Do not add to the `triage.psd1` file.
+#>
     [CmdletBinding()]
     param(
         [string]$ToolkitRoot = (Split-Path -Path $PSScriptRoot -Parent)
@@ -971,10 +970,10 @@ function Copy-TriageFile {
 
 
 function Copy-TriageRawFile {
-    <#
-    .SYNOPSIS
-        Always uses RawCopy (for $MFT, $UsnJrnl)
-    #>
+<#
+.SYNOPSIS
+    Always uses RawCopy (for $MFT, $UsnJrnl)
+#>
     param(
         [Parameter(Mandatory)][string]$Source,
         [Parameter(Mandatory)][string]$Destination
@@ -1020,10 +1019,10 @@ function Save-TriageRegistryHive {
 
 
 function Copy-TriageFolderBackup {
-    <#
-    .SYNOPSIS
-        Robocopy in backup mode: reads folders whose ACL excludes administrators
-    #>
+<#
+.SYNOPSIS
+    Robocopy in backup mode: reads folders whose ACL excludes administrators
+#>
     param(
         [Parameter(Mandatory)][string]$Source,
         [Parameter(Mandatory)][string]$Destination

@@ -24,7 +24,7 @@ REM Expect 0 (or 1, which means a collector logged an error and tells you to rea
 
 REM .\run-triage.ps1 -Operator "Operator" -CaseNumber 26-0001 -Agency "Agency" -Modules 010_Internet -RunEdd
 
-REM .\run-triage.cmd -Op "Operator" -A "Agency" -CN 26-00001 -Edd N -Proc N -Ram N -Zip N -Mods "001","005"
+REM .\run-triage.cmd -Op "Operator" -A "Agency" -CN 26-00001 -Edd N -Proc N -Ram N -Zip N -Mods "001"
 
 REM To unload the reg hives, use =>
 

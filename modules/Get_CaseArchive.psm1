@@ -1,4 +1,4 @@
-function Get-CaseArchive {
+function Invoke-CaseArchive {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$ResultsFolder,

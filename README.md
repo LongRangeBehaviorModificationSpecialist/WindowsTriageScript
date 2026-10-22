@@ -160,9 +160,9 @@ The launcher then:
 4. `-CaseNumber`: Case number recorded in the log and`case_info.json`.
 5. `-Modules`: One or more of the following: `001_Device`, `002_Users`, `003_Network`, `004_Process`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet` and `011_RawArtufacts`.  Default:  all.
 6. `-RunEdd`: Run Encrypted Disk Detector.
-7. `-CaptureProcesses`: Run Magnet Process Capture.
+7. `-GetProcesses`: Run Magnet Process Capture.
 8. `-CaptureRam`: Run Magnet RAM Capture.
-9. `-CreateArchive`: Create a zip of the case folder when finished.
+9. `-Archive`: Create a zip of the case folder when finished.
 10. `-OutputRoot`: Folder in which the case folder is created.  Default:  the toolkit folder.
 11. The following parameters have aliases to keep the length of the command line as short as possible:.
 
@@ -173,16 +173,16 @@ The launcher then:
 | `-CaseNumber`       | `-CN`   |
 | `-Modules`          | `-Mods` |
 | `-RunEdd`           | `-Edd`  |
-| `-CaptureProcesses` | `-Proc` |
+| `-GetProcesses` | `-Proc` |
 | `-CaptureRam`       | `-Ram`  |
-| `-CreateArchive`    | `-Zip`  |
+| `-Archive`    | `-Zip`  |
 
 5. Command line examples:
 
 ```bat
 run-triage.cmd
 run-triage.cmd -Gui
-run-triage.cmd -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -RunEdd N -CaptureRam N -CreateArchive N -RunEdd N -Modules [<Modules>]
+run-triage.cmd -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -RunEdd N -CaptureRam N -Archive N -RunEdd N -Modules [<Modules>]
 
 # Using the parameter aliases:
 run-triage.cmd -Op "Operator" -A "Agency" -CN 26-00001 -Edd N -Proc N -Ram N -Zip N -Mods "001","005"
@@ -222,7 +222,7 @@ Each module writes to its own numbered folder inside the case folder. See the fu
 | Switch                | Tool                                             | Output                   |
 | --------------------- | ------------------------------------------------ | ------------------------ |
 | `-RunEdd`           | Encrypted Disk Detector (`/batch`)             | `/EDD/edd_results.txt` |
-| `-CaptureProcesses` | Magnet Process Capture (`/saveall`)            | `/Process_Capture/`    |
+| `-GetProcesses` | Magnet Process Capture (`/saveall`)            | `/Process_Capture/`    |
 | `-CaptureRam`       | Magnet RAM Capture (`/accepteula /go /silent`) | `/Ram_Capture/*.raw`   |
 
 Before a RAM capture the tool checks that the destination is not FAT32 and has enough free space, and afterwards checks that a `.raw` file was actually produced.
@@ -280,7 +280,7 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 2. **Case record.**  `case_info.json` stores operator, agency, case number, computer, the account that ran the tool, start time in UTC with the local offset, PowerShell version, the full command line, the options selected, and the SHA-256 of the configuration file used.
 3. **Evidence hashes.**  After collection, every file outside `/Logs/` and `/Hash_Results/` is hashed (SHA-256 and MD5, one read per file) into `/Hash_Results/<name>_hash_values.csv`. Paths are relative to the case folder, so the CSV stays valid after the folder is copied.
 4. **Closing the log.**  The log is then closed, and nothing more is written to it. `final_hashes.csv` records the SHA-256 of every file in `/Logs/` and of the evidence hash CSV.
-5. **Archive.**  With `-CreateArchive`, the case folder is zipped (without the `/Ram_Capture/` directory), re-opened to confirm the entry count, and hashed into `<name>.zip.sha256`.
+5. **Archive.**  With `-Archive`, the case folder is zipped (without the `/Ram_Capture/` directory), re-opened to confirm the entry count, and hashed into `<name>.zip.sha256`.
 6. **Record two values.**  The tool prints the SHA-256 of `final_hashes.csv` and of the zip when it finishes. ***Write both in your case notes.***
    To verify later, hash each file listed in the CSV and compare it with the recorded value.
 

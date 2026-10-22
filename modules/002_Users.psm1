@@ -8,8 +8,9 @@ function Get-TriageUserData {
         param(
             [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "who_am_I.txt")
         )
-        $Command = { & (Get-TriageBinary "whoami") /ALL /FO LIST }
-        $Data = &($Command)
+        # $Command = { & (Get-TriageBinary "whoami") /ALL /FO LIST }
+        $Command = { Start-Process -FilePath (Get-TriageBinary "whoami") -ArgumentList "/ALL /FO LIST" -Verb RunAs }
+        $Data = & ($Command)
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -17,8 +18,7 @@ function Get-TriageUserData {
         param(
             [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_user_profile.txt")
         )
-        $Command = { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -26,8 +26,7 @@ function Get-TriageUserData {
         param(
             [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "local_users.txt")
         )
-        $Command = { Get-LocalUser | Select-Object -Property * | Format-List }
-        $Data = &($Command)
+        $Data = & { Get-LocalUser | Select-Object -Property * | Format-List }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -35,8 +34,7 @@ function Get-TriageUserData {
         param(
             [string]$CsvFile = (Join-Path -Path $UserFolder -ChildPath "user_groups.csv")
         )
-        $Command = { Get-CimInstance -ClassName Win32_Group | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_Group | Select-Object -Property * }
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
@@ -44,8 +42,7 @@ function Get-TriageUserData {
         param(
             [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_local_logons.txt")
         )
-        $Command = { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -53,8 +50,7 @@ function Get-TriageUserData {
         param(
             [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_user_account.txt")
         )
-        $Command = { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = & { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 
@@ -132,8 +128,7 @@ function Get-TriageUserData {
         param(
             [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "terminal_sessions.txt")
         )
-        $Command = { & (Get-TriageBinary "qwinsta") 2>&1 | ForEach-Object { "$_" } }
-        $Data = &($Command)
+        $Data = { & (Get-TriageBinary "qwinsta") 2>&1 | ForEach-Object { "$($_)" } }
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
 

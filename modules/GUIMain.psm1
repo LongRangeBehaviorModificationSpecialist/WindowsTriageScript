@@ -266,14 +266,14 @@ function Get-Gui {
 
     $OtherOptsChkLst = @(
         @{ Name = "RunEDD"; Label = "Run Encrypted Disk Detector" }
-        @{ Name = "CaptureProcesses"; Label = "Collect Running Processes" }
+        @{ Name = "GetProcesses"; Label = "Collect Running Processes" }
         @{ Name = "CaptureRAM"; Label = "Collect Computer RAM" }
         @{ Name = "CopyRegHives"; Label = "Copy Registry Hives" }
         @{ Name = "CopyPrefetch"; Label = "Copy Prefetch files" }
         @{ Name = "CopyNTUser"; Label = "Copy NTUSER.DAT file(s)" }
         @{ Name = "ListAllFiles"; Label = "Gather list of ALL files" }
         @{ Name = "CopySRUDB"; Label = "Copy SRUDB.dat file" }
-        @{ Name = "CreateArchive"; Label = "Create Case Archive" }
+        @{ Name = "Archive"; Label = "Create Case Archive" }
     )
 
     $OptsChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
@@ -434,7 +434,7 @@ function Get-Gui {
         }
 
         $Modules = @($ModulesChkBoxes | Where-Object Checked | ForEach-Object { $ModuleMap[$_.Tag] })
-        if (-not $Modules -and -not ($Ticked.RunEDD -or $Ticked.CaptureProcesses -or $Ticked.CaptureRAM)) {
+        if (-not $Modules -and -not ($Ticked.RunEDD -or $Ticked.GetProcesses -or $Ticked.CaptureRAM)) {
             [void][System.Windows.Forms.MessageBox]::Show("Nothing is selected.", "Nothing to do", "OK", "Information")
             return
         }
@@ -454,14 +454,14 @@ function Get-Gui {
         Write-LaunchContext
 
         $Options = @{
-            Operator         = $Operator;
-            Agency           = $TxtboxAgency.Text.Trim();
-            CaseNumber       = $Case;
-            Modules          = $Modules
-            RunEdd           = [bool]$Ticked.RunEDD;
-            CaptureProcesses = [bool]$Ticked.CaptureProcesses
-            CaptureRam       = [bool]$Ticked.CaptureRAM;
-            CreateArchive    = [bool]$Ticked.CreateArchive
+            Operator     = $Operator;
+            Agency       = $TxtboxAgency.Text.Trim();
+            CaseNumber   = $Case;
+            Modules      = $Modules
+            RunEdd       = [bool]$Ticked.RunEDD;
+            GetProcesses = [bool]$Ticked.GetProcesses
+            CaptureRam   = [bool]$Ticked.CaptureRAM;
+            Archive      = [bool]$Ticked.Archive
         }
 
         $Worker = {

@@ -84,7 +84,7 @@
         "Dismount-TriageUserHives",
         "Export-PerUserRegistry",
         "Format-TriageDuration",
-        "Get-CaseArchive",
+        "Invoke-CaseArchive",
         "Get-ComputerDetails",
         "Get-ComputerRam",
         "Get-FileHashes",
