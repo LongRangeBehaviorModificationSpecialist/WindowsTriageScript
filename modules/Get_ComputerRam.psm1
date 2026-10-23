@@ -14,7 +14,7 @@ function Get-ComputerRam {
             Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
             $RamCaptureFolder = Join-Path -Path $ResultsFolder -ChildPath "Ram_Capture"
-            $null = New-Item -ItemType Directory -Path $RamCaptureFolder -Force
+            $null             = New-Item -ItemType Directory -Path $RamCaptureFolder -Force
 
             # Test-IfExists -FolderName $RamCaptureFolder -Type FOLDER
 
@@ -42,8 +42,6 @@ function Get-ComputerRam {
 
             $RamCaptureFileName = (Get-ChildItem -LiteralPath $RamCaptureFolder -Filter "*.raw").Name
 
-            # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
-
             $SuccessMsg = "RAM capture completed successfully from computer => $( $ComputerName )"
             Show-Message -Message $SuccessMsg -Level INFO -AddToLog
 
@@ -56,8 +54,6 @@ function Get-ComputerRam {
         }
     }
     end {
-        if ($Stopwatch.IsRunning) {
-            $Stopwatch.Stop()
-        }
+        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
     }
 }

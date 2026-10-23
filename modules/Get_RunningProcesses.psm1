@@ -3,7 +3,6 @@ function Get-RunningProcesses {
     param(
         [Parameter(Mandatory)][string]$ResultsFolder
     )
-
     begin {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
@@ -14,7 +13,7 @@ function Get-RunningProcesses {
 
             # Make new directory to store the process .dmp files
             $ProcessCaptureFolder = Join-Path -Path $ResultsFolder -ChildPath "Process_Capture"
-            $null = New-Item -ItemType Directory -Path $ProcessCaptureFolder -Force
+            $null                 = New-Item -ItemType Directory -Path $ProcessCaptureFolder -Force
 
             Test-IfExists -FolderName $ProcessCaptureFolder -Type FOLDER
 
@@ -26,9 +25,10 @@ function Get-RunningProcesses {
             the following naming convention =>
             `MagnetProcessCapture-YYYYMMDD-HHMMSS`
             #>
-            Start-Process -NoNewWindow -FilePath (Get-TriageBinary "MagnetProcessCapture") -ArgumentList "/saveall `"$ProcessCaptureFolder`"" -Wait
-
-            # $ExecutionTime = $Stopwatch.Elapsed.TotalSeconds
+            Start-Process -NoNewWindow `
+                -FilePath (Get-TriageBinary "MagnetProcessCapture") `
+                -ArgumentList "/saveall `"$ProcessCaptureFolder`"" `
+                -Wait
 
             Show-Message -Message "Process Capture completed successfully from computer => $( $ComputerName )" -Level INFO -AddToLog
 
@@ -41,8 +41,6 @@ function Get-RunningProcesses {
         }
     }
     end {
-        if ($Stopwatch.IsRunning) {
-            $Stopwatch.Stop()
-        }
+        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
     }
 }

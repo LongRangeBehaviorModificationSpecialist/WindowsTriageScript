@@ -3,7 +3,6 @@ function Invoke-EDD {
     param(
         [Parameter(Mandatory)][string]$ResultsFolder
     )
-
     begin {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
@@ -51,8 +50,6 @@ function Invoke-EDD {
         }
     }
     end {
-        if ($Stopwatch.IsRunning) {
-            $Stopwatch.Stop()
-        }
+        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
     }
 }

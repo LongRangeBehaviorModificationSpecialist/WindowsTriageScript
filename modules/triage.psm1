@@ -32,30 +32,29 @@ function Invoke-DfirTriageScan {
 
         Initialize-TriageSystemTools -ToolkitRoot $global:ToolkitRoot
 
-        # Optional captures: the decision was made up front, so just branch
+        # Optional captures: the decision was made up front, so just
+        # checking for which switches, if any, were passed
         if (-not $RunEdd) {
-            Show-Message -Message "Skipped [ Encrypted Disk Detector ] (not selected)." -Level INFO -AddToLog
+            $Msg = "Skipped [ Encrypted Disk Detector ] (not selected)."
+            Show-Message -Message $Msg -Level INFO -AddToLog
         }
-        else {
-            Invoke-EDD -ResultsFolder $ResultsFolder
-        }
+        else { Invoke-EDD -ResultsFolder $ResultsFolder }
 
         if (-not $GetProcesses) {
-            Show-Message -Message "Skipped [ Magnet Process Capture ] (not selected)." -Level INFO -AddToLog
+            $Msg = "Skipped [ Magnet Process Capture ] (not selected)."
+            Show-Message -Message $Msg -Level INFO -AddToLog
         }
-        else {
-            Get-RunningProcesses -ResultsFolder $ResultsFolder
-        }
+        else { Get-RunningProcesses -ResultsFolder $ResultsFolder }
 
         if (-not $CaptureRam) {
-            Show-Message -Message "Skipped [ Magnet RAM Capture ] (not selected)." -Level INFO -AddToLog
+            $Msg = "Skipped [ Magnet RAM Capture ] (not selected)."
+            Show-Message -Message $Msg -Level INFO -AddToLog
         }
-        else {
-            Get-ComputerRam -ResultsFolder $ResultsFolder
-        }
+        else { Get-ComputerRam -ResultsFolder $ResultsFolder }
 
         if (-not $Archive) {
-            Show-Message -Message "Skipped [ Creating Case Archive ] (not selected)." -Level INFO -AddToLog
+            $Msg = "Skipped [ Creating Case Archive ] (not selected)."
+            Show-Message -Message $Msg -Level INFO -AddToLog
         }
 
         function Initialize-TriageScan {
@@ -139,9 +138,7 @@ function Invoke-DfirTriageScan {
         if ($CreateArchive) {
             $Archive = Invoke-CaseArchive -ResultsFolder $ResultsFolder
         }
-        else {
-            continue
-        }
+        else { continue }
 
         Show-Message -Message "RECORD THESE VALUES IN YOUR CASE NOTES:" -Level INFO
 

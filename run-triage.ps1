@@ -130,7 +130,7 @@ Example:
 # Load the toolkit and its configuration
 try {
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath "modules\triage.psd1") -Force -ErrorAction Stop
-    $null = Get-TriageConfig
+    $null       = Get-TriageConfig
     $AllModules = @(Get-TriageConfig -Key "Modules")
 }
 catch {
@@ -229,17 +229,21 @@ if ($Problems.Count -gt 0) {
 # Show exactly what will happen (the command line is also recorded in case_info.json)
 if (-not $Gui) {
     Show-TriageBanner
+
+    Show-Message "Press [ENTER] to begin..." -MessageColor Green -NoTime
+    Read-Host
+
     $YesNo = { param($b) if ($b) { "YES" } else { "NO" } }
-    Show-Message -Message "---------------------------------------------------------" -NoTime -MessageColor Cyan
-    Show-Message -Message "Operator: $Operator" -NoTime -MessageColor Cyan
-    Show-Message -Message "Agency: $Agency" -NoTime -MessageColor Cyan
-    Show-Message -Message "Case Number: $CaseNumber" -NoTime -MessageColor Cyan
-    Show-Message -Message "Modules: $( $Selected -join ', ' )" -NoTime -MessageColor Cyan
-    Show-Message -Message "EDD: $( & $YesNo $RunEdd )" -NoTime -MessageColor Cyan
-    Show-Message -Message "Process Capture: $( & $YesNo $GetProcesses )" -NoTime -MessageColor Cyan
-    Show-Message -Message "RAM Capture: $( & $YesNo $CaptureRam )" -NoTime -MessageColor Cyan
-    Show-Message -Message "Create Archive: $( & $YesNo $Archive )" -NoTime -MessageColor Cyan
-    Show-Message -Message "---------------------------------------------------------`n" -NoTime -MessageColor Cyan
+    Show-Message -Message "---------------------------------------------------------" -NoTime
+    Show-Message -Message "Operator: $Operator" -NoTime
+    Show-Message -Message "Agency: $Agency" -NoTime
+    Show-Message -Message "Case Number: $CaseNumber" -NoTime
+    Show-Message -Message "Modules: $( $Selected -join ', ' )" -NoTime
+    Show-Message -Message "EDD: $( & $YesNo $RunEdd )" -NoTime
+    Show-Message -Message "Process Capture: $( & $YesNo $GetProcesses )" -NoTime
+    Show-Message -Message "RAM Capture: $( & $YesNo $CaptureRam )" -NoTime
+    Show-Message -Message "Create Archive: $( & $YesNo $Archive )" -NoTime
+    Show-Message -Message "---------------------------------------------------------`n" -NoTime
 }
 if ($DryRun) {
     Show-Message -Message "Dry run => nothing was collected." -Level INFO -MessageColor DarkGreen
@@ -266,9 +270,10 @@ try {
     }
     else {
         Get-InitialSetup -OutputRoot $OutputRoot
-        Write-LaunchContext
         Disable-PSReadLineHistory
+        Write-LaunchContext
         Show-Message -Message "Results folder => [ $global:ResultsFolder ]" -Level INFO -AddToLog
+        # The command that begins the actual scan
         $null = Invoke-DfirTriageScan -ResultsFolder $global:ResultsFolder @Options
         $Result = $global:TriageResult
     }

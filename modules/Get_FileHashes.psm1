@@ -27,19 +27,13 @@ function Get-StreamHash {
             MD5    = if ($Md5) {
                 [System.BitConverter]::ToString($Md5.Hash).Replace("-", "")
             }
-            else {
-                $null
-            }
+            else { $null }
         }
     }
     finally {
-        if ($Fs) {
-            $Fs.Dispose()
-        }
+        if ($Fs) { $Fs.Dispose() }
         $Sha.Dispose()
-        if ($Md5) {
-            $Md5.Dispose()
-        }
+        if ($Md5) { $Md5.Dispose() }
     }
 }
 
@@ -118,18 +112,16 @@ function Get-FileHashes {
         }
     }
     end {
-        if ($Stopwatch.IsRunning) {
-            $Stopwatch.Stop()
-        }
+        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
     }
 }
 
 function Close-TriageLog {
-    <#
-    .SYNOPSIS
-        Stops all writes to the log, then hashes everything in Logs\ plus the
-        evidence hash CSV into `Hash_Results\final_hashes.csv`.
-    #>
+<#
+.SYNOPSIS
+    Stops all writes to the log, then hashes everything in Logs\ plus the
+    evidence hash CSV into `Hash_Results\final_hashes.csv`.
+#>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$ResultsFolder

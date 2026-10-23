@@ -26,10 +26,10 @@ function Get-ComputerDetails {
     }
     process {
         try {
-            $Win32OperatingSystem = Get-CimInstance -ClassName Win32_OperatingSystem
-            $Win32ComputerSystem = Get-CimInstance -ClassName Win32_ComputerSystem
-            $Win32Bios = Get-CimInstance -ClassName Win32_BIOS
-            $Win32Processor = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
+            $Win32OperatingSystem     = Get-CimInstance -ClassName Win32_OperatingSystem
+            $Win32ComputerSystem      = Get-CimInstance -ClassName Win32_ComputerSystem
+            $Win32Bios                = Get-CimInstance -ClassName Win32_BIOS
+            $Win32Processor           = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
             $SoftwareLicensingProduct = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" | Where-Object { $_.PartialProductKey }
 
             $DataProps = [ordered]@{
@@ -66,7 +66,7 @@ function Get-ComputerDetails {
                 $DataProps.BiosVersion = $DataProps.BiosVersion -join " | "
             }
 
-            $UpTime = (Get-Date) - $Win32OperatingSystem.LastBootUpTime
+            $UpTime              = (Get-Date) - $Win32OperatingSystem.LastBootUpTime
             $DataProps["UpTime"] = "{0}:{1}:{2}:{3}" -f $UpTime.Days, $UpTime.Hours, $UpTime.Minutes, $UpTime.Seconds
 
             $DataProps["MinimumPasswordLength"] = $null
@@ -80,7 +80,7 @@ function Get-ComputerDetails {
                     }
                 }
                 else {
-                    Show-Message -Message "The `"net accounts`" command returned exit code $($LASTEXITCODE); minimum password length not recorded. First output line => $( $NetOut | Select-Object -First 1 )" -Level WARNING -AddToLog
+                    Show-Message -Message "The `"net accounts`" command returned exit code $( $LASTEXITCODE ); minimum password length not recorded. First output line => $( $NetOut | Select-Object -First 1 )" -Level WARNING -AddToLog
                 }
             }
             catch {
@@ -99,15 +99,15 @@ function Get-ComputerDetails {
                 }
 
             if ($SoftwareLicensingProduct) {
-                $DataProps["LicenseType"] = ($SoftwareLicensingProduct.Description).Split(",")[1].Trim()
+                $DataProps["LicenseType"]   = ($SoftwareLicensingProduct.Description).Split(",")[1].Trim()
                 $DataProps["LicenseStatus"] = ([LicenseStatus]$SoftwareLicensingProduct.LicenseStatus).ToString()
             }
             else {
-                $DataProps["LicenseType"] = $null
+                $DataProps["LicenseType"]   = $null
                 $DataProps["LicenseStatus"] = $null
             }
 
-            $DataProps["BIOSInstallDate"] = $Win32Bios.InstallDate
+            $DataProps["BIOSInstallDate"]  = $Win32Bios.InstallDate
             $DataProps["BIOSManufacturer"] = $Win32Bios.Manufacturer
             $DataProps["BIOSSerialNumber"] = $Win32Bios.SerialNumber
 

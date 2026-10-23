@@ -15,8 +15,8 @@ function Invoke-CaseArchive {
             Add-Type -AssemblyName System.IO.Compression
             Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-            $Root = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
-            $Name = Split-Path -Path $Root -Leaf
+            $Root    = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
+            $Name    = Split-Path -Path $Root -Leaf
             $ZipPath = Join-Path -Path (Split-Path -Path $Root -Parent) -ChildPath "$Name.zip"
 
             if (Test-Path -LiteralPath $ZipPath) {
@@ -25,13 +25,13 @@ function Invoke-CaseArchive {
 
             Show-Message -Message "Creating case archive => $Name.zip; excluding: [ $( $ExcludeFolders -join ', ' ) ]" -Level INFO
 
-            $Skip = @($ExcludeFolders | ForEach-Object { (Join-Path -Path $Root -ChildPath $_) + "\" })
+            $Skip  = @($ExcludeFolders | ForEach-Object { (Join-Path -Path $Root -ChildPath $_) + "\" })
             $Files = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -File | Where-Object {
                 $Path = $_.FullName
                 -not ($Skip | Where-Object { $Path.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase) })
             })
 
-            $Zip = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+            $Zip   = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
             $Added = 0
             foreach ($File in $Files) {
                 $Rel = $File.FullName.Substring($Root.Length + 1).Replace("\", "/")
@@ -75,14 +75,10 @@ function Invoke-CaseArchive {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR
         }
         finally {
-            if ($Zip) {
-                $Zip.Dispose()
-            }
+            if ($Zip) { $Zip.Dispose() }
         }
     }
     end {
-        if ($Stopwatch.IsRunning) {
-            $Stopwatch.Stop()
-        }
+        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
     }
 }

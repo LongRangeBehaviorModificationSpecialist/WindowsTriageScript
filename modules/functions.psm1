@@ -8,22 +8,22 @@ function Get-InitialSetup {
     if (-not $OutputRoot) {
         $OutputRoot = Get-TriageConfig -Key "ToolkitRoot"
     }
+
     if (-not (Test-Path -LiteralPath $OutputRoot -PathType Container)) {
         throw "Output folder does not exist: $OutputRoot"
     }
 
     $RunDate = Get-Date -Format yyyyMMdd_HHmmss
+    $Idx     = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Sort-Object RouteMetric | Select-Object -First 1).InterfaceIndex
+    $Ipv4    = if ($Idx) { (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $Idx -ErrorAction SilentlyContinue | Select-Object -First 1).IPAddress }
 
-    $Idx  = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Sort-Object RouteMetric | Select-Object -First 1).InterfaceIndex
-
-    $Ipv4 = if ($Idx) { (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $Idx -ErrorAction SilentlyContinue | Select-Object -First 1).IPAddress }
     if (-not $Ipv4) {
         $Ipv4 = "NoIPv4"
     }
 
     $MergedName           = "{0}_{1}_{2}" -f $RunDate, $Ipv4, $env:COMPUTERNAME
     $global:ResultsFolder = Join-Path -Path $OutputRoot -ChildPath $MergedName
-    $null = New-Item -ItemType Directory -Path $global:ResultsFolder -Force
+    $null                 = New-Item -ItemType Directory -Path $global:ResultsFolder -Force
 
     $LogFolder      = Join-Path -Path $global:ResultsFolder -ChildPath "Logs"
     $null           = New-Item -ItemType Directory -Path $LogFolder -Force
@@ -458,7 +458,6 @@ function Get-TriageBinary {
     }
 }
 
-
 function Disable-PSReadLineHistory {
 <#
 .SYNOPSIS
@@ -565,34 +564,46 @@ function Initialize-TriageSystemTools {
 }
 
 
+# |   $($Brand.ToolName)   |
+# |   Compiled by  : $($Brand.Author)     |
+# |   Last Updated : $($Brand.LastUpdated)            |
+
+
 function Show-TriageBanner {
 
     $Brand = Get-TriageConfig -Key "Branding"
     $IntroBanner = @"
 
-+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-|                                         |
-|   $($Brand.ToolName)   |
-|   Compiled by : $($Brand.Author)      |
-|   Last Updated : $($Brand.LastUpdated)            |
-|                                         |
-+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
++---------------------------------------------------------+
+|                                                         |
+|           $($Brand.ToolName)           |
+|           Compiled by  : $($Brand.Author)          |
+|           Last Updated : $($Brand.DLU)                    |
+|                                                         |
++---------------------------------------------------------+
 
-[1] You are about to run the NOVA ICAC VECTOR Triage Application.
-[2] PURPOSE: Gather information from the target machine and
-    save the data to outside storage device.
-[3] The results will automatically be stored in a directory that
-    is automatically created in the same directory from where this
-    script is run.
-[4] You will be asked a few questions now. After you confirm,
-    collection runs with no further prompts.
-[5] **IMPORTANT** DO NOT VIEW THE RESULTS OF THE SCAN ON THE TARGET
-    MACHINE. MOVE THE COLLECTION DEVICE TO A FORENSIC MACHINE BEFORE
+(1) PURPOSE: Gather information from the target machine and
+    save the data to an outside storage device.
+
+(2) The results will be stored in a directory that is
+    automatically created in the same folder from where
+    this script is run.
+
+(3) **IMPORTANT**
+
+    DO NOT VIEW THE RESULTS OF THE SCAN ON THE TARGE MACHINE.
+    MOVE THE COLLECTION DEVICE TO A FORENSIC MACHINE BEFORE
     OPENING ANY FILES!
-[6] DO NOT close any pop-up windows that may appear.
-[7] To get help for this script, run 'Get-Help .\run-triage.ps1'
-    command from a PowerShell CLI prompt.
-[8] To exit this script at anytime, press [Ctrl + C].
+
+(4) DO NOT close any pop-up windows that may appear.
+
+(5) To view the help for this script, run:
+
+    "Get-Help .\run-triage.ps1"
+
+(6) To exit this script at anytime, press [Ctrl + C].
+
+-----------------------------------------------------------
 
 "@
 
@@ -888,7 +899,7 @@ function Invoke-TriageRawCopy {
         [Parameter(Mandatory)][string]$Destination
     )
     # Throws if missing or failed its hash check
-    $Exe  = Get-TriageBinary "RawCopy"
+    $Exe  = (Get-TriageBinary "RawCopy")
     $Dir  = Split-Path -Path $Destination -Parent
     $Name = Split-Path -Path $Destination -Leaf
     $null = New-Item -ItemType Directory -Path $Dir -Force

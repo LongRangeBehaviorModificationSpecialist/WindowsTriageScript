@@ -1,18 +1,18 @@
 function Get-BinaryFilesHashes {
-    <#
-    .SYNOPSIS
-        Helper function used to create a JSON file containing the hash values
-        of the files in the .\bin directory.
+<#
+.SYNOPSIS
+    Helper function used to create a JSON file containing the hash values
+    of the files in the .\bin directory.
 
-        Copy this function to a separate .ps1 file and run it after new files
-        are added to the .\bin directory.
+    Copy this function to a separate .ps1 file and run it after new files
+    are added to the .\bin directory.
 
-        The triage program does not rely on this function.  This function
-        does not need to be added to the `FunctionsToExport` array in the
-        `triage.psd1` file.
+    The triage program does not rely on this function.  This function
+    does not need to be added to the `FunctionsToExport` array in the
+    `triage.psd1` file.
 
-        It is saved here to make it easier to find in the future.
-    #>
+    It is saved here to make it easier to find in the future.
+#>
     $Folder = Join-Path -Path (Get-Location) -ChildPath "bin"
     $Root   = (Resolve-Path $Folder).Path
 

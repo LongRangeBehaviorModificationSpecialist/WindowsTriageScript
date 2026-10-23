@@ -2,9 +2,9 @@
     SchemaVersion = 1
 
     Branding = @{
-        ToolName    = "NOVA ICAC VECTOR Triage Application"
-        Author      = "Michael Sponheimer"
-        LastUpdated = "22-Oct-2026"
+        ToolName = "NOVA ICAC VECTOR Triage Application"
+        Author   = "SA Michael Sponheimer"
+        DLU      = "23-Oct-2026"
     }
 
     Modules = @(

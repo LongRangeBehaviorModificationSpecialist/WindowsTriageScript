@@ -25,6 +25,7 @@ function Get-TriageRawArtifactsData {
         if (-not (Test-Path -LiteralPath $Folder -PathType Container)) {
             return
         }
+
         $Root = (Resolve-Path -LiteralPath $Folder).Path.TrimEnd("\")
         Get-ChildItem -LiteralPath $Folder -Recurse -Force -File -Filter $Filter -ErrorAction SilentlyContinue | ForEach-Object {
             [PSCustomObject]@{
@@ -44,6 +45,7 @@ function Get-TriageRawArtifactsData {
                     Source = "HKLM\$Hive"
                     Dest   = "Registry\$Hive.regsave"
                 }
+
                 foreach ($Extension in "", ".LOG1", ".LOG2") {
                     # On-disk file plus transaction logs (locked: needs RawCopy)
                     [PSCustomObject]@{
@@ -54,6 +56,7 @@ function Get-TriageRawArtifactsData {
                 }
             }
         }
+
         Amcache = {
             foreach ($Extension in "", ".LOG1", ".LOG2") {
                 [PSCustomObject]@{
@@ -63,6 +66,7 @@ function Get-TriageRawArtifactsData {
                 }
             }
         }
+
         UserHives = {
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 $Base = "Users\$( $Hive.Sid )"
@@ -93,8 +97,10 @@ function Get-TriageRawArtifactsData {
                 }
             }
         }
+
         Prefetch = { Get-FolderFiles -Folder "$SysRoot\Prefetch" -DestBase "Prefetch" -Filter "*.pf" }
         Srum     = { Get-FolderFiles -Folder "$SysRoot\System32\sru" -DestBase "SRUM" }
+
         LnkAndJumpLists = {
             $Map = [ordered]@{
                 "AppData\Roaming\Microsoft\Windows\Recent" = "Recent";
@@ -106,6 +112,7 @@ function Get-TriageRawArtifactsData {
                 }
             }
         }
+
         BrowserDatabases = {
             $Wanted = @{
                 Chromium = "History", "Favicons", "Shortcuts", "Top Sites", "Web Data", "Network\Cookies", "Cookies"
@@ -134,12 +141,14 @@ function Get-TriageRawArtifactsData {
                 }
             }
         }
+
         StartupFolders = {
             Get-FolderFiles -Folder "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" -DestBase "Startup\AllUsers"
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 Get-FolderFiles -Folder (Join-Path -Path $Hive.ProfilePath -ChildPath "AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup") -DestBase "Startup\$( $Hive.Sid )"
             }
         }
+
         WmiRepository = { Get-FolderFiles -Folder "$SysRoot\System32\wbem\Repository" -DestBase "WMI_Repository" }
         Bits          = { Get-FolderFiles -Folder "$env:ProgramData\Microsoft\Network\Downloader" -DestBase "BITS" }
         WindowsUpdate = {
@@ -150,6 +159,7 @@ function Get-TriageRawArtifactsData {
                 Dest   = "WindowsUpdate\ReportingEvents.log"
             }
         }
+
         Defender = {
             $Def = "$env:ProgramData\Microsoft\Windows Defender"
             [PSCustomObject]@{
@@ -163,6 +173,7 @@ function Get-TriageRawArtifactsData {
                 Dest   = "Defender\ScanHistory"
             }
         }
+
         # Single quotes matter: in double quotes PowerShell would expand $MFT and $J as variables
         Mft = {
             [PSCustomObject]@{
@@ -171,6 +182,7 @@ function Get-TriageRawArtifactsData {
                 Dest   = "NTFS\MFT"
             }
         }
+
         UsnJrnl = {
             [PSCustomObject]@{
                 Kind   = "Raw"
@@ -185,6 +197,7 @@ function Get-TriageRawArtifactsData {
             Show-Message -Message "Unknown raw artifact set [ $Set ] in the configuration file." -Level WARNING -AddToLog
             continue
         }
+
         if ($Set -in $Cfg.LargeSets -and $FreeGb -lt $Cfg.MinFreeGbForLargeSets) {
             Show-Message -Message "Skipping [ $Set ] => only $( [int]$FreeGb ) GB free (minimum $( $Cfg.MinFreeGbForLargeSets ) GB)." -Level WARNING -AddToLog
             continue
@@ -201,6 +214,7 @@ function Get-TriageRawArtifactsData {
                 }
                 $R | Add-Member -NotePropertyName Set -NotePropertyValue $Set -PassThru
             }
+
             foreach ($R in @($Rows)) {
                 $Manifest.Add($R)
             }

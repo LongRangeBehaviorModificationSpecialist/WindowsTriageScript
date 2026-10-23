@@ -8,10 +8,9 @@ function Get-TriageEncryptionData {
         param(
             [string]$TxtFile = (Join-Path -Path $EncryptionFolder -ChildPath "bitlocker_encryption.txt")
         )
-        $Command = { Get-BitLockerVolume |
+        $Data = Get-BitLockerVolume |
                 Select-Object -Property * |
-                Sort-Object MountPoint }
-        $Data = &($Command)
+                Sort-Object MountPoint
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
 
         function Search-BitlockerVolumes {
@@ -54,11 +53,9 @@ function Get-TriageEncryptionData {
         }
         Search-BitlockerVolumes
     }
-
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
-
     $Tasks = @(
         @{
             Action  = { Get-BitlockerInfoAndRecoveryKeys }
@@ -66,6 +63,5 @@ function Get-TriageEncryptionData {
             Files   = "bitlocker_encryption.txt"
         }
     )
-
     Invoke-TriageTaskList -Tasks $Tasks -Folder $EncryptionFolder
 }

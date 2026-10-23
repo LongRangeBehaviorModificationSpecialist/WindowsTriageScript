@@ -1,8 +1,8 @@
 function Get-Gui {
-    <#
-    .SYNOPSIS
-        Assembles and runs the graphical wrapper managing all worker modules.
-    #>
+<#
+.SYNOPSIS
+    Assembles and runs the graphical wrapper managing all worker modules.
+#>
     [CmdletBinding()]
     param([string]$OutputRoot)
 
@@ -265,15 +265,15 @@ function Get-Gui {
 
 
     $OtherOptsChkLst = @(
-        @{ Name = "RunEDD"; Label = "Run Encrypted Disk Detector" }
+        @{ Name = "RunEDD";       Label = "Run Encrypted Disk Detector" }
         @{ Name = "GetProcesses"; Label = "Collect Running Processes" }
-        @{ Name = "CaptureRAM"; Label = "Collect Computer RAM" }
+        @{ Name = "CaptureRAM";   Label = "Collect Computer RAM" }
         @{ Name = "CopyRegHives"; Label = "Copy Registry Hives" }
         @{ Name = "CopyPrefetch"; Label = "Copy Prefetch files" }
-        @{ Name = "CopyNTUser"; Label = "Copy NTUSER.DAT file(s)" }
+        @{ Name = "CopyNTUser";   Label = "Copy NTUSER.DAT file(s)" }
         @{ Name = "ListAllFiles"; Label = "Gather list of ALL files" }
-        @{ Name = "CopySRUDB"; Label = "Copy SRUDB.dat file" }
-        @{ Name = "Archive"; Label = "Create Case Archive" }
+        @{ Name = "CopySRUDB";    Label = "Copy SRUDB.dat file" }
+        @{ Name = "Archive";      Label = "Create Case Archive" }
     )
 
     $OptsChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
@@ -526,7 +526,6 @@ function Get-Gui {
     # Add the button
     $MainForm.Controls.Add($BtnStartTriage)
 
-
     $BtnQuit                            = New-Object Windows.Forms.Button
     $BtnQuit.Text                       = "Quit"
     $BtnQuit.Font                       = $GlobalFont
@@ -561,12 +560,9 @@ function Get-Gui {
     $LblStatus.Size     = New-Object System.Drawing.Size(665, 22)
     $MainForm.Controls.Add($LblStatus)
 
-
     $MainForm.Add_Shown({ $MainForm.Activate() })
-
 
     # Display the form
     [void]$MainForm.ShowDialog()
     return $script:LastResult
 }
-

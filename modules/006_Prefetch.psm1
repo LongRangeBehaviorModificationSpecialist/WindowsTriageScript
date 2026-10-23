@@ -8,14 +8,13 @@ function Get-TriagePrefetchData {
         param(
             [string]$CsvFile = (Join-Path -Path $PrefetchFolder -ChildPath "prefetch_files.csv")
         )
-        $Command = { Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" | Select-Object -Property * }
-        $Data = &($Command)
+        $Data = Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" | Select-Object -Property *
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
     function Get-RecentExecutions {
         param(
-            [string]$OutputFile = (Join-Path -Path $PrefetchFolder -ChildPath "recent_executions.csv")
+            [string]$CsvFile = (Join-Path -Path $PrefetchFolder -ChildPath "recent_executions.csv")
         )
         $Folders = @("$env:SystemDrive\Temp")
         foreach ($User in $global:TriageUserHives) {
@@ -27,15 +26,15 @@ function Get-TriagePrefetchData {
             if (-not (Test-Path -LiteralPath $Folder)) {
                 continue
             }
-            Get-ChildItem -LiteralPath $Folder -Recurse -Force -ErrorAction SilentlyContinue | Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc
+            Get-ChildItem -LiteralPath $Folder -Recurse -Force -ErrorAction SilentlyContinue |
+                Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc,
+                LastAccessTimeUtc
         }
         Write-OutputToCsv -Data ($Data | Sort-Object LastAccessTimeUtc -Descending) -OutputFile $CsvFile
     }
-
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
-
     $Tasks = @(
         @{
             Action  = { Get-PrefetchFiles }
@@ -48,6 +47,5 @@ function Get-TriagePrefetchData {
             Files   = "recent_executions.csv"
         }
     )
-
     Invoke-TriageTaskList -Tasks $Tasks -Folder $PrefetchFolder
 }
