@@ -4,12 +4,12 @@ function Get-TriageInternetData {
         [Parameter(Mandatory)][string]$InternetFolder
     )
     begin {
-        $TempFolder = Join-Path -Path $InternetFolder -ChildPath "temp"
-        $null       = New-Item -ItemType Directory -Path $TempFolder
+        # $TempFolder = Join-Path -Path $InternetFolder -ChildPath "temp"
+        # $null       = New-Item -ItemType Directory -Path $TempFolder
 
         function Get-StoredCookies {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "002_stored_cookies.csv")
+                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.01_stored_cookies.csv")
             )
             $Data = foreach ($U in $global:TriageUserHives) {
                 $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
@@ -31,28 +31,28 @@ function Get-TriageInternetData {
 
         function Get-TypedUrls {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "003_typed_urls.csv")
+                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.02_typed_urls.csv")
             )
             Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
         }
 
         function Get-InternetSettings {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "004_internet_settings.csv")
+                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.03_internet_settings.csv")
             )
             Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
         }
 
         function Get-TrustedInternetDomains {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "005_trusted_internet_domains.csv")
+                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.04_trusted_internet_domains.csv")
             )
             Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
         }
 
         function Get-BrowserAnalysis {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "006_browser_analysis_summary.csv")
+                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.05_browser_analysis_summary.csv")
                 )
 
             function Copy-SharedFile {
@@ -252,17 +252,25 @@ function Get-TriageInternetData {
                                 $Detail  = ""
 
                                 try {
+                                    # NOTE: -header is deliberately omitted; the header line is built
+                                    # below from the query's AS aliases so it is always written,
+                                    # regardless of how this sqlite3 build renders its output.
                                     $Raw  = & $SqlitePath -batch -readonly -header -csv $Db $Q.Value 2>&1
                                     $Code = $LASTEXITCODE
 
-                                    $ErrText = @($Raw | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } | ForEach-Object { $_.ToString() })
-                                    $Lines   = @($Raw | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
+                                    $ErrText = @($Raw |
+                                        Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } |
+                                        ForEach-Object { $_.ToString() }
+                                    )
+                                    $Lines   = @($Raw |
+                                        Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
+                                    )
 
                                     if ($Code -ne 0) {
                                         $Detail = (($ErrText + $Lines) -join " ").Trim()
                                         if ($Detail -match "no such table|no such column") {
                                             $Status = "NotPresent"
-                                            Show-Message -Message "($Tag) '$( $Q.Key )' is not available in this database version." -Level INFO -AddToLog
+                                            Show-Message -Message "[ $Tag ] '$( $Q.Key )' is not available in this database version." -Level INFO -AddToLog
                                         }
                                         else {
                                             $Status = "Failed"
@@ -270,24 +278,65 @@ function Get-TriageInternetData {
                                             Show-Message -Message "sqlite3 failed ($Tag / $( $Q.Key )) => $Detail" -Level ERROR -AddToLog
                                         }
                                     }
-                                    elseif ($Lines.Count -gt 0) {
-                                        $Lines | Set-Content -LiteralPath $OutFile -Encoding UTF8
+                                    else {
+                                        # sqlite3 on Windows (csv mode) can emit an extra blank line after
+                                        # every record; drop empty / whitespace-only lines.
+                                        $Clean = @(
+                                            $Lines |
+                                                ForEach-Object { "$_".TrimEnd("`r") } |
+                                                Where-Object   { $_.Trim() -ne "" }
+                                        )
 
-                                        # Exact row count from SQLite itself
-                                        $CountOut = & $SqlitePath -batch -readonly $Db "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
-                                        $Parsed   = 0
-                                        if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
-                                            $Rows = $Parsed
+                                        if ($Clean.Count -gt 0) {
+                                            # Every query aliases its columns ("... AS ColumnName"), so the
+                                            # header can be derived straight from the SQL text.
+                                            $Columns = [regex]::Matches($Q.Value, '(?i)\bAS\s+([A-Za-z_][A-Za-z0-9_]*)') |
+                                                ForEach-Object { $_.Groups[1].Value }
+
+                                            if ($Columns.Count -gt 0) {
+                                                @(($Columns -join ',')) + $Clean |
+                                                    Set-Content -LiteralPath $OutFile -Encoding UTF8
+                                            }
+                                            else {
+                                                # Should not happen with the current queries, but write the
+                                                # raw output rather than a silently header-less file.
+                                                $Clean | Set-Content -LiteralPath $OutFile -Encoding UTF8
+                                            }
+
+                                            # Exact row count from SQLite itself
+                                            $CountOut = & $SqlitePath -batch -readonly $Db "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
+                                            $Parsed   = 0
+                                            if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
+                                                $Rows = $Parsed
+                                            }
+                                            else {
+                                                $Rows = -1  # Written, but the count was unavailable
+                                            }
                                         }
                                         else {
-                                            $Rows = -1  # Written, but the count was unavailable
+                                            $Status = "NoData"
+                                            "No data was found for that query." | Set-Content -LiteralPath $OutFile -Encoding UTF8
                                         }
                                     }
-                                    else {
-                                        $Status = "NoData"
-                                        "No data was found for that query." | Set-Content -LiteralPath $OutFile -Encoding UTF8
-                                    }
                                 }
+                                    # elseif ($Lines.Count -gt 0) {
+                                    #     $Lines | Set-Content -LiteralPath $OutFile -Encoding UTF8
+
+                                    #     # Exact row count from SQLite itself
+                                    #     $CountOut = & $SqlitePath -batch -readonly $Db "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
+                                    #     $Parsed   = 0
+                                    #     if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
+                                    #         $Rows = $Parsed
+                                    #     }
+                                    #     else {
+                                    #         $Rows = -1  # Written, but the count was unavailable
+                                    #     }
+                                    # }
+                                    # else {
+                                    #     $Status = "NoData"
+                                    #     "No data was found for that query." | Set-Content -LiteralPath $OutFile -Encoding UTF8
+                                    # }
+                                # }
                                 catch {
                                     $Status = "Failed"
                                     $Failures++
@@ -331,28 +380,28 @@ function Get-TriageInternetData {
         $Tasks = @(
             @{
                 Action  = { Get-StoredCookies }
-                Message = "Getting Stored Cookie Information..."
-                Files   = "002_stored_cookies.csv"
+                Message = "10.1 Getting Stored Cookie Information..."
+                Files   = "10.01_stored_cookies.csv"
             }
             @{
                 Action  = { Get-TypedUrls }
-                Message = "Getting Typed URL Data..."
-                Files   = "003_typed_urls.csv"
+                Message = "10.2 Getting Typed URL Data..."
+                Files   = "10.02_typed_urls.csv"
             }
             @{
                 Action  = { Get-InternetSettings }
-                Message = "Getting Internet Setting Registry Keys..."
-                Files   = "004_internet_settings.csv"
+                Message = "10.3 Getting Internet Setting Registry Keys..."
+                Files   = "10.03_internet_settings.csv"
             }
             @{
                 Action  = { Get-TrustedInternetDomains }
-                Message = "Getting Trusted Internet Domain Registry Keys..."
-                Files   = "005_trusted_internet_domains.csv"
+                Message = "10.4 Getting Trusted Internet Domain Registry Keys..."
+                Files   = "10.04_trusted_internet_domains.csv"
             }
             @{
                 Action  = { Get-BrowserAnalysis }
-                Message = "Analyzing All Browser Data..."
-                Files   = "006_browser_analysis_summary.csv"
+                Message = "10.5 Analyzing All Browser Data..."
+                Files   = "10.05_browser_analysis_summary.csv"
             }
         )
         Invoke-TriageTaskList -Tasks $Tasks -Folder $InternetFolder
