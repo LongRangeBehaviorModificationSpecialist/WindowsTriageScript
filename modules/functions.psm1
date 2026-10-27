@@ -1,6 +1,12 @@
 # functions.psm1
 
 function Get-InitialSetup {
+<#
+.SYNOPSIS
+    Handles the initial setup of the application.
+.PARAMETER OutputRoot
+    Path to directory where the results of the scan will be saved
+#>
     param(
         [string]$OutputRoot
     )
@@ -14,8 +20,12 @@ function Get-InitialSetup {
     }
 
     $RunDate = Get-Date -Format yyyyMMdd_HHmmss
-    $Idx     = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Sort-Object RouteMetric | Select-Object -First 1).InterfaceIndex
-    $Ipv4    = if ($Idx) { (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $Idx -ErrorAction SilentlyContinue | Select-Object -First 1).IPAddress }
+    $Idx     = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
+                    Sort-Object RouteMetric |
+                    Select-Object -First 1).InterfaceIndex
+    $Ipv4    = if ($Idx) {
+        (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $Idx -ErrorAction SilentlyContinue |
+            Select-Object -First 1).IPAddress }
 
     if (-not $Ipv4) {
         $Ipv4 = "NoIPv4"
@@ -34,6 +44,15 @@ function Get-InitialSetup {
 
 
 function Write-OutputToCsv {
+<#
+.SYNOPSIS
+    Handles the writing of the data to a CSV file
+.PARAMETER Data
+    The csv data that is going to be written to the file - usually this
+    information is returned during the execution of a function.
+.PARAMETER OutputFile
+    Path where the $Data will be saved to.
+#>
     param(
         [Parameter(Mandatory)][AllowNull()][AllowEmptyCollection()][object]$Data,
         [Parameter(Mandatory)][string]$OutputFile
@@ -41,7 +60,7 @@ function Write-OutputToCsv {
 
     process {
         if ($null -eq $Data -or @($Data).Count -eq 0) {
-            "No data was found when running this function." | Out-File -FilePath $OutputFile -Encoding UTF8
+            "No data was found when running this operation." | Out-File -FilePath $OutputFile -Encoding UTF8
         }
         else {
             $Data | Export-Csv -Path $OutputFile -NoTypeInformation -Encoding UTF8

@@ -1,67 +1,62 @@
 <#
 .SYNOPSIS
-    Launcher for the NOVA ICAC VECTOR Windows triage suite.
+Launcher for the NOVA ICAC VECTOR Windows triage suite.
 .DESCRIPTION
-    Can launch the application by using the '.\run-triage.cmd'
-    command and passing the parameters as normal.  This will
-    ensure that the script is run with the `-NoProfile` option.
+Can launch the application by using the '.\run-triage.cmd' command and passing the parameters as normal.  This will ensure that the script is run with the '-NoProfile' option.
+.PARAMETER Gui
+Add this switch to run a GUI version of this application interface.
 .PARAMETER Operator
-    Examiner's name (required unless -Gui).
-    Alias: "-Op".
+Alias: "-Op".
+Examiner's name (required unless -Gui).
 .PARAMETER Agency
-    Agency name (optional).
-    Alias: "-A".
+Alias: "-A".
+Agency name (optional).
 .PARAMETER CaseNumber
-    Case number (required unless -Gui).
-    Alias: "-CN".
+Alias: "-CN".
+Case number (required unless -Gui).
 .PARAMETER CaseFile
-    Optional JSON file holding Operator, Agency and CaseNumber, so
-    they stay off the command line.
+Optional JSON file holding Operator, Agency and CaseNumber, so they stay off the command line.
 .PARAMETER Modules
-    A comma-separated list of module names or 3-digit prefixes, e.g.:
-    "001","003","010_Internet".
-    Alias: "-Mods".
-    Default: "all"
+Alias: "-Mods".
+A comma-separated list of module names or 3-digit prefixes, e.g.: "001","003","010_Internet".
 .PARAMETER RunEdd
-    Alias: "-Edd"
+Alias: "-Edd"
+Add this switch to run the Encrypted Disk Detector on the examined machine to search for partitions that may be encrypted.
 .PARAMETER GetProcesses
-    Alias: "-Proc"
+Alias: "-Proc"
+Add this switch to run MAGNET Process Capture to save the processes that are currently running on the examined machine.
 .PARAMETER CaptureRam
-    Alias: "-Ram"
+Alias: "-Ram"
+Add this switch to capture the RAM of the examined computer.
 .PARAMETER Archive
-    Alias: "-Zip"
+Alias: "-Zip"
+Add this switch to create a .zip file of the results once the scan is complete.
 .PARAMETER OutputRoot
-    Folder in which the case folder is created (no trailing backslash).
-    Default: the toolkit folder.
+Folder in which the case folder is created (no trailing backslash).
+Default: the toolkit folder.
 .PARAMETER DryRun
-    Validate the options, print what would run, and exit without collecting
-    anything.
-.EXAMPLE
-    .\run-triage.ps1
-.EXAMPLE
-    run-triage.cmd -DryRun -Operator "MAS" -Agency "Agency" -CaseNumber
-    "12345" [-RunEdd|-Edd] [-GetProcesses|-Proc] [-CaptureRam|-Ram]
-    [-Archive|-Zip] -Modules "001","002","003"
-.EXAMPLE
-    (Using aliases)
-    run-triage.cmd -DryRun -Op "MAS" -A "Agency" -CN "12345" -Edd -Proc
-    -Ram -Zip -Modules "001","002","003"
-.EXAMPLE
-    run-triage.cmd -Operator "MAS" -Agency "Agency" -CaseNumber "12345"
-    -RunEdd -GetProcesses -CaptureRam -Archive -Modules all
-.EXAMPLE
-    .\run-triage.ps1 -Operator "J. Smith" -Agency "Example PD" -CaseNumber
-    2026-0142 -CaptureRam -Archive -Modules ("006_Prefetch", "010_Internet")
-.EXAMPLE
-    .\run-triage.cmd -GUI
+Validate the options, print what would run, and exit without collecting anything.
 .NOTES
-    Exit codes: 0 = completed,
-                1 = completed with logged errors,
-                2 = could not start (not admin, bad parameters, module load
-                    failed),
-                3 = unexpected fatal error.
+Exit codes: 0 = completed,
+            1 = completed with logged errors,
+            2 = could not start (not admin, bad parameters, module load failed),
+            3 = unexpected fatal error.
 
-    Last Updated: 22-Oct-2026
+Last Updated: 27-Oct-2026
+.EXAMPLE
+.\run-triage.ps1
+.EXAMPLE
+.\run-triage.cmd -GUI
+.EXAMPLE
+run-triage.cmd -DryRun -Operator "MAS" -Agency "Agency" -CaseNumber "12345" [-RunEdd|-Edd] [-GetProcesses|-Proc] [-CaptureRam|-Ram] [-Archive|-Zip] -Modules "001","002","003"
+.EXAMPLE
+run-triage.cmd -DryRun -Op "MAS" -A "Agency" -CN "12345" -Edd -Proc -Ram -Zip -Modules "001","002","003"
+.EXAMPLE
+run-triage.cmd -Operator "MAS" -Agency "Agency" -CaseNumber "12345" -RunEdd -GetProcesses -CaptureRam -Archive -Modules all
+.EXAMPLE
+.\run-triage.ps1 -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -CaptureRam -Archive -Modules ("006_Prefetch", "010_Internet")
+.LINK
+https://github.com/LongRangeBehaviorModificationSpecialist/WindowsTriageScript
 #>
 
 [CmdletBinding()]
