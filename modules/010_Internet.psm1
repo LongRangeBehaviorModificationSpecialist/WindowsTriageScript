@@ -4,9 +4,6 @@ function Get-TriageInternetData {
         [Parameter(Mandatory)][string]$InternetFolder
     )
     begin {
-        # $TempFolder = Join-Path -Path $InternetFolder -ChildPath "temp"
-        # $null       = New-Item -ItemType Directory -Path $TempFolder
-
         function Get-StoredCookies {
             param(
                 [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.01_stored_cookies.csv")
@@ -319,24 +316,6 @@ function Get-TriageInternetData {
                                         }
                                     }
                                 }
-                                    # elseif ($Lines.Count -gt 0) {
-                                    #     $Lines | Set-Content -LiteralPath $OutFile -Encoding UTF8
-
-                                    #     # Exact row count from SQLite itself
-                                    #     $CountOut = & $SqlitePath -batch -readonly $Db "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
-                                    #     $Parsed   = 0
-                                    #     if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
-                                    #         $Rows = $Parsed
-                                    #     }
-                                    #     else {
-                                    #         $Rows = -1  # Written, but the count was unavailable
-                                    #     }
-                                    # }
-                                    # else {
-                                    #     $Status = "NoData"
-                                    #     "No data was found for that query." | Set-Content -LiteralPath $OutFile -Encoding UTF8
-                                    # }
-                                # }
                                 catch {
                                     $Status = "Failed"
                                     $Failures++
@@ -362,13 +341,10 @@ function Get-TriageInternetData {
             }
             finally {
                 if ($OldEncoding) {
-                    try {
-                        [Console]::OutputEncoding = $OldEncoding
-                    }
+                    try { [Console]::OutputEncoding = $OldEncoding }
                     catch { }
                 }
             }
-
             Write-OutputToCsv -Data $Summary -OutputFile $CsvFile
             Show-Message -Message "Browser analysis => $DbFound database(s) found, $Failures failure(s)." -Level INFO -AddToLog
         }
