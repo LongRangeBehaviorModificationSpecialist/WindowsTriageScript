@@ -14,7 +14,7 @@ function Get-LinkFiles {
         [string]$TxtFile = (Join-Path -Path $SystemFolder -ChildPath "link_files.txt")
     )
     $Data = Get-CimInstance -ClassName Win32_ShortcutFile |
-            Select-Object FileName, Caption, @{ N = "CreationDate"; E = { $_.ConvertToDateTime($_.CreationDate) } }, @{ N = "LastAccessed"; E = { $_.ConvertToDateTime($_.LastAccessed) } }, @{ N = "LastModified"; E = { $_.ConvertToDateTime($_.LastModified) } }, Target |
+            Select-Object FileName, Caption, @{ Name = "CreationDate"; Expression = { $_.ConvertToDateTime($_.CreationDate) } }, @{ Name = "LastAccessed"; Expression = { $_.ConvertToDateTime($_.LastAccessed) } }, @{ Name = "LastModified"; Expression = { $_.ConvertToDateTime($_.LastModified) } }, Target |
             Where-Object { $_.lastModified -gt ((Get-Date).AddDays(-20)) } |
             Sort-Object LastModified -Descending
     Write-OutputToFile -Data $Data -OutputFile $TxtFile

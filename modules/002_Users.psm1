@@ -1,66 +1,86 @@
-function Get-TriageUserData {
+function Get-TriageUserData
+{
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$UserFolder
+        [Parameter(Mandatory)]
+        [string]$UserFolder
     )
-    begin {
-        function Get-WhoAmI {
+
+    begin
+    {
+        function Get-WhoAmI
+        {
             param(
-                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "who_am_I.txt")
+                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.01_who_am_I.txt")
             )
+
             $Data = & (Get-TriageBinary "whoami") /ALL /FO LIST
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
 
-        function Get-Win32UserProfile {
+        function Get-Win32UserProfile
+        {
             param(
-                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_user_profile.txt")
+                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.02_win32_user_profile.txt")
             )
+
             $Data = & { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
 
-        function Get-LocalUserData {
+        function Get-LocalUserData
+        {
             param(
-                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "local_users.txt")
+                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.03_local_users.txt")
             )
+
             $Data = & { Get-LocalUser | Select-Object -Property * | Format-List }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
 
-        function Get-UserGroups {
+        function Get-UserGroups
+        {
             param(
-                [string]$CsvFile = (Join-Path -Path $UserFolder -ChildPath "user_groups.csv")
+                [string]$CsvFile = (Join-Path -Path $UserFolder -ChildPath "02.04_user_groups.csv")
             )
+
             $Data = & { Get-CimInstance -ClassName Win32_Group | Select-Object -Property * }
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         }
 
-        function Get-Win32LocalLogons {
+        function Get-Win32LocalLogons
+        {
             param(
-                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_local_logons.txt")
+                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.05_win32_local_logons.txt")
             )
+
             $Data = & { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
 
-        function Get-Win32UserAccount {
+        function Get-Win32UserAccount
+        {
             param(
-                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "win32_user_account.txt")
+                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.06_win32_user_account.txt")
             )
+
             $Data = & { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
 
-        function Get-PowershellConsoleHistoryAllUsers {
+        function Get-PowershellConsoleHistoryAllUsers
+        {
             param(
-                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "powershell_history_all_users.txt"),
+                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.07a_powershell_history_all_users.txt"),
                 [string]$CopyFolder = (Join-Path -Path $UserFolder -ChildPath "PowerShell_History")
             )
+
             # Profiles found by the hive step (includes profiles outside C:\Users)
             # Fall back to C:\Users
             $Profiles = @($global:TriageUserHives | Where-Object ProfilePath | ForEach-Object { $_.ProfilePath } | Sort-Object -Unique)
-            if ($Profiles.Count -eq 0) {
+
+            if ($Profiles.Count -eq 0)
+            {
                 $Profiles = @(Get-ChildItem -LiteralPath (Join-Path -Path $env:SystemDrive -ChildPath "Users") -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
             }
 
@@ -72,18 +92,22 @@ function Get-TriageUserData {
             $null = New-Item -ItemType Directory -Path $CopyFolder -Force
             $Rows = [System.Collections.Generic.List[object]]::new()
 
-            foreach ($ProfilePath in $Profiles) {
+            foreach ($ProfilePath in $Profiles)
+            {
                 $UserLeaf = Split-Path -Path $ProfilePath -Leaf
 
-                foreach ($Rel in $HistoryDirs.Keys) {
+                foreach ($Rel in $HistoryDirs.Keys)
+                {
                     $Label = $HistoryDirs[$Rel]
                     $Dir = Join-Path -Path $ProfilePath -ChildPath $Rel
-                    if (-not (Test-Path -LiteralPath $Dir -PathType Container)) {
+                    if (-not (Test-Path -LiteralPath $Dir -PathType Container))
+                    {
                         continue
                     }
 
                     # _history.txt also catches the VS Code terminal history file
-                    foreach ($File in Get-ChildItem -LiteralPath $Dir -Filter "*_history.txt" -File -Force -ErrorAction SilentlyContinue) {
+                    foreach ($File in Get-ChildItem -LiteralPath $Dir -Filter "*_history.txt" -File -Force -ErrorAction SilentlyContinue)
+                    {
                         $RelCopy = "PowerShell_History\$UserLeaf\$Label\$( $File.Name )"
                         $Dest = Join-Path -Path $UserFolder -ChildPath $RelCopy
 
@@ -100,84 +124,89 @@ function Get-TriageUserData {
                             Detail            = $R.Detail
                         })
 
-                        if ($R.Status -eq "OK") {
+                        if ($R.Status -eq "OK")
+                        {
                             # Combined text file, built from the copy and streamed
                             # line by line
-                            if (-not (Test-Path -LiteralPath $TxtFile)) {
+                            if (-not (Test-Path -LiteralPath $TxtFile))
+                            {
                                 Set-Content -LiteralPath $TxtFile -Value "PowerShell console history, one section per history file." -Encoding UTF8
                             }
                             Add-Content -LiteralPath $TxtFile -Value "`r`n===== $UserLeaf | $Label | $( $File.Name ) =====" -Encoding UTF8
                             Get-Content -LiteralPath $Dest | Add-Content -LiteralPath $TxtFile -Encoding UTF8
                         }
-                        else {
+                        else
+                        {
                             Show-Message -Message "Could not copy [ $( $File.FullName ) ] => $( $R.Detail )" -Level ERROR -AddToLog
                         }
                     }
                 }
             }
 
-            if (-not (Test-Path -LiteralPath $TxtFile)) {
+            if (-not (Test-Path -LiteralPath $TxtFile))
+            {
                 Set-Content -LiteralPath $TxtFile -Value "No PowerShell history files were found." -Encoding UTF8
             }
-            Write-OutputToCsv -Data $Rows -OutputFile (Join-Path -Path $UserFolder -ChildPath "powershell_history_manifest.csv")
+            Write-OutputToCsv -Data $Rows -OutputFile (Join-Path -Path $UserFolder -ChildPath "02.07b_powershell_history_manifest.csv")
         }
 
-        function Get-TerminalSessions {
+        function Get-TerminalSessions
+        {
             param(
-                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "terminal_sessions.txt")
+                [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.08_terminal_sessions.txt")
             )
+
             $Data = & (Get-TriageBinary "qwinsta") 2>&1
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
     }
-
+    process
+    {
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
-    process {
         $Tasks = @(
             @{
                 Action  = { Get-WhoAmI }
-                Message = "Getting WhoAmI Data..."
-                Files   = "who_am_I.txt"
+                Message = "02.01_Getting WhoAmI Data..."
+                Files   = "02.01_who_am_I.txt"
             }
             @{
                 Action  = { Get-Win32UserProfile }
-                Message = "Getting Win32 User Profile Data..."
-                Files   = "win32_user_profile.txt"
+                Message = "02.02_Getting Win32 User Profile Data..."
+                Files   = "02.02_win32_user_profile.txt"
             }
             @{
                 Action  = { Get-LocalUserData }
-                Message = "Getting Local Users List..."
-                Files   = "local_users.txt"
+                Message = "02.03_Getting Local Users List..."
+                Files   = "02.03_local_users.txt"
             }
             @{
                 Action  = { Get-UserGroups }
-                Message = "Getting User Groups..."
-                Files   = "user_groups.csv"
+                Message = "02.04_Getting User Groups..."
+                Files   = "02.04_user_groups.csv"
             }
             @{
                 Action  = { Get-Win32LocalLogons }
-                Message = "Getting Win32 Local Logons..."
-                Files   = "win32_local_logons.txt"
+                Message = "02.05_Getting Win32 Local Logons..."
+                Files   = "02.05_win32_local_logons.txt"
             }
             @{
                 Action  = { Get-Win32UserAccount }
-                Message = "Getting Win32 User Account Data..."
-                Files   = "win32_user_account.txt"
+                Message = "02.06_Getting Win32 User Account Data..."
+                Files   = "02.06_win32_user_account.txt"
             }
             @{
                 Action  = { Get-PowershellConsoleHistoryAllUsers }
-                Message = "Getting PowerShell History (All Users)..."
-                Files   = "powershell_history_all_users.txt", "powershell_history_manifest.csv"
+                Message = "02.07_Getting PowerShell History (All Users)..."
+                Files   = "02.07a_powershell_history_all_users.txt", "02.07b_powershell_history_manifest.csv"
             }
             @{
                 Action  = { Get-TerminalSessions }
-                Message = "Getting terminal sessions..."
-                Files   = "terminal_sessions.txt"
+                Message = "02.08_Getting terminal sessions..."
+                Files   = "02.08_terminal_sessions.txt"
             }
         )
-
         Invoke-TriageTaskList -Tasks $Tasks -Folder $UserFolder
     }
 }

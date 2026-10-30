@@ -1,6 +1,7 @@
 # functions.psm1
 
-function Get-InitialSetup {
+function Get-InitialSetup
+{
 <#
 .SYNOPSIS
     Handles the initial setup of the application.
@@ -11,11 +12,13 @@ function Get-InitialSetup {
         [string]$OutputRoot
     )
 
-    if (-not $OutputRoot) {
+    if (-not $OutputRoot)
+    {
         $OutputRoot = Get-TriageConfig -Key "ToolkitRoot"
     }
 
-    if (-not (Test-Path -LiteralPath $OutputRoot -PathType Container)) {
+    if (-not (Test-Path -LiteralPath $OutputRoot -PathType Container))
+    {
         throw "Output folder does not exist: $OutputRoot"
     }
 
@@ -23,11 +26,13 @@ function Get-InitialSetup {
     $Idx     = (Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
                     Sort-Object RouteMetric |
                     Select-Object -First 1).InterfaceIndex
-    $Ipv4    = if ($Idx) {
-        (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $Idx -ErrorAction SilentlyContinue |
-            Select-Object -First 1).IPAddress }
+    $Ipv4    = if ($Idx)
+    {
+        (Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $Idx -ErrorAction SilentlyContinue | Select-Object -First 1).IPAddress
+    }
 
-    if (-not $Ipv4) {
+    if (-not $Ipv4)
+    {
         $Ipv4 = "NoIPv4"
     }
 
@@ -43,7 +48,8 @@ function Get-InitialSetup {
 }
 
 
-function Write-OutputToCsv {
+function Write-OutputToCsv
+{
 <#
 .SYNOPSIS
     Handles the writing of the data to a CSV file.
@@ -62,11 +68,14 @@ function Write-OutputToCsv {
         [string]$OutputFile
     )
 
-    process {
-        if ($null -eq $Data -or @($Data).Count -eq 0) {
+    process
+    {
+        if ($null -eq $Data -or @($Data).Count -eq 0)
+        {
             "No data was found when running this operation." | Out-File -FilePath $OutputFile -Encoding UTF8
         }
-        else {
+        else
+        {
             $Data | Export-Csv -Path $OutputFile -NoTypeInformation -Encoding UTF8
         }
     }
@@ -123,27 +132,33 @@ function Show-Message {
         [switch]$SpaceAbove
     )
 
-    try {
-        switch ($Level) {
+    try
+    {
+        switch ($Level)
+        {
             "ERROR"   { $global:TriageErrorCount++ }
             "WARNING" { $global:TriageWarningCount++ }
         }
 
         # Handle SUCCESS auto-message
-        if ($Level -eq "SUCCESS" -and $File) {
+        if ($Level -eq "SUCCESS" -and $File)
+        {
             $Names   = @($File | ForEach-Object { [System.IO.Path]::GetFileName($_) })
             $Joined  = $Names -join ", "
             $Message = "Process completed. Output saved to [ $Joined ]"
-            if ($ExecutionTime) {
+            if ($ExecutionTime)
+            {
                 $Message += " ($ExecutionTime)."
             }
         }
 
         # Build timestamp string only (no color attached yet)
-        if ($NoTime) {
+        if ($NoTime)
+        {
             $Timestamp = ""
         }
-        else {
+        else
+        {
             $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
         }
 
@@ -152,7 +167,8 @@ function Show-Message {
         $LogMessage = "$LogEntryPrefix $Message"
 
         # Determine display color based on Level
-        switch ($Level) {
+        switch ($Level)
+        {
             "SUCCESS" { $DisplayColor = "Green" }
             "WARNING" { $DisplayColor = "Yellow" }
             "ERROR"   { $DisplayColor = "Red" }
@@ -160,36 +176,44 @@ function Show-Message {
         }
 
         # OUTPUT TO TERMINAL (colors are applied here)
-        if ($NoTime) {
+        if ($NoTime)
+        {
             Write-Host $Message -ForegroundColor $DisplayColor
         }
-        elseif ($SpaceAbove) {
+        elseif ($SpaceAbove)
+        {
             Write-Host "`n[$Timestamp] " -ForegroundColor $TimestampColor -NoNewLine
             Write-Host $Message -ForegroundColor $DisplayColor
         }
-        else {
+        else
+        {
             Write-Host "[$Timestamp] " -ForegroundColor $TimestampColor -NoNewLine
             Write-Host $Message -ForegroundColor $DisplayColor
         }
 
         # LOG TO FILE (if requested)
-        if ($AddToLog -and $LogFile) {
-            try {
+        if ($AddToLog -and $LogFile)
+        {
+            try
+            {
                 $LogMessage | Out-File -FilePath $LogFile -Append -Encoding UTF8 -NoClobber
             }
-            catch {
+            catch
+            {
                 # If writing to the USB log fails, tell the examiner
                 Write-Host "Error occured during $( $MyInvocation.MyCommand.Name ) => CRITICAL: Unable to write to triage log file! Error => $( $_.Exception.Message )" -ForegroundColor Red
             }
         }
     }
-    catch {
+    catch
+    {
         Write-Error "An uncaught/unknown error occured during $( $MyInvocation.MyCommand.Name ). Error => $( $_.Exception.Message )"
     }
 }
 
 
-function Write-LogMessage {
+function Write-LogMessage
+{
 <#
 .SYNOPSIS
     temp
@@ -202,8 +226,10 @@ function Write-LogMessage {
         [string]$Message
     )
 
-    process {
-        if (-not $Message) {
+    process
+    {
+        if (-not $Message)
+        {
             Write-Error -Message "The `"-Message`" parameter cannot be empty."
             return
         }
@@ -214,7 +240,8 @@ function Write-LogMessage {
 }
 
 
-function Write-OutputToFile {
+function Write-OutputToFile
+{
 <#
 .SYNOPSIS
     Writes the results of the commands to the $OutputFile.
@@ -236,29 +263,38 @@ function Write-OutputToFile {
         [switch]$Append
     )
 
-    $Header = if ($Command) {
+    $Header = if ($Command)
+    {
         "Command: $Command`r`n`r`n"
     }
-    else {
+    else
+    {
         ""
     }
-    $Body   = if ($Data) {
+
+    $Body   = if ($Data)
+
+    {
         $Data | Out-String -Width 4096
     }
-    else {
+    else
+    {
         "No data was found when running this function.`r`n"
     }
 
-    if ($Append) {
+    if ($Append)
+    {
         ($Header + $Body) | Out-File -FilePath $OutputFile -Encoding UTF8 -Append
     }
-    else{
+    else
+    {
         ($Header + $Body) | Out-File -FilePath $OutputFile -Encoding UTF8
     }
 }
 
 
-function Read-LogHost {
+function Read-LogHost
+{
 <#
 .SYNOPSIS
     temp
@@ -281,23 +317,29 @@ function Read-LogHost {
         [switch]$AsSecureString
     )
 
-    begin {
+    begin
+    {
         $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
     }
-    process {
+    process
+    {
         Write-Host "[$Timestamp] " -ForegroundColor $TimeStampColor -NoNewline
         Write-Host $Prompt -ForegroundColor $PromptColor -NoNewline
 
-        if ($AsSecureString) {
+        if ($AsSecureString)
+        {
             Read-Host -AsSecureString
-        } else {
+        }
+        else
+        {
             Read-Host
         }
     }
 }
 
 
-function Test-IfExists {
+function Test-IfExists
+{
 <#
 .SYNOPSIS
     temp
@@ -316,28 +358,35 @@ function Test-IfExists {
         [string]$Type
     )
 
-    if ($Type -eq "FOLDER") {
+    if ($Type -eq "FOLDER")
+    {
         $FolderNameText = $(Split-Path -Path $FolderName -Leaf)
-        if (Test-Path $FolderName) {
+        if (Test-Path $FolderName)
+        {
             Show-Message -Message "[ /$FolderNameText/ ] directory created successfully" -Level INFO -AddToLog -SpaceAbove -MessageColor Magenta
         }
-        else {
+        else
+        {
             return
         }
     }
-    if ($Type -eq "FILE") {
+    if ($Type -eq "FILE")
+    {
         $FileNameText = $(Split-Path -Path $FileName -Leaf)
-        if (Test-Path $FileName) {
+        if (Test-Path $FileName)
+        {
             Show-Message -Message "[ $FileNameText ] file was created successfully." -Level INFO -AddToLog
         }
-        else {
+        else
+        {
             continue
         }
     }
 }
 
 
-function Get-PerUserRegistryValue {
+function Get-PerUserRegistryValue
+{
 <#
 .SYNOPSIS
     temp
@@ -349,14 +398,17 @@ function Get-PerUserRegistryValue {
         [string]$SubKey
     )
 
-    foreach ($User in ($global:TriageUserHives | Where-Object Root)) {
+    foreach ($User in ($global:TriageUserHives | Where-Object Root))
+    {
         $Path = "$( $User.Root )\$SubKey"
-        if (-not (Test-Path -LiteralPath $Path)) {
+        if (-not (Test-Path -LiteralPath $Path))
+        {
             continue
         }
 
         $Props = Get-Itemproperty -LiteralPath $Path
-        foreach ($Property in ($Props.PSObject.Properties | Where-Object { $_.Name -notlike "PS*" })) {
+        foreach ($Property in ($Props.PSObject.Properties | Where-Object { $_.Name -notlike "PS*" }))
+        {
             [PSCustomObject]@{
                 UserName  = $User.UserName
                 SID       = $User.Sid
@@ -369,7 +421,8 @@ function Get-PerUserRegistryValue {
 }
 
 
-function Get-PerUserRegistrySubKey {
+function Get-PerUserRegistrySubKey
+{
 <#
 .SYNOPSIS
     Same idea as Get-PerUserRegistryValue, but lists the *subkeys* (MountPoints2, EscDomains).
@@ -381,9 +434,11 @@ function Get-PerUserRegistrySubKey {
         [string]$SubKey
     )
 
-    foreach ($User in ($global:TriageUserHives | Where-Object Root)) {
+    foreach ($User in ($global:TriageUserHives | Where-Object Root))
+    {
         $Path = "$( $User.Root )\$SubKey"
-        if (-not (Test-Path -LiteralPath $Path)) {
+        if (-not (Test-Path -LiteralPath $Path))
+        {
             continue
         }
         Get-ChildItem -LiteralPath $Path | ForEach-Object {
@@ -398,7 +453,8 @@ function Get-PerUserRegistrySubKey {
 }
 
 
-function Export-PerUserRegistry {
+function Export-PerUserRegistry
+{
 <#
 .SYNOPSIS
     temp
@@ -420,11 +476,14 @@ function Export-PerUserRegistry {
         [switch]$EnumerateSubKeys
     )
 
-    $Data = foreach ($Key in $SubKey) {
-        if ($EnumerateSubKeys) {
+    $Data = foreach ($Key in $SubKey)
+    {
+        if ($EnumerateSubKeys)
+        {
             Get-PerUserRegistrySubKey -SubKey $Key
         }
-        else {
+        else
+        {
             Get-PerUserRegistryValue  -SubKey $Key
         }
     }
@@ -432,7 +491,8 @@ function Export-PerUserRegistry {
 }
 
 
-function Mount-TriageUserHives {
+function Mount-TriageUserHives
+{
 <#
 .SYNOPSIS
     temp
@@ -460,7 +520,8 @@ function Mount-TriageUserHives {
         $_.PSChildName -match "^S-1-(5-21|12-1)-" -and $_.PSChildName -notmatch "\.bak$"
     }
 
-    foreach ($Key in $Keys) {
+    foreach ($Key in $Keys)
+    {
         $Sid = $Key.PSChildName
         $Out = [ordered]@{
             UserName    = $null
@@ -470,41 +531,52 @@ function Mount-TriageUserHives {
             MountName   = $null
             Note        = ""
         }
-        try {
+        try
+        {
             $ProfilePath = [Environment]::ExpandEnvironmentVariables(
                 (Get-Itemproperty -LiteralPath $Key.PSPath -ErrorAction Stop).ProfileImagePath)
             $Out.ProfilePath = $ProfilePath
-            try {
+            try
+            {
                 $Out.UserName = ([Security.Principal.SecurityIdentifier]$Sid).Translate([Security.Principal.NTAccount]).Value
             }
-            catch {
+            catch
+            {
                 $Out.UserName = "UNRESOLVED\" + (Split-Path -Path $ProfilePath -Leaf)
             }
 
             $RawDir = Join-Path -Path $HiveFolder -ChildPath $Sid
             $null   = New-Item -ItemType Directory -Path $RawDir -Force
 
-            if (Test-Path -LiteralPath "Registry::HKEY_USERS\$Sid") {
+            if (Test-Path -LiteralPath "Registry::HKEY_USERS\$Sid")
+            {
                 # Logged on: read the live hive and keep a snapshot
                 $Out.Root = "Registry::HKEY_USERS\$Sid"
                 & (Get-TriageBinary "reg") save "HKU\$Sid" (Join-Path -Path $RawDir -ChildPath "NTUSER.DAT.regsave") /y 2>&1 | Out-Null
-                $Out.Note = if ($LASTEXITCODE -eq 0) {
+                $Out.Note = if ($LASTEXITCODE -eq 0)
+                {
                     "Live hive; snapshot via reg save"
                 }
-                else {
+                else
+                {
                     "Live hive; reg save FAILED"
                 }
             }
-            else {
+            else
+            {
                 $Src = Join-Path -Path $ProfilePath -ChildPath "NTUSER.DAT"
-                if (-not (Test-Path -LiteralPath $Src)) {
+                if (-not (Test-Path -LiteralPath $Src))
+                {
                     $Out.Note = "No NTUSER.DAT"
                 }
-                else {
+                else
+                {
                     # Pristine copy and transaction logs go into the evidence folder
-                    foreach ($File in "NTUSER.DAT", "NTUSER.DAT.LOG1", "NTUSER.DAT.LOG2") {
+                    foreach ($File in "NTUSER.DAT", "NTUSER.DAT.LOG1", "NTUSER.DAT.LOG2")
+                    {
                         $UserProfile = Join-Path -Path $ProfilePath -ChildPath $File
-                        if (Test-Path -LiteralPath $UserProfile) {
+                        if (Test-Path -LiteralPath $UserProfile)
+                        {
                             Copy-Item -LiteralPath $UserProfile -Destination $RawDir -Force -ErrorAction Stop
                         }
                     }
@@ -512,27 +584,32 @@ function Mount-TriageUserHives {
                     # Load a disposable working copy (logs beside it so Windows replays them)
                     $Work = Join-Path -Path $ScratchFolder -ChildPath "$Sid.DAT"
                     Copy-Item -LiteralPath (Join-Path -Path $RawDir -ChildPath "NTUSER.DAT") -Destination $Work -Force -ErrorAction Stop
-                    foreach ($Log in "LOG1", "LOG2") {
+                    foreach ($Log in "LOG1", "LOG2")
+                    {
                         $LP = Join-Path -Path $RawDir -ChildPath "NTUSER.DAT.$Log"
-                        if (Test-Path -LiteralPath $LP) {
+                        if (Test-Path -LiteralPath $LP)
+                        {
                             Copy-Item -LiteralPath $LP -Destination "$Work.$Log" -Force -ErrorAction Stop
                         }
                     }
 
                     $Mount  = "TRIAGE_$Sid"
                     $RegOut = & (Get-TriageBinary "reg") load "HKU\$Mount" $Work 2>&1
-                    if ($LASTEXITCODE -eq 0) {
+                    if ($LASTEXITCODE -eq 0)
+                    {
                         $Out.Root = "Registry::HKEY_USERS\$Mount"
                         $Out.MountName = $Mount
                         $Out.Note = "Offline; loaded from working copy"
                     }
-                    else {
+                    else
+                    {
                         $Out.Note = "reg load FAILED => $( $RegOut -join ' ' )"
                     }
                 }
             }
         }
-        catch {
+        catch
+        {
             # Collectors skip a hive with no Root
             $Out.Root = $null
             $Out.Note = "FAILED => $( $_.Exception.Message )"
@@ -543,7 +620,8 @@ function Mount-TriageUserHives {
 }
 
 
-function Dismount-TriageUserHives {
+function Dismount-TriageUserHives
+{
 <#
 .SYNOPSIS
     temp
@@ -558,14 +636,18 @@ function Dismount-TriageUserHives {
         [string]$ScratchFolder
     )
 
-    begin {
+    begin
+    {
         # Unloads this run's hives and anything a failed Mount left behind
         Clear-TriageHives
     }
-    process {
-        if ($ScratchFolder -and (Test-Path -LiteralPath $ScratchFolder)) {
+    process
+    {
+        if ($ScratchFolder -and (Test-Path -LiteralPath $ScratchFolder))
+        {
             Remove-Item -LiteralPath $ScratchFolder -Recurse -Force -ErrorAction SilentlyContinue
-            if (Test-Path -LiteralPath $ScratchFolder) {
+            if (Test-Path -LiteralPath $ScratchFolder)
+            {
                 Show-Message -Message "Scratch folder could not be removed [ $ScratchFolder ]" -Level WARNING -AddToLog
             }
         }
@@ -573,7 +655,8 @@ function Dismount-TriageUserHives {
 }
 
 
-function Get-TriageBinary {
+function Get-TriageBinary
+{
 <#
 .SYNOPSIS
     temp
@@ -585,72 +668,88 @@ function Get-TriageBinary {
         [string]$Name
     )
 
-    begin {
+    begin
+    {
         $Bins = (Get-TriageConfig -Key "Binaries")
     }
-    process {
+    process
+    {
         if (-not $Bins.ContainsKey($Name)) {
             throw "Unknown binary [ $Name ]. Available: $( $Bins.Keys -join ', ' )"
         }
 
         $Key = [System.IO.Path]::GetFileNameWithoutExtension($Bins[$Name])
-        if (-not $global:TriageSys -or -not $global:TriageSys.ContainsKey($Key)) {
+
+        if (-not $global:TriageSys -or -not $global:TriageSys.ContainsKey($Key))
+        {
             throw "[ $Key.exe ] is missing from \bin\ or failed its hash check; refusing to run it."
         }
+
         $global:TriageSys[$Key]
     }
 }
 
-function Disable-PSReadLineHistory {
+function Disable-PSReadLineHistory
+{
 <#
 .SYNOPSIS
     Best effort. Only affects the current session, and the launch line has normally already been written by the time the script runs.
 #>
     try {
-        if (Get-Module -Name PSReadLine) {
+        if (Get-Module -Name PSReadLine)
+        {
             Set-PSReadLineOption -HistorySaveStyle SaveNothing -ErrorAction Stop
             Show-Message -Message "PSReadLine history saving disabled for this session." -Level INFO -AddToLog
         }
-        else {
+        else
+        {
             Show-Message -Message "PSReadLine not loaded (non-interactive launch); nothing to disable." -Level INFO -AddToLog
         }
     }
-    catch {
+    catch
+    {
         Show-Message -Message "Could not disable PSReadLine history => $( $_.Exception.Message )" -Level WARNING -AddToLog
     }
 }
 
 
-function Write-LaunchContext {
+function Write-LaunchContext
+{
 <#
 .SYNOPSIS
     Records how the tool was started and the state of the operator's history file, so an examiner can later separate tool-caused changes from the subject's activity.
 #>
-    begin {
+    begin
+    {
         $ArgList = [Environment]::GetCommandLineArgs()
         $NoProf  = [bool]($ArgList | Where-Object { $_ -like "-NoProf*" })
         $Hist    = Join-Path -Path $env:APPDATA -ChildPath "Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
     }
-    process {
+    process
+    {
         Show-Message -Message "Launch command line => [ $( [Environment]::CommandLine ) ]" -Level INFO -AddToLog
         Show-Message -Message "PowerShell $( $PSVersionTable.PSVersion ), -NoProfile used: $NoProf, operator account: $env:USERDOMAIN\$env:USERNAME" -Level INFO -AddToLog
 
-        if (-not $NoProf) {
+        if (-not $NoProf)
+        {
             Show-Message -Message "Not launched with -NoProfile; target profile scripts may have run." -Level WARNING -AddToLog
         }
 
-        if (Test-Path -LiteralPath $Hist) {
+        if (Test-Path -LiteralPath $Hist)
+        {
             $Item = Get-Item -LiteralPath $Hist -Force
             Show-Message -Message "Operator PSReadLine history at start => [ $Hist ], $( $Item.Length ) bytes, last write (UTC) $( $Item.LastWriteTimeUtc.ToString('o') )" -Level INFO -AddToLog
         }
-        else {
+        else
+        {
             Show-Message -Message "Operator PSReadLine history file not present at start." -Level INFO -AddToLog
         }
     }
 }
 
 
-function Initialize-TriageSystemTools {
+function Initialize-TriageSystemTools
+{
 <#
 .SYNOPSIS
     temp
@@ -662,38 +761,46 @@ function Initialize-TriageSystemTools {
         [string]$ToolkitRoot
     )
 
-    begin {
+    begin
+    {
         $Folder = Join-Path -Path $ToolkitRoot -ChildPath "bin"
         $ManifestPath = Join-Path -Path $Folder -ChildPath "__hashes.json"
         $global:TriageSys = @{}
     }
-    process {
-        if (-not (Test-Path -LiteralPath $ManifestPath)) {
+    process
+    {
+        if (-not (Test-Path -LiteralPath $ManifestPath))
+        {
             Show-Message -Message "No trusted tool manifest at $ManifestPath." -Level WARNING -AddToLog
             return
         }
 
-        try {
+        try
+        {
             $Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json -ErrorAction Stop
         }
-        catch {
+        catch
+        {
             Show-Message -Message "Could not read $ManifestPath => $( $_.Exception.Message )" -Level ERROR -AddToLog
             return
         }
 
         $Verified = 0
         $Failed   = 0
-        foreach ($Entry in $Manifest.Files) {
+        foreach ($Entry in $Manifest.Files)
+        {
             $Path = Join-Path -Path $Folder -ChildPath $Entry.Path
 
-            if (-not (Test-Path -LiteralPath $Path)) {
+            if (-not (Test-Path -LiteralPath $Path))
+            {
                 Show-Message -Message "Listed in manifest but missing => $( $Entry.Path )" -Level ERROR -AddToLog
                 $Failed++
                 continue
             }
 
             $Actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash
-            if ($Actual -ne $Entry.SHA256) {
+            if ($Actual -ne $Entry.SHA256)
+            {
                 Show-Message -Message "Hash mismatch for $( $Entry.Path ) => binary is not trusted." -Level ERROR -AddToLog
                 $Failed++
                 continue
@@ -702,7 +809,8 @@ function Initialize-TriageSystemTools {
             $Verified++
             # Register only top-level executables as callable tools (skips
             # .mui and anything in subfolders)
-            if ($Entry.Path -notmatch "\\" -and $Entry.Path -like "*.exe") {
+            if ($Entry.Path -notmatch "\\" -and $Entry.Path -like "*.exe")
+            {
                 $global:TriageSys[[IO.Path]::GetFileNameWithoutExtension($Entry.Path)] = $Path
             }
         }
@@ -712,7 +820,8 @@ function Initialize-TriageSystemTools {
 }
 
 
-function Show-TriageBanner {
+function Show-TriageBanner
+{
 <#
 .SYNOPSIS
     temp
@@ -758,7 +867,8 @@ function Show-TriageBanner {
     Show-Message -Message $IntroBanner -NoTime -MessageColor DarkYellow
 }
 
-function Write-CaseInfo {
+function Write-CaseInfo
+{
 <#
 .SYNOPSIS
     Stores the operator/case details as data (they were only logged before). Written before hashing, so it is covered by the hash manifest.
@@ -789,7 +899,8 @@ function Write-CaseInfo {
         [string]$Agency
     )
 
-    begin {
+    begin
+    {
         $Now  = Get-Date
         $Info = [ordered]@{
             ToolVersion        = [string](Get-Module -Name triage | Select-Object -First 1).Version
@@ -809,13 +920,15 @@ function Write-CaseInfo {
             )
         }
     }
-    process {
+    process
+    {
         $Info | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path -Path $ResultsFolder -ChildPath "case_info.json") -Encoding UTF8
     }
 }
 
 
-function Invoke-RegistryCommand {
+function Invoke-RegistryCommand
+{
 <#
 .SYNOPSIS
     Runs a registry read. A missing key/path is logged as "no data"; any other problem (access denied, etc.) is logged as an ERROR.
@@ -827,19 +940,24 @@ function Invoke-RegistryCommand {
         [scriptblock]$Command
     )
 
-    begin {
+    begin
+    {
         # 2>&1 turns non-terminating errors into objects we can inspect instead of printing them
         $Output = & $Command 2>&1
         $Errors = @($Output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })
         $Data   = @($Output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] })
     }
-    process {
-        foreach ($E in $Errors) {
-            if ($E.FullyQualifiedErrorId -like "PathNotFound*") {
+    process
+    {
+        foreach ($E in $Errors)
+        {
+            if ($E.FullyQualifiedErrorId -like "PathNotFound*")
+            {
                 $Msg = "No data found for registry key [ $( $E.TargetObject ) ]"
                 Show-Message -Message $Msg -Level INFO -AddToLog -MessageColor Yellow
             }
-            else {
+            else
+            {
                 Show-Message -Message "Registry read problem [ $( $E.Exception.Message ) ]" -Level ERROR -AddToLog
             }
         }
@@ -849,7 +967,8 @@ function Invoke-RegistryCommand {
 }
 
 
-function Clear-TriageHives {
+function Clear-TriageHives
+{
 <#
 .SYNOPSIS
     Unloads every TRIAGE_* hive, including ones left behind by a crashed or interrupted run.
@@ -857,27 +976,34 @@ function Clear-TriageHives {
     [CmdletBinding()]
     param()
 
-    begin {
+    begin
+    {
         # Release provider handles first
         [gc]::Collect()
         [gc]::WaitForPendingFinalizers()
     }
-    process {
+    process
+    {
         $Stale = @(Get-ChildItem -LiteralPath "Registry::HKEY_USERS" -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -like "TRIAGE_*" })
 
-        foreach ($K in $Stale) {
+        foreach ($K in $Stale)
+        {
             $Name = $K.PSChildName
             & (Get-TriageBinary "reg") unload "HKU\$Name" 2>&1 | Out-Null
-            if ($LASTEXITCODE -ne 0) {
+            if ($LASTEXITCODE -ne 0)
+            {
                 Start-Sleep -Seconds 2
                 [gc]::Collect()
                 [gc]::WaitForPendingFinalizers()
                 & (Get-TriageBinary "reg") unload "HKU\$Name" 2>&1 | Out-Null
             }
-            if ($LASTEXITCODE -eq 0) {
+
+            if ($LASTEXITCODE -eq 0)
+            {
                 Show-Message -Message "Unloaded hive $Name" -Level INFO -AddToLog
             }
-            else {
+            else
+            {
                 Show-Message -Message "Could not unload hive $Name. Close other PowerShell windows and run: 'reg unload HKU\$Name'" -Level ERROR -AddToLog
             }
         }
@@ -885,7 +1011,8 @@ function Clear-TriageHives {
 }
 
 
-function Import-TriageConfig {
+function Import-TriageConfig
+{
 <#
 .SYNOPSIS
     This function stays private.  Do not add to the `triage.psd1` file.
@@ -898,21 +1025,25 @@ function Import-TriageConfig {
     )
 
     $Path = Join-Path -Path $ToolkitRoot -ChildPath "config\TriageConfig.psd1"
-    if (-not (Test-Path -LiteralPath $Path)) {
+    if (-not (Test-Path -LiteralPath $Path))
+    {
         throw "Configuration file not found => [ $Path ]"
     }
 
     $Cfg = Import-PowerShellDataFile -Path $Path
 
-    foreach ($Required in "Modules", "Binaries", "Defaults") {
-        if (-not $Cfg.ContainsKey($Required)) {
+    foreach ($Required in "Modules", "Binaries", "Defaults")
+    {
+        if (-not $Cfg.ContainsKey($Required))
+        {
             throw "Configuration file [ $Path ] is missing the required key [ $Required ]."
         }
     }
 
     # Relative -> full paths
     $Full = @{}
-    foreach ($Name in $Cfg.Binaries.Keys) {
+    foreach ($Name in $Cfg.Binaries.Keys)
+    {
         $Full[$Name] = Join-Path -Path $ToolkitRoot -ChildPath $Cfg.Binaries[$Name]
     }
     $Cfg.Binaries = $Full
@@ -927,7 +1058,8 @@ function Import-TriageConfig {
 }
 
 
-function Get-TriageConfig {
+function Get-TriageConfig
+{
 <#
 .SYNOPSIS
     temp
@@ -939,17 +1071,22 @@ function Get-TriageConfig {
         [string]$Key
     )
 
-    if (-not $script:TriageConfig) {
+    if (-not $script:TriageConfig)
+    {
         Import-TriageConfig
     }
-    if ($Key) {
+
+    if ($Key)
+    {
         return $script:TriageConfig[$Key]
     }
+
     $script:TriageConfig
 }
 
 
-function Format-TriageDuration {
+function Format-TriageDuration
+{
 <#
 .SYNOPSIS
     temp
@@ -961,22 +1098,29 @@ function Format-TriageDuration {
         [TimeSpan]$Span
     )
 
-    begin {
+    begin
+    {
         $Inv = [System.Globalization.CultureInfo]::InvariantCulture
     }
-    process {
-        if ($Span.TotalSeconds -lt 60) {
+    process
+    {
+        if ($Span.TotalSeconds -lt 60)
+        {
             return [string]::Format($Inv, "{0:N2} seconds", $Span.TotalSeconds)
         }
-        if ($Span.TotalHours -lt 1) {
+
+        if ($Span.TotalHours -lt 1)
+        {
             return [string]::Format($Inv, "{0} min {1:00} sec", $Span.Minutes, $Span.Seconds)
         }
+
         [string]::Format($Inv, "{0} hr {1:00} min {2:00} sec", [int][math]::Floor($Span.TotalHours), $Span.Minutes, $Span.Seconds)
     }
 }
 
 
-function Invoke-TriageTask {
+function Invoke-TriageTask
+{
 <#
 .SYNOPSIS
     temp
@@ -1005,10 +1149,12 @@ function Invoke-TriageTask {
 
     Show-Message -Message $Message -Level INFO -AddToLog
 
-    try {
+    try
+    {
         $null = & $Action
     }
-    catch {
+    catch
+    {
         $Status = "Failed"
         Show-Message -Message "Execution failed during [ $Action ] => $( $_.Exception.Message )" -Level ERROR -AddToLog
     }
@@ -1018,40 +1164,51 @@ function Invoke-TriageTask {
 
     $Present = [System.Collections.Generic.List[string]]::new()
     $Missing = [System.Collections.Generic.List[string]]::new()
-    if ($Status -eq "OK") {
-        foreach ($Path in $ExpectedFile) {
-            $Hits = if ($Path -match "[\*\?]") {
-                @(Get-ChildItem -Path $Path -File -Force -ErrorAction SilentlyContinue)
-            }
-                    else {
-                        @(Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue | Where-Object { $_ -is [System.IO.FileInfo] })
-                    }
-            if (@($Hits | Where-Object { $_.Length -gt 0 }).Count -gt 0) {
+    if ($Status -eq "OK")
+    {
+        foreach ($Path in $ExpectedFile)
+        {
+            $Hits = if ($Path -match "[\*\?]")
+                {
+                    @(Get-ChildItem -Path $Path -File -Force -ErrorAction SilentlyContinue)
+                }
+                else
+                {
+                    @(Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue | Where-Object { $_ -is [System.IO.FileInfo] })
+                }
+            if (@($Hits | Where-Object { $_.Length -gt 0 }).Count -gt 0)
+            {
                 $Present.Add($Path)
             }
-            else {
+            else
+            {
                 $Missing.Add($Path)
             }
         }
 
         $NewErrors = [int]$global:TriageErrorCount - $ErrorsStart
-        if ($Missing.Count -gt 0) {
+        if ($Missing.Count -gt 0)
+        {
             $Status = "MissingOutput"
             Show-Message -Message "[ $Message ] finished ($Time) but expected output is missing or empty => $( ($Missing | ForEach-Object { Split-Path -Path $_ -Leaf }) -join ', ' )" -Level ERROR -AddToLog
         }
-        elseif ($NewErrors -gt 0) {
+        elseif ($NewErrors -gt 0)
+        {
             $Status = "CompletedWithErrors"
             Show-Message -Message "[ $Message ] completed with $NewErrors error(s) ($Time). See application log." -Level WARNING -AddToLog
         }
-        elseif ($Present.Count -gt 0) {
+        elseif ($Present.Count -gt 0)
+        {
             Show-Message -File $Present -ExecutionTime $Time -Level SUCCESS -AddToLog
         }
-        else {
+        else
+        {
             Show-Message -Message "Process completed ($Time)." -Level SUCCESS -AddToLog
         }
     }
 
-    if ($global:TriageTimings) {
+    if ($global:TriageTimings)
+    {
         $global:TriageTimings.Add([PSCustomObject]@{
             StartedUtc = $StartedUtc
             Task       = $Message
@@ -1062,7 +1219,8 @@ function Invoke-TriageTask {
 }
 
 
-function Invoke-TriageTaskList {
+function Invoke-TriageTaskList
+{
 <#
 .SYNOPSIS
     temp
@@ -1079,14 +1237,16 @@ function Invoke-TriageTaskList {
         [string]$Folder
     )
 
-    foreach ($Task in $Tasks) {
+    foreach ($Task in $Tasks)
+    {
         $Expected = @($Task.Files | Where-Object { $_ } | ForEach-Object { Join-Path -Path $Folder -ChildPath $_ })
         Invoke-TriageTask -Message $Task.Message -Action $Task.Action -ExpectedFile $Expected
     }
 }
 
 
-function New-TriageCopyResult {
+function New-TriageCopyResult
+{
 <#
 .SYNOPSIS
     temp
@@ -1114,7 +1274,8 @@ function New-TriageCopyResult {
 }
 
 
-function Invoke-TriageRawCopy {
+function Invoke-TriageRawCopy
+{
 <#
 .SYNOPSIS
     temp
@@ -1143,13 +1304,15 @@ function Invoke-TriageRawCopy {
     $null = Start-Process -FilePath $Exe -ArgumentList $ArgList -WorkingDirectory $Dir -Wait -PassThru -WindowStyle Hidden
 
     $Out = Get-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
-    if (-not $Out -or $Out.Length -eq 0) {
+    if (-not $Out -or $Out.Length -eq 0)
+    {
         throw "RawCopy produced no output for [ $Source ]."
     }
 }
 
 
-function Copy-TriageFile {
+function Copy-TriageFile
+{
 <#
 .SYNOPSIS
     temp
@@ -1169,7 +1332,8 @@ function Copy-TriageFile {
 
     $R    = New-TriageCopyResult -Source $Source -Destination $Destination
     $Item = Get-Item -LiteralPath $Source -Force -ErrorAction SilentlyContinue
-    if (-not $Item) {
+    if (-not $Item)
+    {
         $R.Status = "NotFound"
         return $R
     }
@@ -1184,7 +1348,8 @@ function Copy-TriageFile {
     $In = $null
     $Out = $null
 
-    try {
+    try
+    {
         $Share    = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
         $In       = [System.IO.File]::Open($Source, "Open", "Read", $Share)
         $Out      = [System.IO.File]::Open($Destination, "Create", "Write")
@@ -1192,17 +1357,24 @@ function Copy-TriageFile {
         $R.Method = "SharedRead"
         $R.Status = "OK"
     }
-    catch { $R.Detail = $_.Exception.Message }
-    finally {
-        if ($Out) {
+    catch
+    {
+        $R.Detail = $_.Exception.Message
+    }
+    finally
+    {
+        if ($Out)
+        {
             $Out.Dispose()
         }
-        if ($In) {
+        if ($In)
+        {
             $In.Dispose()
         }
     }
 
-    if ($R.Status -eq "OK") {
+    if ($R.Status -eq "OK")
+    {
         # Keep the source's modified time
         (Get-Item -LiteralPath $Destination -Force).LastWriteTimeUtc = $Item.LastWriteTimeUtc
         return $R
@@ -1210,13 +1382,15 @@ function Copy-TriageFile {
 
     # Exclusively locked: read it from the volume instead
     Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
-    try {
+    try
+    {
         Invoke-TriageRawCopy -Source $Source -Destination $Destination
         $R.Method = "RawCopy"
         $R.Status = "OK"
         $R.Detail = ""
     }
-    catch {
+    catch
+    {
         $R.Status = "Locked"
         $R.Detail = "$( $R.Detail ) | RawCopy => $( $_.Exception.Message )"
     }
@@ -1224,7 +1398,8 @@ function Copy-TriageFile {
 }
 
 
-function Copy-TriageRawFile {
+function Copy-TriageRawFile
+{
 <#
 .SYNOPSIS
     Always uses RawCopy (for $MFT, $UsnJrnl).
@@ -1243,19 +1418,22 @@ function Copy-TriageRawFile {
 
     $R = New-TriageCopyResult -Source $Source -Destination $Destination
     $R.Method = "RawCopy"
-    try {
+    try
+    {
         Invoke-TriageRawCopy -Source $Source -Destination $Destination
         $R.Status = "OK"
         $R.SizeBytes = (Get-Item -LiteralPath $Destination -Force).Length
     }
-    catch {
+    catch
+    {
         $R.Detail = $_.Exception.Message
     }
     $R
 }
 
 
-function Save-TriageRegistryHive {
+function Save-TriageRegistryHive
+{
 <#
 .SYNOPSIS
     temp
@@ -1275,25 +1453,30 @@ function Save-TriageRegistryHive {
 
     $R = New-TriageCopyResult -Source $HiveKey -Destination $Destination
     $R.Method = "reg save"
-    try {
+    try
+    {
         $null = New-Item -ItemType Directory -Path (Split-Path -Path $Destination -Parent) -Force
         $Raw = & (Get-TriageBinary "reg") save $HiveKey $Destination /y 2>&1
-        if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $Destination)) {
+        if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $Destination))
+        {
             $R.Status    = "OK"
             $R.SizeBytes = (Get-Item -LiteralPath $Destination -Force).Length
         }
-        else {
+        else
+        {
             $R.Detail = ($Raw | ForEach-Object { "$_" }) -join " "
         }
     }
-    catch {
+    catch
+    {
         $R.Detail = $_.Exception.Message
     }
     $R
 }
 
 
-function Copy-TriageFolderBackup {
+function Copy-TriageFolderBackup
+{
 <#
 .SYNOPSIS
     Robocopy in backup mode: reads folders whose ACL excludes administrators.
@@ -1312,23 +1495,29 @@ function Copy-TriageFolderBackup {
 
     $R = New-TriageCopyResult -Source $Source -Destination $Destination
     $R.Method = "robocopy /B"
-    try {
+    try
+    {
         $Raw = & (Get-TriageBinary "robocopy") $Source $Destination /E /B /XJ /COPY:DAT /DCOPY:DAT /R:0 /W:0 /NP /NJH /NJS /NDL /NC /NS 2>&1
-        if ($LASTEXITCODE -ge 8) {
+        if ($LASTEXITCODE -ge 8)
+        {
             $R.Detail = "robocopy exit $LASTEXITCODE => $( ($Raw | ForEach-Object { "$_" }) -join ' ' )"
         }
-        else {
+        else
+        {
             $Files = @(Get-ChildItem -LiteralPath $Destination -Recurse -File -Force -ErrorAction SilentlyContinue)
-            $R.Status = if ($Files.Count -gt 0) {
+            $R.Status = if ($Files.Count -gt 0)
+            {
                 "OK"
             }
-            else {
+            else
+            {
                 "NotFound"
             }
             $R.SizeBytes = ($Files | Measure-Object Length -Sum).Sum
         }
     }
-    catch {
+    catch
+    {
         $R.Detail = $_.Exception.Message
     }
     $R

@@ -1,14 +1,20 @@
-function Get-RunningProcesses {
+function Get-RunningProcesses
+{
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$ResultsFolder
+        [Parameter(Mandatory)]
+        [string]$ResultsFolder
     )
-    begin {
+
+    begin
+    {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
     }
-    process {
-        try {
+    process
+    {
+        try
+        {
             Show-Message -Message "Starting Process Capture from computer [ $( $ComputerName )] . Please wait..." -Level INFO -AddToLog
 
             # Make new directory to store the process .dmp files
@@ -36,11 +42,16 @@ function Get-RunningProcesses {
 
             $Stopwatch.Stop()
         }
-        catch {
+        catch
+        {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
-    end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+    end
+    {
+        if ($Stopwatch.IsRunning)
+        {
+            $Stopwatch.Stop()
+        }
     }
 }

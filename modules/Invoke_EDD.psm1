@@ -1,14 +1,20 @@
-function Invoke-EDD {
+function Invoke-EDD
+{
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$ResultsFolder
+        [Parameter(Mandatory)]
+        [string]$ResultsFolder
     )
-    begin {
+
+    begin
+    {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
     }
-    process {
-        try {
+    process
+    {
+        try
+        {
             $BeginMsg = "Starting Encrypted Disk Detector on [ $( $ComputerName ) ]"
             Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
@@ -37,7 +43,8 @@ function Invoke-EDD {
             $EddResults = (Get-Content -Path $EddResultsFilePath -Force) -join "`r`n"
 
             # Guard against an empty result file
-            if ([string]::IsNullOrWhiteSpace($EddResults)) {
+            if ([string]::IsNullOrWhiteSpace($EddResults))
+            {
                 $EddResults = "(EDD produced no output => check if the tool ran interactively)"
             }
 
@@ -45,11 +52,15 @@ function Invoke-EDD {
 
             Show-Message -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
         }
-        catch {
+        catch
+        {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
     end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+        if ($Stopwatch.IsRunning)
+        {
+            $Stopwatch.Stop()
+        }
     }
 }

@@ -1,71 +1,102 @@
-function Get-StreamHash {
+function Get-StreamHash
+{
     # Reads the file once and feeds both algorithms from the same buffer.
     param(
-        [Parameter(Mandatory)][string]$LiteralPath,
+        [Parameter(Mandatory)]
+        [string]$LiteralPath,
+
         [bool]$IncludeMd5 = (Get-TriageConfig).Defaults.HashIncludeMd5
     )
+
     $Sha = [System.Security.Cryptography.SHA256]::Create()
     $Md5 = if ($IncludeMd5) { [System.Security.Cryptography.MD5]::Create() }
     $Fs  = $null
-    try {
+
+    try
+    {
         $Fs = [System.IO.File]::Open($LiteralPath, [System.IO.FileMode]::Open,
                 [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
         $Buffer = New-Object byte[] 1048576
-        while (($Read = $Fs.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
+        while (($Read = $Fs.Read($Buffer, 0, $Buffer.Length)) -gt 0)
+        {
             [void]$Sha.TransformBlock($Buffer, 0, $Read, $null, 0)
-            if ($Md5) {
+            if ($Md5)
+            {
                 [void]$Md5.TransformBlock($Buffer, 0, $Read, $null, 0)
             }
         }
+
         [void]$Sha.TransformFinalBlock($Buffer, 0, 0)
-        if ($Md5) {
+
+        if ($Md5)
+        {
             [void]$Md5.TransformFinalBlock($Buffer, 0, 0)
         }
 
         [PSCustomObject]@{
             SHA256 = [System.BitConverter]::ToString($Sha.Hash).Replace("-", "")
-            MD5    = if ($Md5) {
+            MD5    = if ($Md5)
+            {
                 [System.BitConverter]::ToString($Md5.Hash).Replace("-", "")
             }
-            else { $null }
+            else
+            {
+                $null
+            }
         }
     }
-    finally {
-        if ($Fs) { $Fs.Dispose() }
+    finally
+    {
+        if ($Fs)
+        {
+            $Fs.Dispose()
+        }
         $Sha.Dispose()
-        if ($Md5) { $Md5.Dispose() }
+        if ($Md5)
+        {
+            $Md5.Dispose()
+        }
     }
 }
 
-function Get-FileHashes {
+function Get-FileHashes
+{
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$ResultsFolder,
+        [Parameter(Mandatory)]
+        [string]$ResultsFolder,
+
         [bool]$IncludeMd5 = $true,
+
         [string[]]$ExcludedFiles = @(
             "*PowerShell_transcript*",
             "*Hash_Values*"
         )
     )
 
-    begin {
+    begin
+    {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
     }
-
-    process {
-        try {
+    process
+    {
+        try
+        {
             $Root       = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
             $LogsDir    = Join-Path -Path $Root -ChildPath "Logs"
             $HashFolder = Join-Path -Path $Root -ChildPath "Hash_Results"
             $null       = New-Item -ItemType Directory -Path $HashFolder -Force
             $OutFile    = Join-Path -Path $HashFolder -ChildPath "$( Split-Path -Path $Root -Leaf )_hash_values.csv"
 
-            if ($IncludeMd5) {
-                try {
+            if ($IncludeMd5)
+            {
+                try
+                {
                     [System.Security.Cryptography.MD5]::Create().Dispose()
                 }
-                catch {
+                catch
+                {
                     $IncludeMd5 = $false
                     Show-Message -Message "MD5 is unavailable here (FIPS mode?). Hashing SHA-256 only." -Level WARNING -AddToLog
                 }
@@ -82,15 +113,19 @@ function Get-FileHashes {
                 $Sha = $null
                 $Md5 = $null
                 $Err = ""
-                try {
+
+                try
+                {
                     $Hash = Get-StreamHash -LiteralPath $File.FullName -IncludeMd5:$IncludeMd5
                     $Sha  = $Hash.SHA256
                     $Md5  = $Hash.MD5
                 }
-                catch {
+                catch
+                {
                     $Err = $_.Exception.Message
                     Show-Message -Message "Could not hash => $( $File.FullName ) => $Err" -Level ERROR -AddToLog
                 }
+
                 [PSCustomObject]@{
                     RelativePath      = $File.FullName.Substring($Root.Length + 1)
                     SizeBytes         = $File.Length
@@ -103,28 +138,32 @@ function Get-FileHashes {
                     Error             = $Err
                 }
             }
-
             Write-OutputToCsv -Data $Rows -OutputFile $OutFile
             Show-Message -Message "Hashed $( $Files.Count ) files" -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
         }
-        catch {
+        catch
+        {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
     end {
-        if ($Stopwatch.IsRunning) { $Stopwatch.Stop() }
+        if ($Stopwatch.IsRunning)
+        {
+            $Stopwatch.Stop()
+        }
     }
 }
 
-function Close-TriageLog {
+function Close-TriageLog
+{
 <#
 .SYNOPSIS
-    Stops all writes to the log, then hashes everything in Logs\ plus the
-    evidence hash CSV into `Hash_Results\final_hashes.csv`.
+    Stops all writes to the log, then hashes everything in Logs\ plus the evidence hash CSV into `Hash_Results\final_hashes.csv`.
 #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$ResultsFolder
+        [Parameter(Mandatory)]
+        [string]$ResultsFolder
     )
 
     $Root       = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
@@ -138,13 +177,15 @@ function Close-TriageLog {
     $Targets = @(Get-ChildItem -LiteralPath $LogsDir -Recurse -Force -File) +
             @(Get-ChildItem -LiteralPath $HashFolder -Filter "*_hash_values.csv" -File)
 
-    $Rows = foreach ($F in $Targets) {
+    $Rows = foreach ($F in $Targets)
+    {
         [PSCustomObject]@{
             RelativePath = $F.FullName.Substring($Root.Length + 1)
             SizeBytes    = $F.Length
             SHA256       = (Get-FileHash -LiteralPath $F.FullName -Algorithm SHA256).Hash
         }
     }
+
     $FinalFile = Join-Path -Path $HashFolder -ChildPath "final_hashes.csv"
     $Rows | Export-Csv -LiteralPath $FinalFile -NoTypeInformation -Encoding UTF8
 
