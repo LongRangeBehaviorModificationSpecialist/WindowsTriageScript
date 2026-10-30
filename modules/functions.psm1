@@ -5,7 +5,7 @@ function Get-InitialSetup {
 .SYNOPSIS
     Handles the initial setup of the application.
 .PARAMETER OutputRoot
-    Path to directory where the results of the scan will be saved
+    Path to directory where the results of the scan will be saved.
 #>
     param(
         [string]$OutputRoot
@@ -46,16 +46,20 @@ function Get-InitialSetup {
 function Write-OutputToCsv {
 <#
 .SYNOPSIS
-    Handles the writing of the data to a CSV file
+    Handles the writing of the data to a CSV file.
 .PARAMETER Data
-    The csv data that is going to be written to the file - usually this
-    information is returned during the execution of a function.
+    The csv data that is going to be written to the file - usually this information is returned during the execution of a function.
 .PARAMETER OutputFile
-    Path where the $Data will be saved to.
+    Path of the file to which the $Data will be saved.
 #>
     param(
-        [Parameter(Mandatory)][AllowNull()][AllowEmptyCollection()][object]$Data,
-        [Parameter(Mandatory)][string]$OutputFile
+        [Parameter(Mandatory)]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [object]$Data,
+
+        [Parameter(Mandatory)]
+        [string]$OutputFile
     )
 
     process {
@@ -72,24 +76,48 @@ function Write-OutputToCsv {
 function Show-Message {
 <#
 .SYNOPSIS
-    Handles the display of messages to the terminal (with varions options)
+    Handles the display of messages to the terminal (with varions options).
+.PARAMETER Message
+    temp
+.PARAMETER Level
+    temp
+.PARAMETER File
+    temp
+.PARAMETER ExecutionTime
+    temp
+.PARAMETER TimestampColor
+    temp
+.PARAMETER MessageColor
+    temp
+.PARAMETER NoTime
+    temp
+.PARAMETER AddToLog
+    temp
+.PARAMETER SpaceAbove
+    temp
 #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $false)]
         [string]$Message,
+
         [Parameter(Mandatory = $false)]
         [ValidateSet("INFO","WARNING","ERROR","SUCCESS")]
         [string]$Level = "INFO",
+
         [Parameter(Mandatory = $false)]
         [string[]]$File,
+
         [Parameter(Mandatory = $false)]
         [string]$ExecutionTime,
+
         # Override colors if desired
         [Parameter(Mandatory = $false)]
         [System.ConsoleColor]$TimestampColor = "Cyan",
+
         [Parameter(Mandatory = $false)]
         [System.ConsoleColor]$MessageColor = "Gray",
+
         [switch]$NoTime,
         [switch]$AddToLog,
         [switch]$SpaceAbove
@@ -162,9 +190,16 @@ function Show-Message {
 
 
 function Write-LogMessage {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Message
+    temp
+#>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$Message
+        [Parameter(Mandatory)]
+        [string]$Message
     )
 
     process {
@@ -183,9 +218,19 @@ function Write-OutputToFile {
 <#
 .SYNOPSIS
     Writes the results of the commands to the $OutputFile.
+.PARAMETER OutputFile
+    temp
+.PARAMETER Command
+    temp
+.PARAMETER Data
+    temp
+.PARAMETER Append
+    temp
 #>
     param(
-        [Parameter(Mandatory)][string]$OutputFile,
+        [Parameter(Mandatory)]
+        [string]$OutputFile,
+
         [string]$Command,
         [System.Object]$Data,
         [switch]$Append
@@ -214,13 +259,28 @@ function Write-OutputToFile {
 
 
 function Read-LogHost {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Prompt
+    temp
+.PARAMETER TimestampColor
+    temp
+.PARAMETER PromptColor
+    temp
+.PARAMETER AsSecureString
+    temp
+#>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$Prompt,
+        [Parameter(Mandatory)]
+        [string]$Prompt,
+
         [ConsoleColor]$TimeStampColor = "Cyan",
         [ConsoleColor]$PromptColor = "Gray",
         [switch]$AsSecureString
     )
+
     begin {
         $Timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
     }
@@ -238,10 +298,22 @@ function Read-LogHost {
 
 
 function Test-IfExists {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER FolderName
+    temp
+.PARAMETER FileName
+    temp
+.PARAMETER Type
+    temp
+#>
     param(
         [string]$FolderName,
         [string]$FileName,
-        [ValidateSet("FOLDER","FILE")][string]$Type
+
+        [ValidateSet("FOLDER","FILE")]
+        [string]$Type
     )
 
     if ($Type -eq "FOLDER") {
@@ -266,8 +338,15 @@ function Test-IfExists {
 
 
 function Get-PerUserRegistryValue {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER SubKey
+    temp
+#>
     param(
-        [Parameter(Mandatory)][string]$SubKey
+        [Parameter(Mandatory)]
+        [string]$SubKey
     )
 
     foreach ($User in ($global:TriageUserHives | Where-Object Root)) {
@@ -276,7 +355,7 @@ function Get-PerUserRegistryValue {
             continue
         }
 
-        $Props = Get-ItemProperty -LiteralPath $Path
+        $Props = Get-Itemproperty -LiteralPath $Path
         foreach ($Property in ($Props.PSObject.Properties | Where-Object { $_.Name -notlike "PS*" })) {
             [PSCustomObject]@{
                 UserName  = $User.UserName
@@ -293,11 +372,13 @@ function Get-PerUserRegistryValue {
 function Get-PerUserRegistrySubKey {
 <#
 .SYNOPSIS
-    Same idea as Get-PerUserRegistryValue, but lists the *subkeys*
-    (MountPoints2, EscDomains)
+    Same idea as Get-PerUserRegistryValue, but lists the *subkeys* (MountPoints2, EscDomains).
+.PARAMETER SubKey
+    temp
 #>
     param(
-        [Parameter(Mandatory)][string]$SubKey
+        [Parameter(Mandatory)]
+        [string]$SubKey
     )
 
     foreach ($User in ($global:TriageUserHives | Where-Object Root)) {
@@ -318,12 +399,27 @@ function Get-PerUserRegistrySubKey {
 
 
 function Export-PerUserRegistry {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER SubKey
+    temp
+.PARAMETER OutputFile
+    temp
+.PARAMETER EnumerateSubKeys
+    temp
+#>
     # One-stop wrapper: gather from every user hive and write a CSV
     param(
-        [Parameter(Mandatory)][string[]]$SubKey,
-        [Parameter(Mandatory)][string]$OutputFile,
+        [Parameter(Mandatory)]
+        [string[]]$SubKey,
+
+        [Parameter(Mandatory)]
+        [string]$OutputFile,
+
         [switch]$EnumerateSubKeys
     )
+
     $Data = foreach ($Key in $SubKey) {
         if ($EnumerateSubKeys) {
             Get-PerUserRegistrySubKey -SubKey $Key
@@ -337,10 +433,21 @@ function Export-PerUserRegistry {
 
 
 function Mount-TriageUserHives {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER HiveFolder
+    temp
+.PARAMETER ScratchFolder
+    temp
+#>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$HiveFolder,
-        [Parameter(Mandatory)][string]$ScratchFolder
+        [Parameter(Mandatory)]
+        [string]$HiveFolder,
+
+        [Parameter(Mandatory)]
+        [string]$ScratchFolder
     )
 
     # Remove leftovers from any earlier run
@@ -365,7 +472,7 @@ function Mount-TriageUserHives {
         }
         try {
             $ProfilePath = [Environment]::ExpandEnvironmentVariables(
-                (Get-ItemProperty -LiteralPath $Key.PSPath -ErrorAction Stop).ProfileImagePath)
+                (Get-Itemproperty -LiteralPath $Key.PSPath -ErrorAction Stop).ProfileImagePath)
             $Out.ProfilePath = $ProfilePath
             try {
                 $Out.UserName = ([Security.Principal.SecurityIdentifier]$Sid).Translate([Security.Principal.NTAccount]).Value
@@ -437,11 +544,20 @@ function Mount-TriageUserHives {
 
 
 function Dismount-TriageUserHives {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Hives
+    temp
+.PARAMETER ScratchFolder
+    temp
+#>
     # $Hives is kept so existing calls still work
     param(
         [object[]]$Hives,
         [string]$ScratchFolder
     )
+
     begin {
         # Unloads this run's hives and anything a failed Mount left behind
         Clear-TriageHives
@@ -458,9 +574,17 @@ function Dismount-TriageUserHives {
 
 
 function Get-TriageBinary {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Name
+    temp
+#>
     param(
-        [Parameter(Mandatory)][string]$Name
+        [Parameter(Mandatory)]
+        [string]$Name
     )
+
     begin {
         $Bins = (Get-TriageConfig -Key "Binaries")
     }
@@ -480,8 +604,7 @@ function Get-TriageBinary {
 function Disable-PSReadLineHistory {
 <#
 .SYNOPSIS
-    Best effort. Only affects the current session, and the launch line
-    has normally already been written by the time the script runs.
+    Best effort. Only affects the current session, and the launch line has normally already been written by the time the script runs.
 #>
     try {
         if (Get-Module -Name PSReadLine) {
@@ -501,9 +624,7 @@ function Disable-PSReadLineHistory {
 function Write-LaunchContext {
 <#
 .SYNOPSIS
-    Records how the tool was started and the state of the operator's history
-    file, so an examiner can later separate tool-caused changes from the
-    subject's activity.
+    Records how the tool was started and the state of the operator's history file, so an examiner can later separate tool-caused changes from the subject's activity.
 #>
     begin {
         $ArgList = [Environment]::GetCommandLineArgs()
@@ -530,9 +651,17 @@ function Write-LaunchContext {
 
 
 function Initialize-TriageSystemTools {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER ToolkitRoot
+    temp
+#>
     param(
-        [Parameter(Mandatory)][string]$ToolkitRoot
+        [Parameter(Mandatory)]
+        [string]$ToolkitRoot
     )
+
     begin {
         $Folder = Join-Path -Path $ToolkitRoot -ChildPath "bin"
         $ManifestPath = Join-Path -Path $Folder -ChildPath "__hashes.json"
@@ -583,12 +712,12 @@ function Initialize-TriageSystemTools {
 }
 
 
-# |   $($Brand.ToolName)   |
-# |   Compiled by  : $($Brand.Author)     |
-# |   Last Updated : $($Brand.LastUpdated)            |
-
-
 function Show-TriageBanner {
+<#
+.SYNOPSIS
+    temp
+#>
+    param()
 
     $Brand = Get-TriageConfig -Key "Branding"
     $IntroBanner = @"
@@ -632,16 +761,34 @@ function Show-TriageBanner {
 function Write-CaseInfo {
 <#
 .SYNOPSIS
-    Stores the operator/case details as data (they were only logged before).
-    Written before hashing, so it is covered by the hash manifest.
+    Stores the operator/case details as data (they were only logged before). Written before hashing, so it is covered by the hash manifest.
+.PARAMETER ResultsFolder
+    temp
+.PARAMETER Operator
+    temp
+.PARAMETER CaseNumber
+    temp
+.PARAMETER Selected
+    temp
+.PARAMETER Agency
+    temp
 #>
     param(
-        [Parameter(Mandatory)][string]$ResultsFolder,
-        [Parameter(Mandatory)][string]$Operator,
-        [string]$Agency,
-        [Parameter(Mandatory)][string]$CaseNumber,
-        [Parameter(Mandatory)][System.Collections.IDictionary]$Selected
+        [Parameter(Mandatory)]
+        [string]$ResultsFolder,
+
+        [Parameter(Mandatory)]
+        [string]$Operator,
+
+        [Parameter(Mandatory)]
+        [string]$CaseNumber,
+
+        [Parameter(Mandatory)]
+        [System.Collections.IDictionary]$Selected,
+
+        [string]$Agency
     )
+
     begin {
         $Now  = Get-Date
         $Info = [ordered]@{
@@ -671,12 +818,15 @@ function Write-CaseInfo {
 function Invoke-RegistryCommand {
 <#
 .SYNOPSIS
-    Runs a registry read. A missing key/path is logged as "no data";
-    any other problem (access denied, etc.) is logged as an ERROR.
+    Runs a registry read. A missing key/path is logged as "no data"; any other problem (access denied, etc.) is logged as an ERROR.
+.PARAMETER Command
+    temp
 #>
     param(
-        [Parameter(Mandatory)][scriptblock]$Command
+        [Parameter(Mandatory)]
+        [scriptblock]$Command
     )
+
     begin {
         # 2>&1 turns non-terminating errors into objects we can inspect instead of printing them
         $Output = & $Command 2>&1
@@ -706,6 +856,7 @@ function Clear-TriageHives {
 #>
     [CmdletBinding()]
     param()
+
     begin {
         # Release provider handles first
         [gc]::Collect()
@@ -738,6 +889,8 @@ function Import-TriageConfig {
 <#
 .SYNOPSIS
     This function stays private.  Do not add to the `triage.psd1` file.
+.PARAMETER ToolkitRoot
+    temp
 #>
     [CmdletBinding()]
     param(
@@ -775,6 +928,12 @@ function Import-TriageConfig {
 
 
 function Get-TriageConfig {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Key
+    temp
+#>
     [CmdletBinding()]
     param(
         [string]$Key
@@ -791,9 +950,17 @@ function Get-TriageConfig {
 
 
 function Format-TriageDuration {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Span
+    temp
+#>
     param(
-        [Parameter(Mandatory)][TimeSpan]$Span
+        [Parameter(Mandatory)]
+        [TimeSpan]$Span
     )
+
     begin {
         $Inv = [System.Globalization.CultureInfo]::InvariantCulture
     }
@@ -810,10 +977,24 @@ function Format-TriageDuration {
 
 
 function Invoke-TriageTask {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Message
+    temp
+.PARAMETER Action
+    temp
+.PARAMETER ExpectedFile
+    temp
+#>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$Message,
-        [Parameter(Mandatory)][scriptblock]$Action,
+        [Parameter(Mandatory)]
+        [string]$Message,
+
+        [Parameter(Mandatory)]
+        [scriptblock]$Action,
+
         [string[]]$ExpectedFile = @()
     )
 
@@ -829,7 +1010,7 @@ function Invoke-TriageTask {
     }
     catch {
         $Status = "Failed"
-        Show-Message -Message "Execution failed during [ $Message ] => $( $_.Exception.Message )" -Level ERROR -AddToLog
+        Show-Message -Message "Execution failed during [ $Action ] => $( $_.Exception.Message )" -Level ERROR -AddToLog
     }
 
     $Sw.Stop()
@@ -882,10 +1063,22 @@ function Invoke-TriageTask {
 
 
 function Invoke-TriageTaskList {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Tasks
+    temp
+.PARAMETER Folder
+    temp
+#>
     param(
-        [Parameter(Mandatory)][object[]]$Tasks,
-        [Parameter(Mandatory)][string]$Folder
+        [Parameter(Mandatory)]
+        [object[]]$Tasks,
+
+        [Parameter(Mandatory)]
+        [string]$Folder
     )
+
     foreach ($Task in $Tasks) {
         $Expected = @($Task.Files | Where-Object { $_ } | ForEach-Object { Join-Path -Path $Folder -ChildPath $_ })
         Invoke-TriageTask -Message $Task.Message -Action $Task.Action -ExpectedFile $Expected
@@ -894,10 +1087,19 @@ function Invoke-TriageTaskList {
 
 
 function New-TriageCopyResult {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Source
+    temp
+.PARAMETER Destination
+    temp
+#>
     param(
         [string]$Source,
         [string]$Destination
     )
+
     [PSCustomObject]@{
         Source            = $Source
         Destination       = $Destination
@@ -913,10 +1115,22 @@ function New-TriageCopyResult {
 
 
 function Invoke-TriageRawCopy {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Source
+    temp
+.PARAMETER Destination
+    temp
+#>
     param(
-        [Parameter(Mandatory)][string]$Source,
-        [Parameter(Mandatory)][string]$Destination
+        [Parameter(Mandatory)]
+        [string]$Source,
+
+        [Parameter(Mandatory)]
+        [string]$Destination
     )
+
     # Throws if missing or failed its hash check
     $Exe  = (Get-TriageBinary "RawCopy")
     $Dir  = Split-Path -Path $Destination -Parent
@@ -936,10 +1150,21 @@ function Invoke-TriageRawCopy {
 
 
 function Copy-TriageFile {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER Source
+    temp
+.PARAMETER Destination
+    temp
+#>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$Source,
-        [Parameter(Mandatory)][string]$Destination
+        [Parameter(Mandatory)]
+        [string]$Source,
+
+        [Parameter(Mandatory)]
+        [string]$Destination
     )
 
     $R    = New-TriageCopyResult -Source $Source -Destination $Destination
@@ -1002,12 +1227,20 @@ function Copy-TriageFile {
 function Copy-TriageRawFile {
 <#
 .SYNOPSIS
-    Always uses RawCopy (for $MFT, $UsnJrnl)
+    Always uses RawCopy (for $MFT, $UsnJrnl).
+.PARAMETER Source
+    temp
+.PARAMETER Destination
+    temp
 #>
     param(
-        [Parameter(Mandatory)][string]$Source,
-        [Parameter(Mandatory)][string]$Destination
+        [Parameter(Mandatory)]
+        [string]$Source,
+
+        [Parameter(Mandatory)]
+        [string]$Destination
     )
+
     $R = New-TriageCopyResult -Source $Source -Destination $Destination
     $R.Method = "RawCopy"
     try {
@@ -1023,11 +1256,23 @@ function Copy-TriageRawFile {
 
 
 function Save-TriageRegistryHive {
+<#
+.SYNOPSIS
+    temp
+.PARAMETER HiveKey
+    temp
+.PARAMETER Destination
+    temp
+#>
     # reg save: a consolidated export of a loaded hive
     param(
-        [Parameter(Mandatory)][string]$HiveKey,
-        [Parameter(Mandatory)][string]$Destination
+        [Parameter(Mandatory)]
+        [string]$HiveKey,
+
+        [Parameter(Mandatory)]
+        [string]$Destination
     )
+
     $R = New-TriageCopyResult -Source $HiveKey -Destination $Destination
     $R.Method = "reg save"
     try {
@@ -1051,12 +1296,20 @@ function Save-TriageRegistryHive {
 function Copy-TriageFolderBackup {
 <#
 .SYNOPSIS
-    Robocopy in backup mode: reads folders whose ACL excludes administrators
+    Robocopy in backup mode: reads folders whose ACL excludes administrators.
+.PARAMETER Source
+    temp
+.PARAMETER Destination
+    temp
 #>
     param(
-        [Parameter(Mandatory)][string]$Source,
-        [Parameter(Mandatory)][string]$Destination
+        [Parameter(Mandatory)]
+        [string]$Source,
+
+        [Parameter(Mandatory)]
+        [string]$Destination
     )
+
     $R = New-TriageCopyResult -Source $Source -Destination $Destination
     $R.Method = "robocopy /B"
     try {
