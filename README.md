@@ -370,18 +370,17 @@ Treat the collection drive as sensitive media.  Consider protecting it with **Bi
 
 ## 13. Troubleshooting
 
-
-| Symptom                                                | Likely cause and fix                                                                                                                                                                                                              |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CRITICAL: cannot load the triage module`            | Read the message. A missing name means it is not listed in`FunctionsToExport` in `triage.psd1`. A message about a dynamic expression means `/config/TriageConfig.psd1` contains a variable                                  |
-| `Configuration file ... is missing the required key` | `/config/TriageConfig.psd1` is missing `Modules`, `Binaries` or `Defaults`                                                                                                                                                |
-| `... is missing from /bin/ or failed its hash check` | The file is not in`/bin/`, or it changed since `__hashes.json` was built. Re-copy it, or rebuild the manifest if the change was intended                                                                                      |
-| Exit code 2 from`run-triage.cmd`                     | Not run as administrator, or an unattended run is missing`-Operator` or `-CaseNumber`                                                                                                                                         |
-| Exit code 1                                            | Search the log for`[ERROR]`                                                                                                                                                                                                     |
-| `The process cannot access the file ... .DAT`        | A hive from an interrupted run is still loaded. Run`reg query HKU \| findstr TRIAGE_` and `reg unload HKU\<name>`, or just run the tool again (it unloads leftovers at start). Run from a local folder, not a cloud-synced one |
-| The tool seems to hang in the Internet module          | A call to`sqlite3.exe` has no arguments and is waiting at its prompt. Type `.quit`. Calls must pass the database and query as arguments and use `-batch`                                                                    |
-| An event log shows "No data was found"                 | The log exists but is empty. This is informational, not an error                                                                                                                                                                  |
-| A usage screen from`net` appears                     | The trusted`net.exe` could not run. Copy `net1.exe` (and its `.mui` file) into `/bin/` and rebuild the manifest                                                                                                           |
+| Symptom | Likely Cause And Fix |
+| ------- | -------------------- |
+| `CRITICAL: cannot load the triage module` | Read the message.  A missing name means it is not listed in `FunctionsToExport` in `triage.psd1`.  A message about a dynamic expression means `/config/TriageConfig.psd1` contains a variable. |
+| `Configuration file ... is missing the required key` | `/config/TriageConfig.psd1` is missing `Modules`, `Binaries`, or `Defaults`. |
+| `... is missing from /bin/ or failed its hash check` | The file is not in `/bin/`, or it changed since `__hashes.json` was built.  Re-copy it, or rebuild the manifest if the change was intended. |
+| Exit code 2 from `run-triage.cmd` | Not run as administrator, or an unattended run is missing `-Operator` or `-CaseNumber`. |
+| Exit code 1 | Search the log for `[ERROR]`. |
+| `The process cannot access the file ... .DAT` | A hive from an interrupted run is still loaded.  Run `reg query HKU \| findstr TRIAGE_` and `reg unload HKU\<name>`, or just run the tool again (it unloads leftovers at start).  Run from a local folder, not a cloud-synced one. |
+| The tool seems to hang in the Internet module | A call to `sqlite3.exe` has no arguments and is waiting at its prompt.  Type `.quit`.  Calls must pass the database and query as arguments and use `-batch`. |
+| An event log shows *No data was found* | The log exists but is empty.  This is informational, not an error. |
+| A usage screen from `net` appears | The trusted `net.exe` could not run.  Copy `net1.exe` into `/bin/` (and its `.mui` file into `/bin/en-US/`) and rebuild the manifest. |
 
 
 ## 14. Development Notes
