@@ -13,13 +13,13 @@ function Get-TriageEventLogData
             param(
                 [string]$TxtFile = (Join-Path -Path $EventLogFolder -ChildPath "available_log_files.txt")
             )
-
             $Data = Get-WinEvent -ListLog * |
                 Where-Object { $_.IsEnabled } |
                 Select-Object LogName, RecordCount, FileSize, LogMode, LogFilePath, LastWriteTime |
                 Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-EventLogEntryCount
         {
@@ -32,7 +32,6 @@ function Get-TriageEventLogData
             param(
                 [string]$LogName
             )
-
             $Info = Get-WinEvent -ListLog $LogName -ErrorAction SilentlyContinue
             if (-not $Info)
             {
@@ -45,6 +44,7 @@ function Get-TriageEventLogData
             [long]$Info.RecordCount
         }
 
+
         function Export-NativeEventLog
         {
             param(
@@ -54,7 +54,6 @@ function Get-TriageEventLogData
                 [Parameter(Mandatory)]
                 [string]$OutputFile
             )
-
             # Throws if missing or failed its hash check
             $Wevtutil = (Get-TriageBinary "wevtutil")
 
