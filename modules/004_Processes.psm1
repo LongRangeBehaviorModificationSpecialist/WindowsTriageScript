@@ -17,7 +17,6 @@ function Get-TriageProcessData
                 ),
                 [string]$ProcessListOutput = (Join-Path -Path $ProcessFolder -ChildPath "04.01c_process_list.csv")
             )
-
             $Data = Get-CimInstance -ClassName Win32_Process |
                 Select-Object -Property * |
                 Sort-Object ParentProcessId -Descending
@@ -56,12 +55,12 @@ function Get-TriageProcessData
                 Export-Csv -Path $ProcessListOutput -NoTypeInformation -Encoding UTF8
         }
 
+
         function Get-AllServices
         {
             param(
                 [string]$CsvFile = (Join-Path -Path $ProcessFolder -ChildPath "04.02_all_services.csv")
             )
-
             $Data = Get-CimInstance -ClassName Win32_Service | ForEach-Object {
                 $Dll = $null
                 $Params = "HKLM:\SYSTEM\CurrentControlSet\Services\$( $_.Name )\Parameters"
@@ -87,23 +86,23 @@ function Get-TriageProcessData
             Write-OutputToCsv -Data ($Data | Sort-Object Name) -OutputFile $CsvFile
         }
 
+
         function Get-RunningDriverInfo
         {
             param(
                 [string]$CsvFile = (Join-Path -Path $ProcessFolder -ChildPath "04.03_running_driver_query.csv")
             )
-
             $Data = & (Get-TriageBinary "driverquery") /V /FO CSV | ConvertFrom-Csv
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
             Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
         }
+
 
         function Get-SystemDrivers
         {
             param(
                 [string]$CsvFile = (Join-Path -Path $ProcessFolder -ChildPath "04.04_system_drivers.csv")
             )
-
             $Data = Get-CimInstance -ClassName Win32_SystemDriver | Select-Object -Property *
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
             Show-Message -Message "There were $( $Data.Count ) results returned for this function." -AddToLog
@@ -117,7 +116,9 @@ function Get-TriageProcessData
             @{
                 Action  = { Get-RunningProcessList }
                 Message = "04.01_Getting Running Processes..."
-                Files   = "04.01a_running_processes.csv", "04.01b_unique_process_hashes.csv", "04.01c_process_list.csv"
+                Files   = "04.01a_running_processes.csv", 
+                          "04.01b_unique_process_hashes.csv", 
+                          "04.01c_process_list.csv"
             }
             @{
                 Action  = { Get-AllServices }
