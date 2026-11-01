@@ -13,17 +13,16 @@ function Get-TriageDeviceData
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.01_device_info.txt")
             )
-
             $Data = Get-ComputerDetails
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-SystemProcesses
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.02_PS_info.txt")
             )
-
             & (Get-TriageBinary "PSInfo") -accepteula -s -h -d > $TxtFile 2>&1
 
             $Msg = "`n`nPsInfo was run with `-accepteula`, which creates `HKCU\Software\Sysinternals\PsInfo\EulaAccepted (DWORD = 1)` in the `NTUSER.DAT` of the account used to run the tool (<DOMAIN\user>). This change was made by the examiner's tool, not by the subject. In the current execution order, the snapshot of that account's registry hive is taken before PsInfo runs, so the collected copy will not contain the value."
@@ -31,102 +30,103 @@ function Get-TriageDeviceData
             Add-Content -Path $TxtFile -Value $Msg -Encoding UTF8
         }
 
+
         function Get-FullFileList
         {
             param(
                 [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "01.03_full_dir_list.csv")
             )
-
             Get-ChildItem -LiteralPath "$env:SystemDrive\" -Recurse -Force -ErrorAction SilentlyContinue |
                 Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc |
                 Export-Csv -LiteralPath $CsvFile -NoTypeInformation -Encoding UTF8
         }
+
 
         function Get-CurrentComputerInfo
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.04_computer_info.txt")
             )
-
             $Data = Get-ComputerInfo
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-SystemInfo1
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.05_system_info1.txt")
             )
-
             $Data = & (Get-TriageBinary "systeminfo") /FO LIST
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-SystemInfo2
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.06_system_info2.txt")
             )
-
             $Data = Get-CimInstance -ClassName Win32_ComputerSystem |
                 Select-Object -Property *
             Write-OutputToFile -Data $Data -OutputFile $TxtFile -Append
         }
+
 
         function Get-PhysicalMemory
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.07_physical_memory.txt")
             )
-
             $Data = Get-CimInstance -ClassName Win32_PhysicalMemory |
                 Select-Object -Property *
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-EnvVars
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.08_env_vars.txt")
             )
-
             $Data = Get-ChildItem -LiteralPath env: | Format-List
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-DiskPart
         {
             param(
                 [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "01.09_disk_partitions.csv")
             )
-
             $Data = Get-CimInstance -ClassName Win32_DiskPartition |
                 Select-Object -Property * |
                 Sort-Object -Property Name
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         }
 
+
         function Get-UserAccounts
         {
             param(
                 [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "01.10_user_accounts.csv")
             )
-
             $Data = Get-CimInstance -ClassName Win32_UserProfile |
                 Select-Object *, @{ Name = "last used"; Expression = { $_.lastusetime } }
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         }
+
 
         function Get-LogonSessions
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.11_logon_sessions.txt")
             )
-
             $Data = Get-CimInstance -ClassName Win32_LogonSession |
                 Select-Object -Property *
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-StartUpApps
         {
@@ -134,7 +134,6 @@ function Get-TriageDeviceData
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.12_start_up_apps.txt"),
                 [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "01.12_start_up_apps.csv")
             )
-
             $Data = Get-CimInstance -ClassName Win32_StartupCommand |
                 Select-Object -Property * |
                 Sort-Object Caption
@@ -168,16 +167,17 @@ function Get-TriageDeviceData
             }
         }
 
+
         function Get-MotherboardInfo
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $DeviceFolder -ChildPath "01.13_motherboard.txt")
             )
-
             $Data = & Get-CimInstance -ClassName Win32_BaseBoard |
                 Select-Object -Property *
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-DiskInfo
         {
@@ -192,7 +192,6 @@ function Get-TriageDeviceData
             param(
                 [string]$CsvFile = (Join-Path -Path $DeviceFolder -ChildPath "01.14_disk_info.csv")
             )
-            
             Get-Volume |
                 Where-Object DriveLetter |
                 ForEach-Object { $L = $_.DriveLetter; Get-Partition -DriveLetter $L -ErrorAction SilentlyContinue |
