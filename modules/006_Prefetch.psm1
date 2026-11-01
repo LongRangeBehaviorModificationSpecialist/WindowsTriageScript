@@ -13,18 +13,17 @@ function Get-TriagePrefetchData
             param(
                 [string]$CsvFile = (Join-Path -Path $PrefetchFolder -ChildPath "06.01_prefetch_files.csv")
             )
-
             $Data = Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" |
                 Select-Object -Property *
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         }
+
 
         function Get-RecentExecutions
         {
             param(
                 [string]$CsvFile = (Join-Path -Path $PrefetchFolder -ChildPath "06.02_recent_executions.csv")
             )
-
             $Folders = @("$env:SystemDrive\Temp")
             foreach ($User in $global:TriageUserHives)
             {
