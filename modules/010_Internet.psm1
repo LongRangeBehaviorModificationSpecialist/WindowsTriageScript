@@ -11,9 +11,10 @@ function Get-TriageInternetData
         function Get-StoredCookies
         {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.01_stored_cookies.csv")
+                [string]$CsvFile = (
+                    Join-Path $InternetFolder "10.01_stored_cookies.csv"
+                )
             )
-
             $Data = foreach ($U in $global:TriageUserHives)
             {
                 $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
@@ -35,39 +36,46 @@ function Get-TriageInternetData
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         }
 
+
         function Get-TypedUrls
         {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.02_typed_urls.csv")
+                [string]$CsvFile = (
+                    Join-Path $InternetFolder "10.02_typed_urls.csv"
+                )
             )
-
             Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
         }
 
         function Get-InternetSettings
         {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.03_internet_settings.csv")
+                [string]$CsvFile = (
+                    Join-Path $InternetFolder "10.03_internet_settings.csv"
+                )
             )
-
             Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
         }
+
 
         function Get-TrustedInternetDomains
         {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.04_trusted_internet_domains.csv")
+                [string]$CsvFile = (
+                    Join-Path $InternetFolder "10.04_trusted_internet_domains.csv"
+                )
             )
-
             Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
         }
+
 
         function Get-BrowserAnalysis
         {
             param(
-                [string]$CsvFile = (Join-Path -Path $InternetFolder -ChildPath "10.05_browser_analysis_summary.csv")
+                [string]$CsvFile = (
+                    Join-Path $InternetFolder "10.05_browser_analysis_summary.csv"
                 )
-
+            )
             function Copy-SharedFile
             {
                 # Normal copy first. If a running browser has the file locked,
@@ -76,7 +84,6 @@ function Get-TriageInternetData
                     [string]$Source,
                     [string]$Destination
                 )
-
                 try
                 {
                     Copy-Item -LiteralPath $Source -Destination $Destination -Force -ErrorAction Stop
@@ -89,7 +96,7 @@ function Get-TriageInternetData
                     {
                         $Share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
                         $In    = [System.IO.File]::Open($Source, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, $Share)
-                        $Out    = [System.IO.File]::Open($Destination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
+                        $Out   = [System.IO.File]::Open($Destination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
                         $In.CopyTo($Out)
                     }
                     catch
@@ -132,24 +139,24 @@ function Get-TriageInternetData
             # Firefox: <random>.default-release, ...)
             $Browsers = [ordered]@{
                 "Chrome"  = @{
-                    Type = "Chromium"
-                    Root = "AppData\Local\Google\Chrome\User Data"
+                    Type  = "Chromium"
+                    Root  = "AppData\Local\Google\Chrome\User Data"
                 }
                 "Edge"    = @{
-                    Type = "Chromium"
-                    Root = "AppData\Local\Microsoft\Edge\User Data"
+                    Type  = "Chromium"
+                    Root  = "AppData\Local\Microsoft\Edge\User Data"
                 }
                 "Brave"   = @{
-                    Type = "Chromium"
-                    Root = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
+                    Type  = "Chromium"
+                    Root  = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
                 }
                 "Vivaldi" = @{
-                    Type = "Chromium"
-                    Root = "AppData\Local\Vivaldi\User Data"
+                    Type  = "Chromium"
+                    Root  = "AppData\Local\Vivaldi\User Data"
                 }
                 "Firefox" = @{
-                    Type = "Firefox"
-                    Root = "AppData\Roaming\Mozilla\Firefox\Profiles"
+                    Type  = "Firefox"
+                    Root  = "AppData\Roaming\Mozilla\Firefox\Profiles"
                 }
             }
 
