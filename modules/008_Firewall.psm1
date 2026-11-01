@@ -11,29 +11,34 @@ function Get-TriageFirewallData
         function Get-FirewallRules
         {
             param(
-                [string]$TxtFile = (Join-Path -Path $FirewallFolder -ChildPath "08.01_firewall_rules.txt")
+                [string]$TxtFile = (
+                    Join-Path $FirewallFolder "08.01_firewall_rules.txt"
+                )
             )
-
             $Data = & (Get-TriageBinary "netsh") advfirewall firewall show rule name=all verbose
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
 
+
         function Get-DefenderPreferences
         {
             param(
-                [string]$TxtFile = (Join-Path -Path $FirewallFolder -ChildPath "08.02_defender_preferences.txt")
+                [string]$TxtFile = (
+                    Join-Path $FirewallFolder "08.02_defender_preferences.txt"
+                )
             )
-
             $Data = Get-MpPreference | Select-Object -Property *
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
 
+
         function Copy-DefenderLogs
         {
             param(
-                [string]$TxtFile = (Join-Path -Path $FirewallFolder -ChildPath "08.03_defender_log_files.txt")
+                [string]$TxtFile = (
+                    Join-Path FirewallFolder "08.03_defender_log_files.txt"
+                )
             )
-
             $MpOutputFolder = Join-Path -Path $FirewallFolder -ChildPath "Defender_Log_Files"
             $null = New-Item -ItemType Directory -Path $MpOutputFolder -Force
 
@@ -47,28 +52,36 @@ function Get-TriageFirewallData
             }
         }
 
+
         function Get-DefenderDetections
         {
             param(
                 [string]$ThreatDetectionsFile = (
-                    Join-Path -Path $FirewallFolder -ChildPath "08.04a_defender_threat_detections.csv"
+                    Join-Path $FirewallFolder "08.04a_defender_threat_detections.csv"
                 ),
-                [string]$ThreatsFile = (Join-Path -Path $FirewallFolder -ChildPath "08.04b_defender_threats.csv"),
-                [string]$StatusFile = (Join-Path -Path $FirewallFolder -ChildPath "08.04c_defender_status.txt")
+                [string]$ThreatsFile = (
+                    Join-Path $FirewallFolder "08.04b_defender_threats.csv"
+                ),
+                [string]$StatusFile = (
+                    Join-Path $FirewallFolder "08.04c_defender_status.txt"
+                )
             )
-
             $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
             $Detections = Get-MpThreatDetection -ErrorAction SilentlyContinue |
-                Select-Object -Property *, @{ Name = "ResourceList"; Expression = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
+                Select-Object -Property *, @{ 
+                    Name       = "ResourceList";
+                    Expression = { @($_.Resources) -join "; " }
+                } -ExcludeProperty ($Skip + "Resources")
 
             $Threats = Get-MpThreat -ErrorAction SilentlyContinue |
-                Select-Object -Property *, @{ Name = "ResourceList"; Expression = { @($_.Resources) -join "; " } } -ExcludeProperty ($Skip + "Resources")
+                Select-Object -Property *, @{
+                    Name       = "ResourceList";
+                    Expression = { @($_.Resources) -join "; " }
+                } -ExcludeProperty ($Skip + "Resources")
 
             Write-OutputToCsv -Data $Detections -OutputFile $ThreatDetectionsFile
             Write-OutputToCsv -Data $Threats -OutputFile $ThreatsFile
-
             $Status = Get-MpComputerStatus -ErrorAction SilentlyContinue | Out-String -Width 4096
-
             Write-OutputToFile -Data $Status -OutputFile $StatusFile
         }
     }
@@ -96,7 +109,9 @@ function Get-TriageFirewallData
             @{
                 Action  = { Get-DefenderDetections }
                 Message = "08.04_Listing Windows Defender Detections..."
-                Files   = "08.04a_defender_threat_detections.csv", "08.4b_defender_threats.csv", "08.04c_defender_status.txt"
+                Files   = "08.04a_defender_threat_detections.csv",
+                          "08.4b_defender_threats.csv", 
+                          "08.04c_defender_status.txt"
             }
         )
         Invoke-TriageTaskList -Tasks $Tasks -Folder $FirewallFolder
