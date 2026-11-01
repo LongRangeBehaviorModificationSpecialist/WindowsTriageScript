@@ -11,13 +11,15 @@ function Get-TriageEncryptionData
         function Get-BitlockerInfoAndRecoveryKeys
         {
             param(
-                [string]$TxtFile = (Join-Path -Path $EncryptionFolder -ChildPath "09.01_bitlocker_encryption.txt")
+                [string]$TxtFile = (
+                    Join-Path $EncryptionFolder "09.01_bitlocker_encryption.txt"
+                )
             )
-
             $Data = Get-BitLockerVolume |
                     Select-Object -Property * |
                     Sort-Object MountPoint
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
+
 
             function Search-BitlockerVolumes
             {
@@ -73,7 +75,7 @@ function Get-TriageEncryptionData
         $Tasks = @(
             @{
                 Action  = { Get-BitlockerInfoAndRecoveryKeys }
-                Message = "09.01_Getting BitLocker & Encryption Data and Recovery Keys (if applicable)..."
+                Message = "09.01_Getting BitLocker & Data and Recovery Keys..."
                 Files   = "09.01_bitlocker_encryption.txt"
             }
         )
