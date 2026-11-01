@@ -13,27 +13,26 @@ function Get-TriageUserData
             param(
                 [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.01_who_am_I.txt")
             )
-
             $Data = & (Get-TriageBinary "whoami") /ALL /FO LIST
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-Win32UserProfile
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.02_win32_user_profile.txt")
             )
-
             $Data = & { Get-CimInstance -ClassName Win32_UserProfile | Select-Object -Property * }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-LocalUserData
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.03_local_users.txt")
             )
-
             $Data = & { Get-LocalUser | Select-Object -Property * | Format-List }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
@@ -48,25 +47,26 @@ function Get-TriageUserData
             Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         }
 
+
         function Get-Win32LocalLogons
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.05_win32_local_logons.txt")
             )
-
             $Data = & { Get-CimInstance -ClassName Win32_LogonSession | Select-Object -Property * }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-Win32UserAccount
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.06_win32_user_account.txt")
             )
-
             $Data = & { Get-CimInstance -ClassName Win32_UserAccount | Select-Object -Property * }
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
+
 
         function Get-PowershellConsoleHistoryAllUsers
         {
@@ -74,7 +74,6 @@ function Get-TriageUserData
                 [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.07a_powershell_history_all_users.txt"),
                 [string]$CopyFolder = (Join-Path -Path $UserFolder -ChildPath "PowerShell_History")
             )
-
             # Profiles found by the hive step (includes profiles outside C:\Users)
             # Fall back to C:\Users
             $Profiles = @($global:TriageUserHives | Where-Object ProfilePath | ForEach-Object { $_.ProfilePath } | Sort-Object -Unique)
@@ -150,12 +149,12 @@ function Get-TriageUserData
             Write-OutputToCsv -Data $Rows -OutputFile (Join-Path -Path $UserFolder -ChildPath "02.07b_powershell_history_manifest.csv")
         }
 
+
         function Get-TerminalSessions
         {
             param(
                 [string]$TxtFile = (Join-Path -Path $UserFolder -ChildPath "02.08_terminal_sessions.txt")
             )
-
             $Data = & (Get-TriageBinary "qwinsta") 2>&1
             Write-OutputToFile -Data $Data -OutputFile $TxtFile
         }
@@ -199,7 +198,8 @@ function Get-TriageUserData
             @{
                 Action  = { Get-PowershellConsoleHistoryAllUsers }
                 Message = "02.07_Getting PowerShell History (All Users)..."
-                Files   = "02.07a_powershell_history_all_users.txt", "02.07b_powershell_history_manifest.csv"
+                Files   = "02.07a_powershell_history_all_users.txt", 
+                          "02.07b_powershell_history_manifest.csv"
             }
             @{
                 Action  = { Get-TerminalSessions }
