@@ -1,17 +1,17 @@
-function Get-TriageEventLogData
-{
+function Get-TriageEventLogData {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string]$EventLogFolder
     )
 
-    begin
-    {
-        function Get-AvailableLogFiles
-        {
+    begin {
+
+        function Get-AvailableLogFiles {
             param(
-                [string]$TxtFile = (Join-Path -Path $EventLogFolder -ChildPath "available_log_files.txt")
+                [string]$TxtFile = (
+                    Join-Path $EventLogFolder "available_log_files.txt"
+                )
             )
             $Data = Get-WinEvent -ListLog * |
                 Where-Object { $_.IsEnabled } |
@@ -21,32 +21,28 @@ function Get-TriageEventLogData
         }
 
 
-        function Get-EventLogEntryCount
-        {
-        <#
-        .SYNOPSIS
-            Gets the count of entries in each event log.
-            `$null` = log does not exist; `-1` = exists but no count; otherwise the record count
-            Reads log metadata only. No events are loaded.
-        #>
+        function Get-EventLogEntryCount {
+            <#
+            .SYNOPSIS
+                Gets the count of entries in each event log.
+                '$null' = log does not exist; '-1' = exists but no count; otherwise the record count
+                Reads log metadata only.  No events are loaded.
+            #>
             param(
                 [string]$LogName
             )
-            $Info = Get-WinEvent -ListLog $LogName -ErrorAction SilentlyContinue
-            if (-not $Info)
-            {
+            $Info = Get-WinEvent -ListLog $LogName #  -ErrorAction SilentlyContinue
+            if (-not $Info) {
                 return $null
             }
-            if ($null -eq $Info.RecordCount)
-            {
+            if ($null -eq $Info.RecordCount) {
                 return -1
             }
             [long]$Info.RecordCount
         }
 
 
-        function Export-NativeEventLog
-        {
+        function Export-NativeEventLog {
             param(
                 [Parameter(Mandatory)]
                 [string]$LogName,
@@ -61,25 +57,23 @@ function Get-TriageEventLogData
             $Raw  = & $Wevtutil epl $LogName $OutputFile /ow:true 2>&1
             $Code = $LASTEXITCODE
 
-            if ($Code -ne 0)
-            {
+            if ($Code -ne 0) {
                 # Do not leave a half-written export behind as if it were evidence
-                Remove-Item -LiteralPath $OutputFile -Force -ErrorAction SilentlyContinue
+                Remove-Item -LiteralPath $OutputFile -Force #  -ErrorAction SilentlyContinue
                 throw "wevtutil exited with code $Code => $( ($Raw | ForEach-Object { "$_" }) -join ' ' )"
             }
         }
+
     }
-    process
-    {
+
+    process {
+
         # Preflight: compare the logs' combined size with the free space on the collection drive
-        try
-        {
+        try {
             $Need = 0L
-            foreach ($Name in (Get-TriageConfig -Key "EventLogs"))
-            {
-                $Info = Get-WinEvent -ListLog $Name -ErrorAction SilentlyContinue
-                if ($Info)
-                {
+            foreach ($Name in (Get-TriageConfig -Key "EventLogs")) {
+                $Info = Get-WinEvent -ListLog $Name #  -ErrorAction SilentlyContinue
+                if ($Info) {
                     $Need += [long]$Info.FileSize
                 }
             }
@@ -88,13 +82,13 @@ function Get-TriageEventLogData
             $NeedMb = [math]::Round($Need / 1MB)
             $FreeMb = [math]::Round($Drive.AvailableFreeSpace / 1MB)
 
-            if ($Drive.AvailableFreeSpace -lt ($Need * 1.1))
-            {
-                Show-Message -Message "Event log export needs about $NeedMb MB but $FreeMb MB is free on $( $Drive.Name )." -Level WARNING -AddToLog
+            if ($Drive.AvailableFreeSpace -lt ($Need * 1.1)) {
+                Show-Message -Message "Event log export needs about $NeedMb MB but $FreeMb MB is free on `
+                    $( $Drive.Name )." -Level WARNING -AddToLog
             }
-            else
-            {
-                Show-Message -Message "Event log export needs about $NeedMb MB; $FreeMb MB is free." -Level INFO -AddToLog
+            else {
+                Show-Message -Message "Event log export needs about $NeedMb MB; $FreeMb MB is free." `
+                    -Level INFO -AddToLog
             }
         }
         # UNC destinations cannot be checked this way; wevtutil reports a full disk itself
@@ -102,31 +96,26 @@ function Get-TriageEventLogData
 
         Invoke-TriageTask -Message "Gathering list of available Event Log files..." `
             -Action { Get-AvailableLogFiles } `
-            -ExpectedFile (Join-Path -Path $EventLogFolder -ChildPath "available_log_files.txt")
+            -ExpectedFile (Join-Path $EventLogFolder "available_log_files.txt")
 
-        foreach ($LogName in (Get-TriageConfig -Key "EventLogs"))
-        {
+        foreach ($LogName in (Get-TriageConfig -Key "EventLogs")) {
             $Count = Get-EventLogEntryCount -LogName $LogName
-            if ($null -eq $Count)
-            {
+            if ($null -eq $Count) {
                 Show-Message -Message "Event Log [ $( $LogName ) ] was not found on this computer." -Level INFO -AddToLog -MessageColor Yellow
                 continue
             }
 
-            $Label = if ($Count -lt 0)
-                {
+            $Label = if ($Count -lt 0) {
                     "Entry Count Unavailable"
                 }
-                elseif ($Count -eq 1)
-                {
+                elseif ($Count -eq 1) {
                     "1 Entry"
                 }
-                else
-                {
+                else {
                     [string]::Format([System.Globalization.CultureInfo]::InvariantCulture, "{0:N0} Entries", $Count)
                 }
 
-            $Out = Join-Path -Path $EventLogFolder -ChildPath (($LogName -replace "[\\/]", "%4") + ".evtx")
+            $Out = Join-Path $EventLogFolder (($LogName -replace "[\\/]", "%4") + ".evtx")
 
             Invoke-TriageTask -Message "Exporting [ $( $LogName ) ] log ($Label)..." `
                 -Action { Export-NativeEventLog -LogName $LogName -OutputFile $Out } `

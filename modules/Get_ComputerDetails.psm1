@@ -1,13 +1,12 @@
-function Get-ComputerDetails
-{
+function Get-ComputerDetails {
     [CmdletBinding()]
     param()
 
-    begin
-    {
+    begin {
+
         $ComputerName = $env:COMPUTERNAME
-        Enum DomainRole
-        {
+
+        Enum DomainRole {
             StandaloneWorkstation   = 0
             MemberWorkstation       = 1
             StandaloneServer        = 2
@@ -15,8 +14,8 @@ function Get-ComputerDetails
             BackupDomainController  = 4
             PrimaryDomainController = 5
         }
-        Enum LicenseStatus
-        {
+
+        Enum LicenseStatus {
             Unlicensed      = 0
             Licensed        = 1
             OOBGrace        = 2
@@ -26,15 +25,16 @@ function Get-ComputerDetails
             ExtendedGrace   = 6
         }
     }
-    process
-    {
-        try
-        {
+
+    process {
+
+        try {
             $Win32OperatingSystem     = Get-CimInstance -ClassName Win32_OperatingSystem
             $Win32ComputerSystem      = Get-CimInstance -ClassName Win32_ComputerSystem
             $Win32Bios                = Get-CimInstance -ClassName Win32_BIOS
             $Win32Processor           = Get-CimInstance -ClassName Win32_Processor | Select-Object -First 1
-            $SoftwareLicensingProduct = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" | Where-Object { $_.PartialProductKey }
+            $SoftwareLicensingProduct = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter `
+                "Name like 'Windows%'" | Where-Object { $_.PartialProductKey }
 
             $DataProps = [ordered]@{
                 Host = $env:COMPUTERNAME
@@ -44,12 +44,9 @@ function Get-ComputerDetails
             $MergeProperties = {
                 param($SourceInstance)
 
-                if ($SourceInstance)
-                {
-                    foreach ($Prop in $SourceInstance.CimInstanceProperties)
-                    {
-                        if (-not $DataProps.Contains($Prop.Name))
-                        {
+                if ($SourceInstance) {
+                    foreach ($Prop in $SourceInstance.CimInstanceProperties) {
+                        if (-not $DataProps.Contains($Prop.Name)) {
                             $DataProps[$Prop.Name] = $Prop.Value
                         }
                     }
@@ -61,18 +58,15 @@ function Get-ComputerDetails
             & $MergeProperties $Win32Processor
             & $MergeProperties $Win32Bios
 
-            if ($DataProps.CurrentTimeZone)
-            {
+            if ($DataProps.CurrentTimeZone) {
                 $DataProps.CurrentTimeZone = $DataProps.CurrentTimeZone / 60
             }
 
-            if ($null -ne $DataProps.DomainRole)
-            {
+            if ($null -ne $DataProps.DomainRole) {
                 $DataProps.DomainRole = ([DomainRole]$DataProps.DomainRole).ToString()
             }
 
-            if ($DataProps.BiosVersion)
-            {
+            if ($DataProps.BiosVersion) {
                 $DataProps.BiosVersion = $DataProps.BiosVersion -join " | "
             }
 
@@ -84,45 +78,40 @@ function Get-ComputerDetails
                 # Trusted copy, with both output streams captured so nothing reaches the screen
                 $NetOut = @(& (Get-TriageBinary "net") accounts 2>&1 | ForEach-Object { "$_" })
 
-                if ($LASTEXITCODE -eq 0)
-                {
+                if ($LASTEXITCODE -eq 0) {
                     $NetLine = $NetOut | Select-String -Pattern "Minimum password length"
-                    if ($NetLine)
-                    {
+                    if ($NetLine) {
                         $DataProps["MinimumPasswordLength"] = $NetLine.ToString().Split()[-1]
                     }
                 }
-                else
-                {
-                    Show-Message -Message "The `"net accounts`" command returned exit code $( $LASTEXITCODE ); minimum password length not recorded. First output line => $( $NetOut | Select-Object -First 1 )" -Level WARNING -AddToLog
+                else {
+                    Show-Message -Message "The `"net accounts`" command returned exit code $( $LASTEXITCODE ); `
+                        minimum password length not recorded. First output line => `
+                        $( $NetOut | Select-Object -First 1 )" -Level WARNING -AddToLog
                 }
 
             }
-            catch
-            {
-                Show-Message -Message "Minimum password length not recorded => $( $_.Exception.Message )" -Level WARNING -AddToLog
+            catch {
+                Show-Message -Message "Minimum password length not recorded => $( $_.Exception.Message )" `
+                    -Level WARNING -AddToLog
             }
 
             # $NetAccountsLine = & (Get-TriageBinary "net") accounts | Select-String -Pattern "Minimum password length"
             # $DataProps["MinimumPasswordLength"] = if ($NetAccountsLine) { $NetAccountsLine.ToString().Split()[-1] } else { $null }
 
             $UsbStor = Get-ItemProperty -Path "HKLM:SYSTEM\CurrentControlSet\Services\USBStor" -Name "Start" -ErrorAction SilentlyContinue
-            $DataProps["USBStorageLock"] = if ($UsbStor)
-                {
+            $DataProps["USBStorageLock"] = if ($UsbStor) {
                     $UsbStor.Start
                 }
-                else
-                {
+                else {
                     $null
                 }
 
-            if ($SoftwareLicensingProduct)
-            {
+            if ($SoftwareLicensingProduct) {
                 $DataProps["LicenseType"]   = ($SoftwareLicensingProduct.Description).Split(",")[1].Trim()
                 $DataProps["LicenseStatus"] = ([LicenseStatus]$SoftwareLicensingProduct.LicenseStatus).ToString()
             }
-            else
-            {
+            else {
                 $DataProps["LicenseType"]   = $null
                 $DataProps["LicenseStatus"] = $null
             }
@@ -133,9 +122,9 @@ function Get-ComputerDetails
 
             [PSCustomObject]$DataProps | Select-Object Host, DateScanned, CurrentTimeZone, InstallDate, LastBootUpTime, UpTime, LocalDateTime, BootDevice, BootROMSupported, BootupState, ChassisBootupState, DataExecutionPrevention_32BitApplications, DataExecutionPrevention_Available, DataExecutionPrevention_Drivers, DataExecutionPrevention_SupportPolicy, MinimumPasswordLength, USBStorageLock, Debug, EncryptionLevel, AdminPasswordStatus, Description, Distributed, OSArchitecture, OSProductSuite, OSType, OperatingSystemSKU, Organization, OtherTypeDescription, PortableOperatingSystem, ProductType, RegisteredUser, ServicePackMajorVersion, ServicePackMinorVersion, Status, SuiteMask, BuildNumber, Caption, LicenseType, LicenseStatus, SystemDevice, SystemDirectory, SystemDrive, MUILanguages, Version, WindowsDirectory, DNSHostName, DaylightInEffect, Domain, DomainRole, EnableDaylightSavingsTime, PrimaryOwnerContact, PrimaryOwnerName, SupportContactDescription, UserName, Manufacturer, Model, NetworkServerModeEnabled, HypervisorPresent, SystemSKUNumber, ThermalState, BIOSVersion, BIOSInstallDate, BIOSManufacturer, PrimaryBIOS, BIOSReleaseDate, SMBIOSBIOSVersion, SMBIOSMajorVersion, SMBIOSMinorVersion, SMBIOSPresent, BIOSSerialNumber, SystemBiosMajorVersion, SystemBiosMinorVersion, VirtualizationFirmwareEnabled
         }
-        catch
-        {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
+        catch {
+            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on `
+                $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
         }
     }
 }

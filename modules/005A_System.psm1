@@ -11,10 +11,21 @@
 
 function Get-LinkFiles {
     param(
-        [string]$TxtFile = (Join-Path -Path $SystemFolder -ChildPath "link_files.txt")
+        [string]$TxtFile = (
+            Join-Path $SystemFolder "link_files.txt"
+        )
     )
     $Data = Get-CimInstance -ClassName Win32_ShortcutFile |
-            Select-Object FileName, Caption, @{ Name = "CreationDate"; Expression = { $_.ConvertToDateTime($_.CreationDate) } }, @{ Name = "LastAccessed"; Expression = { $_.ConvertToDateTime($_.LastAccessed) } }, @{ Name = "LastModified"; Expression = { $_.ConvertToDateTime($_.LastModified) } }, Target |
+            Select-Object FileName, Caption, @{
+                Name = "CreationDate"
+                Expression = { $_.ConvertToDateTime($_.CreationDate) }
+            }, @{
+                Name = "LastAccessed"
+                Expression = { $_.ConvertToDateTime($_.LastAccessed) }
+            }, @{
+                Name = "LastModified"
+                Expression = { $_.ConvertToDateTime($_.LastModified) }
+            }, Target |
             Where-Object { $_.lastModified -gt ((Get-Date).AddDays(-20)) } |
             Sort-Object LastModified -Descending
     Write-OutputToFile -Data $Data -OutputFile $TxtFile
@@ -23,7 +34,9 @@ function Get-LinkFiles {
 
 function Get-CompressedFiles {
     param(
-        [string]$TxtFile = (Join-Path -Path $SystemFolder -ChildPath "compressed_files.txt")
+        [string]$TxtFile = (
+            Join-Path $SystemFolder "compressed_files.txt"
+        )
     )
     $Data = Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes |
             Where-Object { $_.Attributes -band [IO.FileAttributes]::Compressed }
@@ -33,7 +46,9 @@ function Get-CompressedFiles {
 
 function Get-EncryptedFiles {
     param(
-        [string]$TxtFile = (Join-Path -Path $SystemFolder -ChildPath "encrypted_files.txt")
+        [string]$TxtFile = (
+            Join-Path $SystemFolder "encrypted_files.txt"
+        )
     )
     $Data = Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes |
             Where-Object { $_.Attributes -band [IO.FileAttributes]::Encrypted }
@@ -43,11 +58,18 @@ function Get-EncryptedFiles {
 
 function Get-TimelineOfExecutables {
     param(
-        [string]$TxtFile = (Join-Path -Path $SystemFolder -ChildPath "timeline_of_executables.txt")
+        [string]$TxtFile = (
+            Join-Path $SystemFolder "timeline_of_executables.txt"
+        )
     )
     $Data = Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes |
-            Where-Object { -Not $_.PSIsContainer -and $_.LastWriteTime -gt ((Get-Date).AddDays(-10)) } |
-            Select-Object FullName, LastWriteTime, @{N = "Owner"; E = { ($_ | Get-ACL).Owner } } |
+            Where-Object {
+                -Not $_.PSIsContainer -and $_.LastWriteTime -gt ((Get-Date).AddDays(-10))
+            } |
+            Select-Object FullName, LastWriteTime, @{
+                Name = "Owner"
+                Expression = { ($_ | Get-ACL).Owner }
+            } |
             Sort-Object LastWriteTime -Desc
     Write-OutputToFile -Data $Data -OutputFile $TxtFile
 }

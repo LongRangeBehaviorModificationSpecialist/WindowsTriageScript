@@ -6,6 +6,7 @@ function Get-TriageInternetData {
     )
 
     begin {
+
         function Get-StoredCookies {
             param(
                 [string]$CsvFile = (
@@ -13,15 +14,17 @@ function Get-TriageInternetData {
                 )
             )
             $Data = foreach ($U in $global:TriageUserHives) {
-                $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
+                $Dir = Join-Path $U.ProfilePath "AppData\Local\Microsoft\Windows\INetCookies"
                 if (-not (Test-Path -LiteralPath $Dir)) {
                     continue
                 }
-                foreach ($File in Get-ChildItem -LiteralPath $Dir -Recurse -Force -File -ErrorAction SilentlyContinue) {
-                    Select-String -LiteralPath $File.FullName -Pattern "/" -ErrorAction SilentlyContinue | ForEach-Object {
+                foreach ($File in Get-ChildItem -LiteralPath $Dir -Recurse -Force -File `
+                        -ErrorAction SilentlyContinue) {
+                    Select-String -LiteralPath $File.FullName -Pattern "/" `
+                    -ErrorAction SilentlyContinue | ForEach-Object {
                         [PSCustomObject]@{
-                            UserName = $U.UserName;
-                            File     = $File.Name;
+                            UserName = $U.UserName
+                            File     = $File.Name
                             Line     = $_.Line
                         }
                     }
@@ -35,9 +38,10 @@ function Get-TriageInternetData {
             param(
                 [string]$CsvFile = (
                     Join-Path $InternetFolder "10.02_typed_urls.csv"
-                )
+                ),
+                [string]$SubKey = "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
             )
-            Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
+            Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
         }
 
 
@@ -45,19 +49,21 @@ function Get-TriageInternetData {
             param(
                 [string]$CsvFile = (
                     Join-Path $InternetFolder "10.03_internet_settings.csv"
-                )
+                ),
+                [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
             )
-            Export-PerUserRegistry -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
+            Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
         }
 
 
         function Get-TrustedInternetDomains {
             param(
                 [string]$CsvFile = (
-                    Join-Path $InternetFolder "10.04_trusted_internet_domains.csv"
-                )
+                    Join-Path $InternetFolder "10.04_trusted_domains.csv"
+                ),
+                [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
             )
-            Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
+            Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey $SubKey
         }
 
 
@@ -110,7 +116,8 @@ function Get-TriageInternetData {
                 $SqlitePath = [string](Get-TriageBinary "SQLite3")
             }
             catch {
-                Show-Message -Message "sqlite3.exe is unavailable. Skipping browser analysis => $( $_.Exception.Message )" -Level ERROR -AddToLog
+                $SqlUnavailMsg = "sqlite3.exe is unavailable. Skipping browser analysis => $($_.Exception.Message)"
+                Show-Message -Message $SqlUnavailMsg -Level ERROR -AddToLog
                 return
             }
 
@@ -163,14 +170,19 @@ function Get-TriageInternetData {
             # Profiles found by the hive-mounting step (covers profiles outside
             # C:\Users). Fall back to C:\Users if that list is empty.
             $ProfilePaths = @($global:TriageUserHives |
-                Where-Object { $_.ProfilePath -and (Test-Path -LiteralPath $_.ProfilePath -PathType Container) } |
+                Where-Object {
+                    $_.ProfilePath -and (Test-Path -LiteralPath $_.ProfilePath -PathType Container)
+                } |
                 Sort-Object -Property ProfilePath -Unique |
                 ForEach-Object { $_.ProfilePath })
 
             if ($ProfilePaths.Count -eq 0) {
-                Show-Message -Message "No mounted user profiles were found. Falling back to [ $env:SystemDrive\Users ]." -Level WARNING -AddToLog
+                $NoMountedMsg = "No mounted user profiles were found. Falling back to [ $env:SystemDrive\Users ]."
+                Show-Message -Message $NoMountedMsg -Level WARNING -AddToLog
 
-                $ProfilePaths = @(Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+                $ProfilePaths = @(Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force `
+                    -ErrorAction SilentlyContinue |
+                    ForEach-Object { $_.FullName })
             }
 
             $Summary   = [System.Collections.Generic.List[object]]::new()
@@ -195,7 +207,8 @@ function Get-TriageInternetData {
                     $UserLeaf = Split-Path -Path $ProfilePath -Leaf
 
                     foreach ($BrowserName in $Browsers.Keys) {
-                        Show-Message -Message "Examining $BrowserName data in [ $ProfilePath ]" -MessageColor Magenta
+                        $Msg = "Examining $BrowserName data in [ $ProfilePath ]"
+                        Show-Message -Message $Msg -MessageColor Magenta
                         $Browser = $Browsers[$BrowserName]
                         $Root    = Join-Path -Path $ProfilePath -ChildPath $Browser.Root
                         if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
@@ -209,15 +222,17 @@ function Get-TriageInternetData {
                             "places.sqlite"
                         }
 
-                        foreach ($ProfileDir in (Get-ChildItem -LiteralPath $Root -Directory -Force -ErrorAction SilentlyContinue)) {
+                        foreach ($ProfileDir in (Get-ChildItem -LiteralPath $Root -Directory `
+                                -Force -ErrorAction SilentlyContinue)) {
                             $Source = Join-Path -Path $ProfileDir.FullName -ChildPath $DbName
                             if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
                                 continue
                             }
 
                             $DbFound++
-                            $Tag        = ("{0}-{1}-{2}" -f $UserLeaf, $BrowserName, $ProfileDir.Name) -replace "[^\w\.\-]", "_"
-                            $BrowserDir = Join-Path -Path $InternetFolder -ChildPath "Browser_Analysis\$BrowserName"
+                            $Tag = ("$UserLeaf-$BrowserName-$( $ProfileDir.Name )") -replace "[^\w\.\-]", "_"
+
+                            $BrowserDir = Join-Path $InternetFolder "Browser_Analysis\$BrowserName"
                             $null       = New-Item -ItemType Directory -Path $BrowserDir -Force
                             $Db         = Join-Path $BrowserDir "$Tag-$DbName.sqlite"
 
@@ -233,14 +248,18 @@ function Get-TriageInternetData {
                                             Copy-SharedFile -Source "$Source$Suffix" -Destination "$Db$Suffix"
                                         }
                                         catch {
-                                            Show-Message -Message "Could not copy $( Split-Path -Path "$Source$Suffix" -Leaf ) for $Tag => $( $_.Exception.Message )" -Level WARNING -AddToLog
+                                            $NoCopyMsg = "Could not copy $( Split-Path -Path "$Source$Suffix" `
+                                                -Leaf ) for $Tag => $( $_.Exception.Message )"
+                                            Show-Message -Message $NoCopyMsg -Level WARNING -AddToLog
                                         }
                                     }
                                 }
                             }
                             catch {
                                 $Failures++
-                                Show-Message -Message "Could not copy [ $BrowserName ] database for [ $Tag ] => $( $_.Exception.Message )" -Level ERROR -AddToLog
+                                $CopyBrowserFailMsg = "Could not copy [ $BrowserName ] database for [ $Tag ] `
+                                    => $( $_.Exception.Message )"
+                                Show-Message -Message $CopyBrowserFailMsg -Level ERROR -AddToLog
                                 $Summary.Add([PSCustomObject]@{
                                     User       = $UserLeaf
                                     Browser    = $BrowserName
@@ -258,33 +277,38 @@ function Get-TriageInternetData {
                             Show-Message -Message "Browser database copied [ $Tag ]" -Level INFO -AddToLog
 
                             foreach ($Q in $Queries[$Browser.Type].GetEnumerator()) {
-                                $OutFile = Join-Path -Path $BrowserDir -ChildPath "$Tag-$( $Q.Key ).csv"
+                                $OutFile = Join-Path $BrowserDir "$Tag-$( $Q.Key ).csv"
                                 $Rows    = 0
                                 $Status  = "OK"
                                 $Detail  = ""
 
                                 try {
-                                    # NOTE: -header is deliberately omitted; 
-                                    # the header line is built below from the 
+                                    # NOTE: -header is deliberately omitted;
+                                    # the header line is built below from the
                                     # query's AS aliases so it is always written,
-                                    # regardless of how this sqlite3 build renders 
+                                    # regardless of how this sqlite3 build renders
                                     # its output.
                                     $Raw  = & $SqlitePath -batch -readonly -header -csv $Db $Q.Value 2>&1
                                     $Code = $LASTEXITCODE
 
                                     $ErrText = @($Raw |
-                                        Where-Object { $_ -is [System.Management.Automation.ErrorRecord] } |
+                                        Where-Object {
+                                            $_ -is [System.Management.Automation.ErrorRecord]
+                                        } |
                                         ForEach-Object { $_.ToString() }
                                     )
                                     $Lines   = @($Raw |
-                                        Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
+                                        Where-Object {
+                                            $_ -isnot [System.Management.Automation.ErrorRecord]
+                                        }
                                     )
 
                                     if ($Code -ne 0) {
                                         $Detail = (($ErrText + $Lines) -join " ").Trim()
                                         if ($Detail -match "no such table|no such column") {
                                             $Status = "NotPresent"
-                                            $NotAvailMsg = "[ $Tag ] '$( $Q.Key )' is not available in this database version."
+                                            $NotAvailMsg = "[ $Tag ] '$( $Q.Key )' `
+                                                is not available in this database version."
                                             Show-Message -Message $NotAvailMsg -Level INFO -AddToLog
                                         }
                                         else {
@@ -295,8 +319,8 @@ function Get-TriageInternetData {
                                         }
                                     }
                                     else {
-                                        # sqlite3 on Windows (csv mode) can emit 
-                                        # an extra blank line after every record; 
+                                        # sqlite3 on Windows (csv mode) can emit
+                                        # an extra blank line after every record;
                                         # drop empty / whitespace-only lines.
                                         $Clean = @(
                                             $Lines |
@@ -305,11 +329,12 @@ function Get-TriageInternetData {
                                         )
 
                                         if ($Clean.Count -gt 0) {
-                                            # Every query aliases its columns 
-                                            # ("... AS ColumnName"), so the header 
-                                            # can be derived straight from the 
+                                            # Every query aliases its columns
+                                            # ("... AS ColumnName"), so the header
+                                            # can be derived straight from the
                                             # SQL text.
-                                            $Columns = [regex]::Matches($Q.Value, '(?i)\bAS\s+([A-Za-z_][A-Za-z0-9_]*)') |
+                                            $Columns = [regex]::Matches($Q.Value, `
+                                                '(?i)\bAS\s+([A-Za-z_][A-Za-z0-9_]*)') |
                                                 ForEach-Object { $_.Groups[1].Value }
 
                                             if ($Columns.Count -gt 0) {
@@ -325,7 +350,8 @@ function Get-TriageInternetData {
                                             }
 
                                             # Exact row count from SQLite itself
-                                            $CountOut = & $SqlitePath -batch -readonly $Db "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
+                                            $CountOut = & $SqlitePath -batch -readonly $Db `
+                                                "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
                                             $Parsed   = 0
                                             if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
                                                 $Rows = $Parsed
@@ -336,7 +362,8 @@ function Get-TriageInternetData {
                                         }
                                         else {
                                             $Status = "NoData"
-                                            "No data was found for that query." | Set-Content -LiteralPath $OutFile -Encoding UTF8
+                                            "No data was found for that query." |
+                                                Set-Content -LiteralPath $OutFile -Encoding UTF8
                                         }
                                     }
                                 }
@@ -366,7 +393,7 @@ function Get-TriageInternetData {
             }
             finally {
                 if ($OldEncoding) {
-                    try { 
+                    try {
                         [Console]::OutputEncoding = $OldEncoding
                     }
                     catch { }
@@ -376,8 +403,11 @@ function Get-TriageInternetData {
             $Msg = "Browser analysis => $DbFound database(s) found, $Failures failure(s)."
             Show-Message -Message $Msg -Level INFO -AddToLog
         }
+
     }
+
     process {
+
         # ----------------------------------
         # Run the functions from the module
         # ----------------------------------
@@ -400,7 +430,7 @@ function Get-TriageInternetData {
             @{
                 Action  = { Get-TrustedInternetDomains }
                 Message = "10.04_Getting Trusted Internet Domain Registry Keys..."
-                Files   = "10.04_trusted_internet_domains.csv"
+                Files   = "10.04_trusted_domains.csv"
             }
             @{
                 Action  = { Get-BrowserAnalysis }
@@ -408,6 +438,9 @@ function Get-TriageInternetData {
                 Files   = "10.05_browser_analysis_summary.csv"
             }
         )
+
         Invoke-TriageTaskList -Tasks $Tasks -Folder $InternetFolder
+
     }
+
 }

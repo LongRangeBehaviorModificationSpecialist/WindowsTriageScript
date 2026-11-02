@@ -4,7 +4,7 @@
     Branding = @{
         ToolName = "NOVA ICAC VECTOR Triage Application"
         Author   = "SA Michael Sponheimer"
-        DLU      = "23-Oct-2026"
+        DLU      = "02-Nov-2026"
     }
 
     Modules = @(
@@ -53,8 +53,10 @@
 
     RawArtifacts = @{
         Enabled = @(
-            "SystemHives", "Amcache", "UserHives", "Prefetch", "Srum", "LnkAndJumpLists", "BrowserDatabases",
-            "StartupFolders", "WmiRepository", "Bits", "WindowsUpdate", "Defender", "Mft", "UsnJrnl"
+            "SystemHives", "Amcache", "UserHives", "Prefetch", "Srum",
+            "LnkAndJumpLists", "BrowserDatabases", "StartupFolders",
+            "WmiRepository", "Bits", "WindowsUpdate", "Defender", "Mft",
+            "UsnJrnl"
         )
         LargeSets             = @("Mft", "UsnJrnl")
         MinFreeGbForLargeSets = 10
@@ -118,4 +120,5 @@
             Root = "AppData\Local\Vivaldi\User Data"
         }
     )
+
 }

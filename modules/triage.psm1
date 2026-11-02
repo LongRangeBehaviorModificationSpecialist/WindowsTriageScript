@@ -1,5 +1,4 @@
-function Invoke-DfirTriageScan
-{
+function Invoke-DfirTriageScan {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -13,7 +12,8 @@ function Invoke-DfirTriageScan
 
         [string]$Agency = "",
 
-        [string[]]$Modules = @("001_Device","002_Users","003_Network","004_Process","005_System","006_Prefetch","007_Event_Logs","008_Firewall","009_Encryption","010_Internet","011_RawArtifacts"),
+        [string[]]$Modules = @("001_Device","002_Users","003_Network","004_Process","005_System",
+        "006_Prefetch","007_Event_Logs","008_Firewall","009_Encryption","010_Internet","011_RawArtifacts"),
 
         [switch]$RunEdd,
         [switch]$GetProcesses,
@@ -21,8 +21,7 @@ function Invoke-DfirTriageScan
         [switch]$Archive
     )
 
-    begin
-    {
+    begin {
         $global:TriageTimings = [System.Collections.Generic.List[object]]::new()
         $StartTime = Get-Date
         $global:TriageErrorCount   = 0
@@ -31,9 +30,10 @@ function Invoke-DfirTriageScan
         Show-Message -Message "Script Log for VECTOR DFIR Script Usage" -Level INFO -AddToLog
         Show-Message -Message "[ $( $MyInvocation.MyCommand.Name ) ] execution started." -Level INFO -AddToLog
     }
-    process
-    {
-        Write-CaseInfo -ResultsFolder $ResultsFolder -Operator $Operator -Agency $Agency -CaseNumber $CaseNumber -Selected ([ordered]@{
+
+    process {
+        Write-CaseInfo -ResultsFolder $ResultsFolder -Operator $Operator -Agency $Agency `
+            -CaseNumber $CaseNumber -Selected ([ordered]@{
             Modules      = $Modules
             RunEdd       = [bool]$RunEdd
             GetProcesses = [bool]$GetProcesses
@@ -45,70 +45,61 @@ function Invoke-DfirTriageScan
 
         # Optional captures: the decision was made up front, so just
         # checking for which switches, if any, were passed
-        if (-not $RunEdd)
-        {
+        if (-not $RunEdd) {
             $Msg = "Skipped [ Encrypted Disk Detector ] (not selected)."
             Show-Message -Message $Msg -Level INFO -AddToLog
         }
-        else
-        {
+        else {
             Invoke-EDD -ResultsFolder $ResultsFolder
         }
 
-        if (-not $GetProcesses)
-        {
+        if (-not $GetProcesses) {
             $Msg = "Skipped [ Magnet Process Capture ] (not selected)."
             Show-Message -Message $Msg -Level INFO -AddToLog
         }
-        else
-        {
+        else {
             Get-RunningProcesses -ResultsFolder $ResultsFolder
         }
 
-        if (-not $CaptureRam)
-        {
+        if (-not $CaptureRam) {
             $Msg = "Skipped [ Magnet RAM Capture ] (not selected)."
             Show-Message -Message $Msg -Level INFO -AddToLog
         }
-        else
-        {
+        else {
             Get-ComputerRam -ResultsFolder $ResultsFolder
         }
 
-        if (-not $Archive)
-        {
+        if (-not $Archive) {
             $Msg = "Skipped [ Creating Case Archive ] (not selected)."
             Show-Message -Message $Msg -Level INFO -AddToLog
         }
 
-        function Initialize-TriageScan
-        {
+        function Initialize-TriageScan {
             [CmdletBinding()]
             param(
                 [string]$ResultsFolder,
                 [string[]]$Modules
             )
 
-            function Invoke-TriageScan
-            {
+            function Invoke-TriageScan {
                 param(
                     [string]$ResultsFolder,
                     [string]$FolderName,
                     [scriptblock]$Action
                 )
 
-                try
-                {
+                try {
                     $SubFolderPathName = Join-Path -Path $ResultsFolder -ChildPath $FolderName
                     $null = New-Item -ItemType Directory -Path $SubFolderPathName -Force
 
                     Test-IfExists -FolderName $SubFolderPathName -Type FOLDER
                     $ModuleSw = [System.Diagnostics.Stopwatch]::StartNew()
                     & $Action $SubFolderPathName
-                    Show-Message -Message "Module $FolderName finished ($( Format-TriageDuration -Span $ModuleSw.Elapsed ))" -Level INFO -AddToLog -MessageColor Magenta
+                    Show-Message -Message "Module $FolderName finished `
+                        ($( Format-TriageDuration -Span $ModuleSw.Elapsed ))" `
+                        -Level INFO -AddToLog -MessageColor Magenta
                 }
-                catch
-                {
+                catch {
                     $ErrorMsg = "Execution failed during $FolderName on $( $env:COMPUTERNAME ). Error => $( $_.Exception.Message )"
                     Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
                 }
@@ -128,39 +119,41 @@ function Invoke-DfirTriageScan
                 "011_Raw_Artifacts" = { param($SubFolderPathName) Get-TriageRawArtifactsData -RawFolder $SubFolderPathName }
             }
 
-            foreach ($Entry in $DfirScanWorkflow.GetEnumerator())
-            {
-                if ($Modules -notcontains $Entry.Key)
-                {
-                    Show-Message -Message "Skipped module [ /$( $Entry.Key )/ ] (not selected)" -Level INFO -AddToLog
+            foreach ($Entry in $DfirScanWorkflow.GetEnumerator()) {
+                if ($Modules -notcontains $Entry.Key) {
+                    Show-Message -Message "Skipped module [ /$( $Entry.Key )/ ] (not selected)" `
+                        -Level INFO -AddToLog
                     continue
                 }
                 Invoke-TriageScan -ResultsFolder $ResultsFolder -FolderName $Entry.Key -Action $Entry.Value
             }
         }
 
-        $Scratch = Join-Path -Path (Get-TriageConfig -Key "ToolkitRoot") -ChildPath (Get-TriageConfig).Defaults.ScratchFolder
+        $Scratch = Join-Path `
+            -Path (Get-TriageConfig -Key "ToolkitRoot") `
+            -ChildPath (Get-TriageConfig).Defaults.ScratchFolder
         $global:TriageUserHives = @()
 
-        try
-        {
-            $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path -Path $ResultsFolder -ChildPath "Registry_Hives") -ScratchFolder $Scratch)
+        try {
+            $global:TriageUserHives = @(Mount-TriageUserHives -HiveFolder (Join-Path -Path $ResultsFolder `
+                -ChildPath "Registry_Hives") -ScratchFolder $Scratch)
 
-            foreach ($Hive in $global:TriageUserHives)
-            {
-                Show-Message -Message "User hive: $( $Hive.UserName ) [ $( $Hive.Sid ) ] - $( $Hive.Note )" -Level INFO -AddToLog
+            foreach ($Hive in $global:TriageUserHives) {
+                Show-Message -Message "User hive: $( $Hive.UserName ) [ $( $Hive.Sid ) ] - $( $Hive.Note )" `
+                    -Level INFO -AddToLog
             }
 
             Initialize-TriageScan -ResultsFolder $ResultsFolder -Modules $Modules
         }
-        finally
-        {
+        finally {
             Dismount-TriageUserHives -Hives $global:TriageUserHives -ScratchFolder $Scratch
         }
 
-        Show-Message -Message "Collection finished => $( $global:TriageErrorCount ) error(s), $( $global:TriageWarningCount ) warning(s) so far. Hashing evidence..." -Level INFO -AddToLog -MessageColor Magenta
+        Show-Message -Message "Collection finished => $( $global:TriageErrorCount ) error(s), $( $global:TriageWarningCount ) warning(s) so far. Hashing evidence..." `
+            -Level INFO -AddToLog -MessageColor Magenta
 
-        $global:TriageTimings | Export-Csv -LiteralPath (Join-Path -Path $ResultsFolder -ChildPath "Logs\task_timings.csv") -NoTypeInformation -Encoding UTF8
+        $global:TriageTimings | Export-Csv -LiteralPath (Join-Path -Path $ResultsFolder -ChildPath `
+            "Logs\task_timings.csv") -NoTypeInformation -Encoding UTF8
 
         Get-FileHashes -ResultsFolder $ResultsFolder
 
@@ -169,21 +162,20 @@ function Invoke-DfirTriageScan
         $Closed = Close-TriageLog -ResultsFolder $ResultsFolder
 
         $Archive = $null
-        if ($CreateArchive)
-        {
+        if ($CreateArchive) {
             $Archive = Invoke-CaseArchive -ResultsFolder $ResultsFolder
         }
-        else
-        {
+        else {
             continue
         }
 
         Show-Message -Message "RECORD THESE VALUES IN YOUR CASE NOTES:" -Level INFO
-        Show-Message -Message "    File Name: final_hashes.csv (SHA-256 => $( $Closed.FinalHashesSha256 ))" -Level INFO -MessageColor Yellow
+        Show-Message -Message "    File Name: final_hashes.csv (SHA-256 => $( $Closed.FinalHashesSha256 ))" `
+            -Level INFO -MessageColor Yellow
 
-        if ($Archive)
-        {
-            Show-Message -Message "    File Name: $( Split-Path -Path $Archive.ZipPath -Leaf ) (SHA-256 => $( $Archive.Sha256 ))" -Level INFO -MessageColor Yellow
+        if ($Archive) {
+            Show-Message -Message "    File Name: $( Split-Path -Path $Archive.ZipPath -Leaf ) `
+                (SHA-256 => $( $Archive.Sha256 ))" -Level INFO -MessageColor Yellow
         }
 
         $Duration = (Get-Date) - $StartTime
@@ -200,12 +192,12 @@ function Invoke-DfirTriageScan
         }
 
         Show-Message -Message ("Data collection completed in {0:hh\:mm\:ss}" -f $Duration) -Level INFO
-        Show-Message -Message ("{0} error(s), {1} warning(s)" -f $global:TriageErrorCount, $global:TriageWarningCount) -Level INFO
+        Show-Message -Message ("{0} error(s), {1} warning(s)" -f $global:TriageErrorCount, `
+            $global:TriageWarningCount) -Level INFO
         Show-Message -Message ("Exit code: {0}" -f $Code) -Level INFO
         Show-Message -Message ("Results saved to [ {0} ]" -f $ResultsFolder) -Level INFO
     }
-    end
-    {
+    end {
         # Force the .NET Garbage Collector to immediately purge the freed memory slots
         [System.GC]::Collect()
         [System.GC]::WaitForPendingFinalizers()

@@ -1,15 +1,13 @@
-function Get-TriageFirewallData
-{
+function Get-TriageFirewallData {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string]$FirewallFolder
     )
 
-    begin
-    {
-        function Get-FirewallRules
-        {
+    begin {
+
+        function Get-FirewallRules {
             param(
                 [string]$TxtFile = (
                     Join-Path $FirewallFolder "08.01_firewall_rules.txt"
@@ -20,8 +18,7 @@ function Get-TriageFirewallData
         }
 
 
-        function Get-DefenderPreferences
-        {
+        function Get-DefenderPreferences {
             param(
                 [string]$TxtFile = (
                     Join-Path $FirewallFolder "08.02_defender_preferences.txt"
@@ -32,8 +29,7 @@ function Get-TriageFirewallData
         }
 
 
-        function Copy-DefenderLogs
-        {
+        function Copy-DefenderLogs {
             param(
                 [string]$TxtFile = (
                     Join-Path FirewallFolder "08.03_defender_log_files.txt"
@@ -45,16 +41,14 @@ function Get-TriageFirewallData
             $MpLogLocation = "$env:ProgramData\Microsoft\Windows Defender\Support"
             $MpLogFiles = Get-ChildItem -LiteralPath $MpLogLocation -Filter "*.log" -File
 
-            foreach ($File in $MpLogFiles)
-            {
+            foreach ($File in $MpLogFiles) {
                 Copy-Item -LiteralPath $File.FullName -Destination $MpOutputFolder
                 Add-Content -Path $TxtFile -Value $File.FullName -Encoding UTF8 -Force
             }
         }
 
 
-        function Get-DefenderDetections
-        {
+        function Get-DefenderDetections {
             param(
                 [string]$ThreatDetectionsFile = (
                     Join-Path $FirewallFolder "08.04a_defender_threat_detections.csv"
@@ -68,7 +62,7 @@ function Get-TriageFirewallData
             )
             $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
             $Detections = Get-MpThreatDetection -ErrorAction SilentlyContinue |
-                Select-Object -Property *, @{ 
+                Select-Object -Property *, @{
                     Name       = "ResourceList";
                     Expression = { @($_.Resources) -join "; " }
                 } -ExcludeProperty ($Skip + "Resources")
@@ -81,15 +75,19 @@ function Get-TriageFirewallData
 
             Write-OutputToCsv -Data $Detections -OutputFile $ThreatDetectionsFile
             Write-OutputToCsv -Data $Threats -OutputFile $ThreatsFile
-            $Status = Get-MpComputerStatus -ErrorAction SilentlyContinue | Out-String -Width 4096
+            $Status = Get-MpComputerStatus -ErrorAction SilentlyContinue |
+                Out-String -Width 4096
             Write-OutputToFile -Data $Status -OutputFile $StatusFile
         }
+
     }
-    process
-    {
+
+    process {
+
         # ----------------------------------
         # Run the functions from the module
         # ----------------------------------
+
         $Tasks = @(
             @{
                 Action  = { Get-FirewallRules }
@@ -110,10 +108,13 @@ function Get-TriageFirewallData
                 Action  = { Get-DefenderDetections }
                 Message = "08.04_Listing Windows Defender Detections..."
                 Files   = "08.04a_defender_threat_detections.csv",
-                          "08.4b_defender_threats.csv", 
+                          "08.4b_defender_threats.csv",
                           "08.04c_defender_status.txt"
             }
         )
+
         Invoke-TriageTaskList -Tasks $Tasks -Folder $FirewallFolder
+
     }
+
 }

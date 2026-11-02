@@ -1,5 +1,4 @@
-function Invoke-CaseArchive
-{
+function Invoke-CaseArchive {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -8,16 +7,14 @@ function Invoke-CaseArchive
         [string[]]$ExcludeFolders = (Get-TriageConfig).Defaults.ArchiveExcludeFolders
     )
 
-    begin
-    {
+    begin {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
     }
-    process
-    {
+
+    process {
         $Zip = $null
-        try
-        {
+        try {
             Add-Type -AssemblyName System.IO.Compression
             Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -25,12 +22,12 @@ function Invoke-CaseArchive
             $Name    = Split-Path -Path $Root -Leaf
             $ZipPath = Join-Path -Path (Split-Path -Path $Root -Parent) -ChildPath "$Name.zip"
 
-            if (Test-Path -LiteralPath $ZipPath)
-            {
+            if (Test-Path -LiteralPath $ZipPath) {
                 throw "Archive already exists [ $ZipPath ]"
             }
 
-            Show-Message -Message "Creating case archive => $Name.zip; excluding: [ $( $ExcludeFolders -join ', ' ) ]" -Level INFO
+            Show-Message -Message "Creating case archive => $Name.zip; excluding: `
+                [ $( $ExcludeFolders -join ', ' ) ]" -Level INFO
 
             $Skip  = @($ExcludeFolders | ForEach-Object { (Join-Path -Path $Root -ChildPath $_) + "\" })
             $Files = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -File | Where-Object {
@@ -40,16 +37,14 @@ function Invoke-CaseArchive
 
             $Zip   = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
             $Added = 0
-            foreach ($File in $Files)
-            {
+            foreach ($File in $Files) {
                 $Rel = $File.FullName.Substring($Root.Length + 1).Replace("\", "/")
-                try
-                {
-                    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($Zip, $File.FullName, "$Name/$Rel", [System.IO.Compression.CompressionLevel]::Optimal)
+                try {
+                    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                        $Zip, $File.FullName, "$Name/$Rel", [System.IO.Compression.CompressionLevel]::Optimal)
                     $Added++
                 }
-                catch
-                {
+                catch {
                     Show-Message -Message "Not added to archive [ $Rel ] => $( $_.Exception.Message )" -Level ERROR
                 }
             }
@@ -58,26 +53,25 @@ function Invoke-CaseArchive
 
             # Sanity check => re-open and count entries
             $Check = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
-            try
-            {
+            try {
                 $Entries = $Check.Entries.Count
             }
-            finally
-            {
+            finally {
                 $Check.Dispose()
             }
 
-            if ($Entries -ne $Added)
-            {
+            if ($Entries -ne $Added) {
                 throw "Archive holds $Entries entries but $Added files were added."
             }
 
             # Hash the zip and write a sidecar file next to it (outside of
             # the archive)
             $Sha = (Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash
-            "$Sha *$( Split-Path -Path $ZipPath -Leaf )" | Set-Content -LiteralPath "$ZipPath.sha256" -Encoding ASCII
+            "$Sha *$(
+                Split-Path -Path $ZipPath -Leaf )" | Set-Content -LiteralPath "$ZipPath.sha256" -Encoding ASCII
 
-            Show-Message -Message "Archive complete => $Added files in $( [int]$Stopwatch.Elapsed.TotalSeconds )s." -Level INFO
+            Show-Message -Message "Archive complete => $Added files in `
+                $( [int]$Stopwatch.Elapsed.TotalSeconds )s." -Level INFO
 
             [PSCustomObject]@{
                 ZipPath  = $ZipPath
@@ -85,22 +79,17 @@ function Invoke-CaseArchive
                 Excluded = $ExcludeFolders
             }
         }
-        catch
-        {
+        catch {
             Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR
         }
-        finally
-        {
-            if ($Zip)
-            {
+        finally {
+            if ($Zip) {
                 $Zip.Dispose()
             }
         }
     }
-    end
-    {
-        if ($Stopwatch.IsRunning)
-        {
+    end {
+        if ($Stopwatch.IsRunning) {
             $Stopwatch.Stop()
         }
     }

@@ -1,17 +1,17 @@
-function Get-TriagePrefetchData
-{
+function Get-TriagePrefetchData {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string]$PrefetchFolder
     )
 
-    begin
-    {
-        function Get-PrefetchFiles
-        {
+    begin {
+
+        function Get-PrefetchFiles {
             param(
-                [string]$CsvFile = (Join-Path -Path $PrefetchFolder -ChildPath "06.01_prefetch_files.csv")
+                [string]$CsvFile = (
+                    Join-Path $PrefetchFolder "06.01_prefetch_files.csv"
+                )
             )
             $Data = Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" |
                 Select-Object -Property *
@@ -19,36 +19,38 @@ function Get-TriagePrefetchData
         }
 
 
-        function Get-RecentExecutions
-        {
+        function Get-RecentExecutions {
             param(
-                [string]$CsvFile = (Join-Path -Path $PrefetchFolder -ChildPath "06.02_recent_executions.csv")
+                [string]$CsvFile = (
+                    Join-Path $PrefetchFolder "06.02_recent_executions.csv"
+                )
             )
             $Folders = @("$env:SystemDrive\Temp")
-            foreach ($User in $global:TriageUserHives)
-            {
-                $Folders += Join-Path -Path $User.ProfilePath -ChildPath "AppData\Roaming"
-                $Folders += Join-Path -Path $User.ProfilePath -ChildPath "AppData\Local\Temp"
+            foreach ($User in $global:TriageUserHives) {
+                $Folders += Join-Path $User.ProfilePath "AppData\Roaming"
+                $Folders += Join-Path $User.ProfilePath "AppData\Local\Temp"
             }
 
-            $Data = foreach ($Folder in $Folders)
-            {
-                if (-not (Test-Path -LiteralPath $Folder))
-                {
+            $Data = foreach ($Folder in $Folders) {
+                if (-not (Test-Path -LiteralPath $Folder)) {
                     continue
                 }
-                Get-ChildItem -LiteralPath $Folder -Recurse -Force -ErrorAction SilentlyContinue |
-                    Select-Object FullName, Length, Attributes, CreationTimeUtc, LastWriteTimeUtc,
-                    LastAccessTimeUtc
+                Get-ChildItem -LiteralPath $Folder -Recurse -Force `
+                    -ErrorAction SilentlyContinue |
+                    Select-Object FullName, Length, Attributes, CreationTimeUtc, `
+                    LastWriteTimeUtc, LastAccessTimeUtc
             }
             Write-OutputToCsv -Data ($Data | Sort-Object LastAccessTimeUtc -Descending) -OutputFile $CsvFile
         }
+
     }
-    process
-    {
+
+    process {
+
         # ----------------------------------
         # Run the functions from the module
         # ----------------------------------
+
         $Tasks = @(
             @{
                 Action  = { Get-PrefetchFiles }
@@ -61,6 +63,9 @@ function Get-TriagePrefetchData
                 Files   = "06.02_recent_executions.csv"
             }
         )
+
         Invoke-TriageTaskList -Tasks $Tasks -Folder $PrefetchFolder
+
     }
+
 }

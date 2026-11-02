@@ -1,8 +1,8 @@
 function Get-Gui {
-<#
-.SYNOPSIS
-    Assembles and runs the graphical wrapper managing all worker modules.
-#>
+    <#
+    .SYNOPSIS
+        Assembles and runs the graphical wrapper managing all worker modules.
+    #>
     [CmdletBinding()]
     param([string]$OutputRoot)
 
@@ -47,7 +47,6 @@ function Get-Gui {
     $MainForm.StartPosition   = "CenterScreen"
     $MainForm.FormBorderStyle = "Sizable"
     $MainForm.MaximizeBox     = $false
-    # $MainForm.BackColor       = [System.Drawing.Color]::FromArgb(245, 246, 248)
     $MainForm.BackColor       = "#1b1b1c"
     $MainForm.TopMost         = $false
 
@@ -135,43 +134,43 @@ function Get-Gui {
 
     $ModulesChkLst = @(
         @{
-            Name = "DeviceData"
+            Name  = "DeviceData"
             Label = "Get Device Data"
         }
         @{
-            Name = "UserData"
+            Name  = "UserData"
             Label = "Parse User(s) Data"
         }
         @{
-            Name = "NetworkData"
+            Name  = "NetworkData"
             Label = "Network Connection Data"
         }
         @{
-            Name = "ProcessData"
+            Name  = "ProcessData"
             Label = "Get Process Data"
         }
         @{
-            Name = "SystemData"
+            Name  = "SystemData"
             Label = "Get System Data"
         }
         @{
-            Name = "PrefetchData"
+            Name  = "PrefetchData"
             Label = "Prefetch Info"
         }
         @{
-            Name = "EventLogData"
+            Name  = "EventLogData"
             Label = "EventLog Info"
         }
         @{
-            Name = "FirewallData"
+            Name  = "FirewallData"
             Label = "Firewall Info"
         }
         @{
-            Name = "EncryptionData"
+            Name  = "EncryptionData"
             Label = "BitLocker Encryption Data"
         }
         @{
-            Name = "InternetData"
+            Name  = "InternetData"
             Label = "Internet Usage Data"
         }
     )
@@ -185,12 +184,12 @@ function Get-Gui {
         $TextLbl           = New-Object System.Windows.Forms.Label
         $TextLbl.Text      = $Item.Label
         $TextLbl.Font      = $GlobalFont
-        # $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
         $TextLbl.ForeColor = "#f1f1f1"
 
         # Measure out text metrics using raw engine parameters
         $ProposedSize = New-Object System.Drawing.Size($GpBxLblW, 0)
-        $MeasuredSize = [System.Windows.Forms.TextRenderer]::MeasureText($Item.Label, $GlobalFont, $ProposedSize, [System.Windows.Forms.TextFormatFlags]::WordBreak)
+        $MeasuredSize = [System.Windows.Forms.TextRenderer]::MeasureText(
+            $Item.Label, $GlobalFont, $ProposedSize, [System.Windows.Forms.TextFormatFlags]::WordBreak)
         $CalculatedH  = [Math]::Max($MeasuredSize.Height, $GpBxTxtbxH)
         $TextLbl.Size = New-Object System.Drawing.Size($GpBxLblW, $CalculatedH)
 
@@ -232,7 +231,6 @@ function Get-Gui {
     $BtnSelAllModules.Location                   = New-Object Drawing.Point($GpBxCol1XValue, $GpBxSelAllBtnY)
     $BtnSelAllModules.FlatAppearance.BorderSize  = 1
     $BtnSelAllModules.FlatAppearance.BorderColor = "#1b1b1c"
-    # $BtnSelAllModules.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
     $BtnSelAllModules.BackColor                  = "#2B7FFF"
     $BtnSelAllModules.Forecolor                  = "#f1f1f1"
     $BtnSelAllModules.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
@@ -250,7 +248,8 @@ function Get-Gui {
     $BtnClearAllModules.Width                      = $GpBxBtnW
     $BtnClearAllModules.Height                     = $GpBxBtnH
     $BtnClearAllModules.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnClearAllModules.Location                   = New-Object Drawing.Point($GpBxCol1XValue, ($GpBxSelAllBtnY + $GpBxBtnH + 10))
+    $BtnClearAllModules.Location                   = New-Object Drawing.Point($GpBxCol1XValue, `
+                                                     ($GpBxSelAllBtnY + $GpBxBtnH + 10))
     $BtnClearAllModules.FlatAppearance.BorderSize  = 1
     $BtnClearAllModules.FlatAppearance.BorderColor = "#1b1b1c"
     $BtnClearAllModules.BackColor                  = "#f1f1f1"
@@ -265,15 +264,42 @@ function Get-Gui {
 
 
     $OtherOptsChkLst = @(
-        @{ Name = "RunEDD";       Label = "Run Encrypted Disk Detector" }
-        @{ Name = "GetProcesses"; Label = "Collect Running Processes" }
-        @{ Name = "CaptureRAM";   Label = "Collect Computer RAM" }
-        @{ Name = "CopyRegHives"; Label = "Copy Registry Hives" }
-        @{ Name = "CopyPrefetch"; Label = "Copy Prefetch files" }
-        @{ Name = "CopyNTUser";   Label = "Copy NTUSER.DAT file(s)" }
-        @{ Name = "ListAllFiles"; Label = "Gather list of ALL files" }
-        @{ Name = "CopySRUDB";    Label = "Copy SRUDB.dat file" }
-        @{ Name = "Archive";      Label = "Create Case Archive" }
+        @{
+            Name = "RunEDD"
+            Label = "Run Encrypted Disk Detector"
+        }
+        @{
+            Name = "GetProcesses"
+            Label = "Collect Running Processes"
+        }
+        @{
+            Name = "CaptureRAM"
+            Label = "Collect Computer RAM"
+        }
+        @{
+            Name = "CopyRegHives"
+            Label = "Copy Registry Hives"
+        }
+        @{
+            Name = "CopyPrefetch"
+            Label = "Copy Prefetch files"
+        }
+        @{
+            Name = "CopyNTUser"
+            Label = "Copy NTUSER.DAT file(s)"
+        }
+        @{
+            Name = "ListAllFiles"
+            Label = "Gather list of ALL files"
+        }
+        @{
+            Name = "CopySRUDB"
+            Label = "Copy SRUDB.dat file"
+        }
+        @{
+            Name = "Archive"
+            Label = "Create Case Archive"
+        }
     )
 
     $OptsChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
@@ -288,12 +314,12 @@ function Get-Gui {
         $TextLbl           = New-Object System.Windows.Forms.Label
         $TextLbl.Text      = $Item.Label
         $TextLbl.Font      = $GlobalFont
-        # $TextLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
         $TextLbl.ForeColor = "#f1f1f1"
 
         # Measure out text metrics using raw engine parameters
         $ProposedSize     = New-Object System.Drawing.Size($GpBxLblW, 0)
-        $MeasuredSize     = [System.Windows.Forms.TextRenderer]::MeasureText($Item.Label, $GlobalFont, $ProposedSize, [System.Windows.Forms.TextFormatFlags]::WordBreak)
+        $MeasuredSize     = [System.Windows.Forms.TextRenderer]::MeasureText(
+            $Item.Label, $GlobalFont, $ProposedSize, [System.Windows.Forms.TextFormatFlags]::WordBreak)
         $CalculatedH      = [Math]::Max($MeasuredSize.Height, $GpBxTxtbxH)
         $TextLbl.Size     = New-Object System.Drawing.Size($GpBxLblW, $CalculatedH)
 
@@ -316,7 +342,9 @@ function Get-Gui {
         $TextLbl.add_Click({
                 param($Sender, $e)
                 $AssociatedBox = $OptsChkBoxes | Where-Object { $_.Tag -eq $Sender.Tag }
-                if ($AssociatedBox) { $AssociatedBox.Checked = !$AssociatedBox.Checked }
+                if ($AssociatedBox) {
+                    $AssociatedBox.Checked = !$AssociatedBox.Checked
+                }
             })
         # Store key mapping reference link
         $TextLbl.Tag = $Item.Name
@@ -334,7 +362,6 @@ function Get-Gui {
     $BtnSelAllOpts.Location                   = New-Object Drawing.Point($GpBxCol1XValue, $GpBxSelAllBtnY)
     $BtnSelAllOpts.FlatAppearance.BorderSize  = 1
     $BtnSelAllOpts.FlatAppearance.BorderColor = "#1b1b1c"
-    # $BtnSelAllOpts.BackColor                  = [System.Drawing.Color]::FromArgb(34, 139, 34)
     $BtnSelAllOpts.BackColor                  = "#2B7FFF"
     $BtnSelAllOpts.Forecolor                  = "#f1f1f1"
     $BtnSelAllOpts.FlatStyle                  = [System.Windows.Forms.FlatStyle]::Flat
@@ -352,7 +379,8 @@ function Get-Gui {
     $BtnClearAllOpts.Width                      = $GpBxBtnW
     $BtnClearAllOpts.Height                     = $GpBxBtnH
     $BtnClearAllOpts.Padding                    = New-Object System.Windows.Forms.Padding(3)
-    $BtnClearAllOpts.Location                   = New-Object Drawing.Point($GpBxCol1XValue, ($GpBxSelAllBtnY + $GpBxBtnH + 10))
+    $BtnClearAllOpts.Location                   = New-Object Drawing.Point($GpBxCol1XValue, `
+                                                  ($GpBxSelAllBtnY + $GpBxBtnH + 10))
     $BtnClearAllOpts.FlatAppearance.BorderSize  = 1
     $BtnClearAllOpts.FlatAppearance.BorderColor = "#1b1b1c"
     $BtnClearAllOpts.BackColor                  = "#f1f1f1"
@@ -398,44 +426,56 @@ function Get-Gui {
 
     $script:SetBusy = {
         param([bool]$Busy)
-        foreach ($C in @($TxtboxUserName, $TxtboxAgency, $TxtboxCaseNumber, $GpBxModules, $GpBxOpts, $BtnStartTriage)) {
+        foreach ($C in @(
+            $TxtboxUserName, $TxtboxAgency, $TxtboxCaseNumber, $GpBxModules, $GpBxOpts, $BtnStartTriage)) {
             $C.Enabled = -not $Busy
         }
     }
 
     $script:PumpLog = {
-        if (-not $script:LogFile -or -not (Test-Path -LiteralPath $script:LogFile)) { return }
-        $Fs = [System.IO.File]::Open($script:LogFile, "Open", "Read", "ReadWrite")  # the collector keeps appending
+        if (-not $script:LogFile -or -not (Test-Path -LiteralPath $script:LogFile)) {
+            return
+        }
+        $Fs = [System.IO.File]::Open($script:LogFile, "Open", "Read", "ReadWrite")
         try {
             [void]$Fs.Seek($script:LogPos, "Begin")
             $Reader = New-Object System.IO.StreamReader($Fs, [System.Text.Encoding]::UTF8)
             $New = $Reader.ReadToEnd()
             $script:LogPos = $Fs.Position
         }
-        finally { $Fs.Dispose() }
-        if ($New) { $TxtLog.AppendText($New) }
+        finally {
+            $Fs.Dispose()
+        }
+        if ($New) {
+            $TxtLog.AppendText($New)
+        }
     }
 
     $BtnStartTriage.Add_Click({
         $Operator = $TxtboxUserName.Text.Trim()
         $Case = $TxtboxCaseNumber.Text.Trim()
         if (-not $Operator -or -not $Case) {
-            [void][System.Windows.Forms.MessageBox]::Show("User Name and Case Number are required.", "Missing information", "OK", "Warning")
+            [void][System.Windows.Forms.MessageBox]::Show("User Name and Case Number are required.", `
+                "Missing information", "OK", "Warning")
             return
         }
 
         $Ticked = @{}
-        foreach ($C in $OptsChkBoxes) { $Ticked[$C.Tag] = $C.Checked }
+        foreach ($C in $OptsChkBoxes) {
+            $Ticked[$C.Tag] = $C.Checked
+        }
 
         $Unbuilt = @($NotImplemented | Where-Object { $Ticked[$_] })
         if ($Unbuilt) {
-            [void][System.Windows.Forms.MessageBox]::Show("Not implemented yet, untick: $($Unbuilt -join ', ')", "Option unavailable", "OK", "Warning")
+            [void][System.Windows.Forms.MessageBox]::Show("Not implemented yet, untick: `
+                $($Unbuilt -join ', ')", "Option unavailable", "OK", "Warning")
             return
         }
 
         $Modules = @($ModulesChkBoxes | Where-Object Checked | ForEach-Object { $ModuleMap[$_.Tag] })
         if (-not $Modules -and -not ($Ticked.RunEDD -or $Ticked.GetProcesses -or $Ticked.CaptureRAM)) {
-            [void][System.Windows.Forms.MessageBox]::Show("Nothing is selected.", "Nothing to do", "OK", "Information")
+            [void][System.Windows.Forms.MessageBox]::Show("Nothing is selected.", "Nothing to do", `
+                "OK", "Information")
             return
         }
 
@@ -446,6 +486,7 @@ function Get-Gui {
         # Folder and log are created here so the log timer can start
         # tailing immediately
         Get-InitialSetup -OutputRoot $script:OutputRoot
+
         $script:ResultsFolder = $global:ResultsFolder
         $script:LogFile       = $global:LogFile
         $script:LogPos        = 0
@@ -493,7 +534,9 @@ function Get-Gui {
             $Sender.Stop()
             try {
                 $Out = $script:Ps.EndInvoke($script:Async)  # throws if the worker died
-                $script:LastResult = @($Out | Where-Object { $_ -and $_.PSObject.Properties["ExitCode"] }) | Select-Object -Last 1
+                $script:LastResult = @(
+                    $Out | Where-Object { $_ -and $_.PSObject.Properties["ExitCode"] }
+                ) | Select-Object -Last 1
             }
             catch {
                 $TxtLog.AppendText("`r`nFATAL ERROR => $( $_.Exception.Message )`r`n")
@@ -511,14 +554,16 @@ function Get-Gui {
 
             & $script:PumpLog  # pick up the last lines
             & $script:SetBusy $false
-            $LblStatus.Text = "Finished. Exit code $( $script:LastResult.ExitCode ). Results => $( $script:ResultsFolder )"
+            $LblStatus.Text = "Finished. Exit code $( $script:LastResult.ExitCode ). `
+                Results => $( $script:ResultsFolder )"
         }
     })
 
     $MainForm.Add_FormClosing({
         param($Sender, $e)
         if ($script:Async -and -not $script:Async.IsCompleted) {
-            [void][System.Windows.Forms.MessageBox]::Show("Collection is still running. Wait for it to finish.", "Triage running", "OK", "Warning")
+            [void][System.Windows.Forms.MessageBox]::Show("Collection is still running. Wait for it to finish.", `
+                "Triage running", "OK", "Warning")
             $e.Cancel = $true
         }
     })
@@ -560,7 +605,9 @@ function Get-Gui {
     $LblStatus.Size     = New-Object System.Drawing.Size(665, 22)
     $MainForm.Controls.Add($LblStatus)
 
-    $MainForm.Add_Shown({ $MainForm.Activate() })
+    $MainForm.Add_Shown({
+        $MainForm.Activate()
+    })
 
     # Display the form
     [void]$MainForm.ShowDialog()

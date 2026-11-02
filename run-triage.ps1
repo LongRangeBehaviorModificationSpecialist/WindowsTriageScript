@@ -97,31 +97,20 @@ $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Contin
 
 $ComputerName = $env:COMPUTERNAME
 
-function ConvertTo-YesNo
-{
+function ConvertTo-YesNo {
     param(
         [string]$Value
     )
 
-    switch -Regex ("$Value".Trim())
-    {
-        "^(y|yes|true|1)$"
-        {
-            return $true
-        }
-        "^(n|no|false|0)$"
-        {
-            return $false
-        }
-        default
-        {
-            return $null  # For values that are not understood
-        }
+    switch -Regex ("$Value".Trim()) {
+        "^(y|yes|true|1)$" { return $true }
+        "^(n|no|false|0)$" { return $false }
+        # For values that are not understood
+        default { return $null }
     }
 }
 
-function Show-Usage
-{
+function Show-Usage {
     Write-Host @"
 
 Usage:
@@ -148,14 +137,12 @@ Example:
 }
 
 # Load the toolkit and its configuration
-try
-{
+try {
     Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath "modules\triage.psd1") -Force -ErrorAction Stop
     $null       = Get-TriageConfig
     $AllModules = @(Get-TriageConfig -Key "Modules")
 }
-catch
-{
+catch {
     Write-Host "CRITICAL: cannot load the triage module => $( $_.Exception.Message )" -ForegroundColor Red
     exit 2
 }
@@ -163,8 +150,7 @@ catch
 # Must be elevated (a dry run only checks the options, so it does not need to be)
 $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-if (-not $IsAdmin -and -not $DryRun)
-{
+if (-not $IsAdmin -and -not $DryRun) {
     Show-Message -Message "CRITICAL ACCESS ERROR: This triage tool must be run as Administrator." -Level ERROR
     exit 2
 }
@@ -172,42 +158,33 @@ if (-not $IsAdmin -and -not $DryRun)
 # Validate everything and report ALL problems at once
 $Problems = [System.Collections.Generic.List[string]]::new()
 
-if ($CaseFile)
-{
-    try
-    {
+if ($CaseFile) {
+    try {
         $Case = Get-Content -LiteralPath $CaseFile -Raw -ErrorAction Stop | ConvertFrom-Json
 
-        if (-not $PSBoundParameters.ContainsKey("Operator") -and $Case.Operator)
-        {
+        if (-not $PSBoundParameters.ContainsKey("Operator") -and $Case.Operator) {
             $Operator = [string]$Case.Operator
         }
 
-        if (-not $PSBoundParameters.ContainsKey("Agency") -and $Case.Agency)
-        {
+        if (-not $PSBoundParameters.ContainsKey("Agency") -and $Case.Agency) {
             $Agency = [string]$Case.Agency
         }
 
-        if (-not $PSBoundParameters.ContainsKey("CaseNumber") -and $Case.CaseNumber)
-        {
+        if (-not $PSBoundParameters.ContainsKey("CaseNumber") -and $Case.CaseNumber) {
             $CaseNumber = [string]$Case.CaseNumber
         }
     }
-    catch
-    {
+    catch {
         $Problems.Add("Cannot read -CaseFile [ $CaseFile ] => $( $_.Exception.Message )")
     }
 }
 
-if (-not $Gui)
-{
-    if (-not $Operator)
-    {
+if (-not $Gui) {
+    if (-not $Operator) {
         $Problems.Add("-Operator is required.")
     }
 
-    if (-not $CaseNumber)
-    {
+    if (-not $CaseNumber) {
         $Problems.Add("-CaseNumber is required.")
     }
 }
@@ -221,15 +198,12 @@ $Flags = [ordered]@{
 
 $Resolved = @{}
 
-foreach ($Name in $Flags.Keys)
-{
+foreach ($Name in $Flags.Keys) {
     $B = ConvertTo-YesNo -Value $Flags[$Name]
-    if ($null -eq $B)
-    {
+    if ($null -eq $B) {
         $Problems.Add("-$Name must be Y or N (got '$( $Flags[$Name] )').")
     }
-    else
-    {
+    else {
         $Resolved[$Name] = $B
     }
 }
@@ -238,37 +212,29 @@ foreach ($Name in $Flags.Keys)
 # The config order decides the run order.
 $Tokens = @(($Modules -join ",") -split "[,;\s]+" | Where-Object { $_ })
 
-if ($Tokens.Count -eq 0 -or $Tokens -contains "all")
-{
+if ($Tokens.Count -eq 0 -or $Tokens -contains "all") {
     $Selected = $AllModules
 }
-else
-{
-    $Chosen = foreach ($Token in $Tokens)
-    {
+else {
+    $Chosen = foreach ($Token in $Tokens) {
         $Hit = @($AllModules | Where-Object { $_ -eq $Token -or $_ -like ($Token + "_*") })
 
-        if ($Hit.Count -eq 0)
-        {
+        if ($Hit.Count -eq 0) {
             $Problems.Add("Unknown module [ $Token ]. Valid: all, $( $AllModules -join ', ' )")
         }
-        else
-        {
+        else {
             $Hit
         }
     }
     $Selected = @($AllModules | Where-Object { $_ -in $Chosen })
 }
 
-if ($OutputRoot -and -not (Test-Path -LiteralPath $OutputRoot -PathType Container))
-{
+if ($OutputRoot -and -not (Test-Path -LiteralPath $OutputRoot -PathType Container)) {
     $Problems.Add("-OutputRoot does not exist [ $OutputRoot ]")
 }
 
-if ($Problems.Count -gt 0)
-{
-    foreach ($Problem in $Problems)
-    {
+if ($Problems.Count -gt 0) {
+    foreach ($Problem in $Problems) {
         Show-Message -Message $Problem -Level ERROR
     }
     Show-Usage
@@ -276,8 +242,7 @@ if ($Problems.Count -gt 0)
 }
 
 # Show exactly what will happen (the command line is also recorded in case_info.json)
-if (-not $Gui)
-{
+if (-not $Gui) {
     Show-TriageBanner
 
     Show-Message "Press [ENTER] to begin..." -MessageColor Green -NoTime
@@ -296,8 +261,7 @@ if (-not $Gui)
     Show-Message -Message "---------------------------------------------------------`n" -NoTime
 }
 
-if ($DryRun)
-{
+if ($DryRun) {
     Show-Message -Message "Dry run => nothing was collected." -Level INFO -MessageColor DarkGreen
     exit 0
 }
@@ -313,18 +277,14 @@ $Options = @{
     Archive      = $Archive
 }
 
-try
-{
-    if ($Gui)
-    {
+try {
+    if ($Gui) {
         $Result = Get-Gui -OutputRoot $OutputRoot
-        if (-not $Result)
-        {
+        if (-not $Result) {
             exit 0
         }
     }
-    else
-    {
+    else {
         Get-InitialSetup -OutputRoot $OutputRoot
         Disable-PSReadLineHistory
         Write-LaunchContext
@@ -334,14 +294,12 @@ try
         $Result = $global:TriageResult
     }
 }
-catch
-{
+catch {
     Show-Message -Message "FATAL ERROR => $( $_.Exception.Message )" -Level ERROR -AddToLog
     exit 3
 }
 
-if (-not $Result)
-{
+if (-not $Result) {
     exit 3
 }
 
