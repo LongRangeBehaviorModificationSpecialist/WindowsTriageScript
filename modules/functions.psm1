@@ -1291,6 +1291,35 @@ function Clear-TriageHives {
 }
 
 
+function Read-PowerShellDataFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $ResolvedPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+    if (-not (Test-Path -LiteralPath $ResolvedPath -PathType Leaf)) {
+        throw "Data file not found: $ResolvedPath"
+    }
+
+    # Use native cmdlet if available
+    if (Get-Command -Name Import-PowerShellDataFile -ErrorAction SilentlyContinue) {
+        return Import-PowerShellDataFile -LiteralPath $ResolvedPath
+    }
+
+    # Fallback: Safely evaluate the .psd1 file content as a hashtable across any version
+    try {
+        $fileContent = Get-Content -LiteralPath $ResolvedPath -Raw -ErrorAction Stop
+        # A standard .psd1 file contains a hashtable script block
+        return [scriptblock]::Create($fileContent).Invoke()
+    }
+    catch {
+        throw "Failed to parse PowerShell data file '$ResolvedPath': $_"
+    }
+}
+
+
 function Import-TriageConfig {
     <#
     .SYNOPSIS
@@ -1326,7 +1355,7 @@ function Import-TriageConfig {
         throw "Configuration file not found => [ $Path ]"
     }
 
-    $Cfg = Import-PowerShellDataFile -Path $Path
+    $Cfg = Read-PowerShellDataFile -Path $Path
 
     foreach ($Required in "Modules", "Binaries", "Defaults") {
         if (-not $Cfg.ContainsKey($Required)) {
