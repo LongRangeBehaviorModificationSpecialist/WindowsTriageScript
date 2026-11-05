@@ -2,445 +2,438 @@ function Get-TriageInternetData {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [string]$InternetFolder
     )
 
-    begin {
-
-        function Get-StoredCookies {
-            param(
-                [string]$CsvFile = (
-                    Join-Path $InternetFolder "10.01_stored_cookies.csv"
-                )
+    function Get-StoredCookies {
+        param(
+            [string]$CsvFile = (
+                Join-Path -Path $InternetFolder -ChildPath "10.01_stored_cookies.csv"
             )
-            $Data = foreach ($U in $global:TriageUserHives) {
-                $Dir = Join-Path $U.ProfilePath "AppData\Local\Microsoft\Windows\INetCookies"
-                if (-not (Test-Path -LiteralPath $Dir)) {
-                    continue
-                }
-                foreach ($File in Get-ChildItem -LiteralPath $Dir -Recurse -Force -File `
-                        -ErrorAction SilentlyContinue) {
-                    Select-String -LiteralPath $File.FullName -Pattern "/" `
-                    -ErrorAction SilentlyContinue | ForEach-Object {
-                        [PSCustomObject]@{
-                            UserName = $U.UserName
-                            File     = $File.Name
-                            Line     = $_.Line
-                        }
+        )
+        $Data = foreach ($U in $global:TriageUserHives) {
+            $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
+            if (-not (Test-Path -LiteralPath $Dir)) {
+                continue
+            }
+            foreach ($File in Get-ChildItem -LiteralPath $Dir -Recurse -Force -File `
+                    -ErrorAction SilentlyContinue) {
+                Select-String -LiteralPath $File.FullName -Pattern "/" `
+                -ErrorAction SilentlyContinue | ForEach-Object {
+                    [PSCustomObject]@{
+                        UserName = $U.UserName
+                        File     = $File.Name
+                        Line     = $_.Line
                     }
                 }
             }
-            Write-OutputToCsv -Data $Data -OutputFile $CsvFile
         }
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+    }
 
 
-        function Get-TypedUrls {
-            param(
-                [string]$CsvFile = (
-                    Join-Path $InternetFolder "10.02_typed_urls.csv"
-                ),
-                [string]$SubKey = "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
+    function Get-TypedUrls {
+        param(
+            [string]$CsvFile = (
+                Join-Path -Path $InternetFolder -ChildPath "10.02_typed_urls.csv"
+            ),
+            [string]$SubKey = "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
+        )
+        Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
+    }
+
+
+    function Get-InternetSettings {
+        param(
+            [string]$CsvFile = (
+                Join-Path -Path $InternetFolder -ChildPath "10.03_internet_settings.csv"
+            ),
+            [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
+        )
+        Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
+    }
+
+
+    function Get-TrustedInternetDomains {
+        param(
+            [string]$CsvFile = (
+                Join-Path -Path $InternetFolder -ChildPath "10.04_trusted_domains.csv"
+            ),
+            [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
+        )
+        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey $SubKey
+    }
+
+
+    function Get-BrowserAnalysis {
+        param(
+            [string]$CsvFile = (
+                Join-Path -Path $InternetFolder -ChildPath "10.05_browser_analysis_summary.csv"
             )
-            Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
-        }
-
-
-        function Get-InternetSettings {
+        )
+        function Copy-SharedFile {
+            # Normal copy first. If a running browser has the file locked,
+            # retry with a stream opened for shared read access.
             param(
-                [string]$CsvFile = (
-                    Join-Path $InternetFolder "10.03_internet_settings.csv"
-                ),
-                [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
+                [string]$Source,
+                [string]$Destination
             )
-            Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
-        }
-
-
-        function Get-TrustedInternetDomains {
-            param(
-                [string]$CsvFile = (
-                    Join-Path $InternetFolder "10.04_trusted_domains.csv"
-                ),
-                [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
-            )
-            Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey $SubKey
-        }
-
-
-        function Get-BrowserAnalysis {
-            param(
-                [string]$CsvFile = (
-                    Join-Path $InternetFolder "10.05_browser_analysis_summary.csv"
-                )
-            )
-            function Copy-SharedFile {
-                # Normal copy first. If a running browser has the file locked,
-                # retry with a stream opened for shared read access.
-                param(
-                    [string]$Source,
-                    [string]$Destination
-                )
+            try {
+                Copy-Item -LiteralPath $Source -Destination $Destination -Force -ErrorAction Stop
+            }
+            catch {
+                $In  = $null
+                $Out = $null
                 try {
-                    Copy-Item -LiteralPath $Source -Destination $Destination -Force -ErrorAction Stop
+                    $Share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+                    $In    = [System.IO.File]::Open($Source, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, $Share)
+                    $Out   = [System.IO.File]::Open($Destination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
+                    $In.CopyTo($Out)
                 }
                 catch {
-                    $In  = $null
-                    $Out = $null
-                    try {
-                        $Share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
-                        $In    = [System.IO.File]::Open($Source, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, $Share)
-                        $Out   = [System.IO.File]::Open($Destination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
-                        $In.CopyTo($Out)
+                    if ($Out) {
+                        $Out.Dispose()
+                        $Out = $null
                     }
-                    catch {
-                        if ($Out) {
-                            $Out.Dispose()
-                            $Out = $null
-                        }
-                        Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
-                        throw
+                    Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
+                    throw
+                }
+                finally {
+                    if ($In) {
+                        $In.Dispose()
                     }
-                    finally {
-                        if ($In) {
-                            $In.Dispose()
-                        }
-                        if ($Out) {
-                            $Out.Dispose()
-                        }
+                    if ($Out) {
+                        $Out.Dispose()
                     }
                 }
             }
+        }
 
-            # Trusted sqlite3 path (a string; do NOT call it with `&` here)
-            try {
-                $SqlitePath = [string](Get-TriageBinary "SQLite3")
+        # Trusted sqlite3 path (a string; do NOT call it with `&` here)
+        try {
+            $SqlitePath = [string](Get-TriageBinary "SQLite3")
+        }
+        catch {
+            $SqlUnavailMsg = "sqlite3.exe is unavailable. Skipping browser analysis => $($_.Exception.Message)"
+            Show-Message -Message $SqlUnavailMsg -Level ERROR -AddToLog
+            return
+        }
+
+        # Each browser's root folder holds one sub-folder per profile
+        # (Chromium: Default, Profile 1, ... /
+        # Firefox: <random>.default-release, ...)
+        $Browsers = [ordered]@{
+            "Chrome"  = @{
+                Type  = "Chromium"
+                Root  = "AppData\Local\Google\Chrome\User Data"
             }
-            catch {
-                $SqlUnavailMsg = "sqlite3.exe is unavailable. Skipping browser analysis => $($_.Exception.Message)"
-                Show-Message -Message $SqlUnavailMsg -Level ERROR -AddToLog
-                return
+            "Edge"    = @{
+                Type  = "Chromium"
+                Root  = "AppData\Local\Microsoft\Edge\User Data"
             }
-
-            # Each browser's root folder holds one sub-folder per profile
-            # (Chromium: Default, Profile 1, ... /
-            # Firefox: <random>.default-release, ...)
-            $Browsers = [ordered]@{
-                "Chrome"  = @{
-                    Type  = "Chromium"
-                    Root  = "AppData\Local\Google\Chrome\User Data"
-                }
-                "Edge"    = @{
-                    Type  = "Chromium"
-                    Root  = "AppData\Local\Microsoft\Edge\User Data"
-                }
-                "Brave"   = @{
-                    Type  = "Chromium"
-                    Root  = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
-                }
-                "Vivaldi" = @{
-                    Type  = "Chromium"
-                    Root  = "AppData\Local\Vivaldi\User Data"
-                }
-                "Firefox" = @{
-                    Type  = "Firefox"
-                    Root  = "AppData\Roaming\Mozilla\Firefox\Profiles"
-                }
+            "Brave"   = @{
+                Type  = "Chromium"
+                Root  = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
             }
-
-            # All times are UTC
-            $Queries = @{
-                "Chromium" = [ordered]@{
-                    "Urls"        = "SELECT datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch') AS VisitTimeUTC, visit_count AS VisitCount, typed_count AS TypedCount, title AS Title, url AS Url FROM urls ORDER BY last_visit_time DESC"
-
-                    "Visits"      = "SELECT datetime((v.visit_time / 1000000) - 11644473600, 'unixepoch') AS VisitTimeUTC, u.url AS Url, u.title AS Title, v.transition AS Transition FROM visits v JOIN urls u ON u.id = v.url ORDER BY v.visit_time DESC"
-
-                    "SearchTerms" = "SELECT datetime((u.last_visit_time / 1000000) - 11644473600, 'unixepoch') AS LastVisitUTC, k.term AS SearchTerm, u.url AS Url FROM keyword_search_terms k JOIN urls u ON u.id = k.url_id ORDER BY u.last_visit_time DESC"
-
-                    "Downloads"   = "SELECT datetime((start_time / 1000000) - 11644473600, 'unixepoch') AS DownloadStartUTC, datetime((end_time / 1000000) - 11644473600, 'unixepoch') AS DownloadEndUTC, round(total_bytes / 1048576.0, 3) AS SizeMB, mime_type AS MimeType, opened AS OpenedFromBrowser, current_path AS SavedPath, tab_url AS DownloadedFrom FROM downloads ORDER BY start_time DESC"
-                }
-                "Firefox" = [ordered]@{
-                    "Urls"      = "SELECT datetime(last_visit_date / 1000000, 'unixepoch') AS LastVisitUTC, visit_count AS VisitCount, title AS Title, url AS Url FROM moz_places WHERE last_visit_date IS NOT NULL ORDER BY last_visit_date DESC"
-
-                    "Visits"    = "SELECT datetime(v.visit_date / 1000000, 'unixepoch') AS VisitTimeUTC, p.url AS Url, p.title AS Title, v.visit_type AS VisitType FROM moz_historyvisits v JOIN moz_places p ON p.id = v.place_id ORDER BY v.visit_date DESC"
-
-                    "Downloads" = "SELECT datetime(a.dateAdded / 1000000, 'unixepoch') AS AddedUTC, n.name AS Attribute, a.content AS Content, p.url AS Url FROM moz_annos a JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id JOIN moz_places p ON p.id = a.place_id WHERE n.name LIKE 'downloads/%' ORDER BY a.dateAdded DESC"
-                }
+            "Vivaldi" = @{
+                Type  = "Chromium"
+                Root  = "AppData\Local\Vivaldi\User Data"
             }
-
-            # Profiles found by the hive-mounting step (covers profiles outside
-            # C:\Users). Fall back to C:\Users if that list is empty.
-            $ProfilePaths = @($global:TriageUserHives |
-                Where-Object {
-                    $_.ProfilePath -and (Test-Path -LiteralPath $_.ProfilePath -PathType Container)
-                } |
-                Sort-Object -Property ProfilePath -Unique |
-                ForEach-Object { $_.ProfilePath })
-
-            if ($ProfilePaths.Count -eq 0) {
-                $NoMountedMsg = "No mounted user profiles were found. Falling back to [ $env:SystemDrive\Users ]."
-                Show-Message -Message $NoMountedMsg -Level WARNING -AddToLog
-
-                $ProfilePaths = @(Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force `
-                    -ErrorAction SilentlyContinue |
-                    ForEach-Object { $_.FullName })
+            "Firefox" = @{
+                Type  = "Firefox"
+                Root  = "AppData\Roaming\Mozilla\Firefox\Profiles"
             }
+        }
 
-            $Summary   = [System.Collections.Generic.List[object]]::new()
-            $DbFound   = 0
-            $Failures  = 0
+        # All times are UTC
+        $Queries = @{
+            "Chromium" = [ordered]@{
+                "Urls"        = "SELECT datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch') AS VisitTimeUTC, visit_count AS VisitCount, typed_count AS TypedCount, title AS Title, url AS Url FROM urls ORDER BY last_visit_time DESC"
 
-            # `sqlite3` writes UTF-8, but PowerShell decodes native output with the
-            # console code page. Switch it for the duration of the queries so
-            # non-ASCII titles are not mangled.
+                "Visits"      = "SELECT datetime((v.visit_time / 1000000) - 11644473600, 'unixepoch') AS VisitTimeUTC, u.url AS Url, u.title AS Title, v.transition AS Transition FROM visits v JOIN urls u ON u.id = v.url ORDER BY v.visit_time DESC"
+
+                "SearchTerms" = "SELECT datetime((u.last_visit_time / 1000000) - 11644473600, 'unixepoch') AS LastVisitUTC, k.term AS SearchTerm, u.url AS Url FROM keyword_search_terms k JOIN urls u ON u.id = k.url_id ORDER BY u.last_visit_time DESC"
+
+                "Downloads"   = "SELECT datetime((start_time / 1000000) - 11644473600, 'unixepoch') AS DownloadStartUTC, datetime((end_time / 1000000) - 11644473600, 'unixepoch') AS DownloadEndUTC, round(total_bytes / 1048576.0, 3) AS SizeMB, mime_type AS MimeType, opened AS OpenedFromBrowser, current_path AS SavedPath, tab_url AS DownloadedFrom FROM downloads ORDER BY start_time DESC"
+            }
+            "Firefox" = [ordered]@{
+                "Urls"      = "SELECT datetime(last_visit_date / 1000000, 'unixepoch') AS LastVisitUTC, visit_count AS VisitCount, title AS Title, url AS Url FROM moz_places WHERE last_visit_date IS NOT NULL ORDER BY last_visit_date DESC"
+
+                "Visits"    = "SELECT datetime(v.visit_date / 1000000, 'unixepoch') AS VisitTimeUTC, p.url AS Url, p.title AS Title, v.visit_type AS VisitType FROM moz_historyvisits v JOIN moz_places p ON p.id = v.place_id ORDER BY v.visit_date DESC"
+
+                "Downloads" = "SELECT datetime(a.dateAdded / 1000000, 'unixepoch') AS AddedUTC, n.name AS Attribute, a.content AS Content, p.url AS Url FROM moz_annos a JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id JOIN moz_places p ON p.id = a.place_id WHERE n.name LIKE 'downloads/%' ORDER BY a.dateAdded DESC"
+            }
+        }
+
+        # Profiles found by the hive-mounting step (covers profiles outside
+        # C:\Users). Fall back to C:\Users if that list is empty.
+        $ProfilePaths = @($global:TriageUserHives |
+            Where-Object {
+                $_.ProfilePath -and (Test-Path -LiteralPath $_.ProfilePath -PathType Container)
+            } |
+            Sort-Object -Property ProfilePath -Unique |
+            ForEach-Object { $_.ProfilePath })
+
+        if ($ProfilePaths.Count -eq 0) {
+            $NoMountedMsg = "No mounted user profiles were found. Falling back to [ $env:SystemDrive\Users ]."
+            Show-Message -Message $NoMountedMsg -Level WARNING -AddToLog
+
+            $ProfilePaths = @(Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force `
+                -ErrorAction SilentlyContinue |
+                ForEach-Object { $_.FullName })
+        }
+
+        $Summary   = [System.Collections.Generic.List[object]]::new()
+        $DbFound   = 0
+        $Failures  = 0
+
+        # `sqlite3` writes UTF-8, but PowerShell decodes native output with the
+        # console code page. Switch it for the duration of the queries so
+        # non-ASCII titles are not mangled.
+        $OldEncoding = $null
+        try {
+            $OldEncoding = [Console]::OutputEncoding
+            [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+        }
+        catch {
             $OldEncoding = $null
-            try {
-                $OldEncoding = [Console]::OutputEncoding
-                [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-            }
-            catch {
-                $OldEncoding = $null
-            }
+        }
 
-            try {
-                foreach ($ProfilePath in $ProfilePaths) {
-                    Show-Message -Message "Profile found => [ $ProfilePath ]" -MessageColor Magenta
-                    $UserLeaf = Split-Path -Path $ProfilePath -Leaf
+        try {
+            foreach ($ProfilePath in $ProfilePaths) {
+                Show-Message -Message "Profile found => [ $ProfilePath ]" -MessageColor Magenta
+                $UserLeaf = Split-Path -Path $ProfilePath -Leaf
 
-                    foreach ($BrowserName in $Browsers.Keys) {
-                        $Msg = "Examining $BrowserName data in [ $ProfilePath ]"
-                        Show-Message -Message $Msg -MessageColor Magenta
-                        $Browser = $Browsers[$BrowserName]
-                        $Root    = Join-Path -Path $ProfilePath -ChildPath $Browser.Root
-                        if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
+                foreach ($BrowserName in $Browsers.Keys) {
+                    $Msg = "Examining $BrowserName data in [ $ProfilePath ]"
+                    Show-Message -Message $Msg -MessageColor Magenta
+                    $Browser = $Browsers[$BrowserName]
+                    $Root    = Join-Path -Path $ProfilePath -ChildPath $Browser.Root
+                    if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
+                        continue
+                    }
+
+                    $DbName = if ($Browser.Type -eq "Chromium") {
+                        "History"
+                    }
+                    else {
+                        "places.sqlite"
+                    }
+
+                    foreach ($ProfileDir in (Get-ChildItem -LiteralPath $Root -Directory `
+                            -Force -ErrorAction SilentlyContinue)) {
+                        $Source = Join-Path -Path $ProfileDir.FullName -ChildPath $DbName
+                        if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
                             continue
                         }
 
-                        $DbName = if ($Browser.Type -eq "Chromium") {
-                            "History"
-                        }
-                        else {
-                            "places.sqlite"
-                        }
+                        $DbFound++
+                        $Tag = ("$UserLeaf-$BrowserName-$( $ProfileDir.Name )") -replace "[^\w\.\-]", "_"
 
-                        foreach ($ProfileDir in (Get-ChildItem -LiteralPath $Root -Directory `
-                                -Force -ErrorAction SilentlyContinue)) {
-                            $Source = Join-Path -Path $ProfileDir.FullName -ChildPath $DbName
-                            if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
-                                continue
+                        $BrowserDir = Join-Path -Path $InternetFolder -ChildPath "Browser_Analysis\$BrowserName"
+                        $null       = New-Item -ItemType Directory -Path $BrowserDir -Force
+                        $Db         = Join-Path -Path $BrowserDir -ChildPath "$Tag-$DbName.sqlite"
+
+                        # Copy the database plus its -wal/-journal files so
+                        # recent entries are not lost. (-shm is not copied;
+                        # SQLite rebuilds it from the WAL, and a stale copy can
+                        # confuse it.)
+                        try {
+                            Copy-SharedFile -Source $Source -Destination $Db
+                            foreach ($Suffix in "-wal", "-journal") {
+                                if (Test-Path -LiteralPath "$Source$Suffix") {
+                                    try {
+                                        Copy-SharedFile -Source "$Source$Suffix" -Destination "$Db$Suffix"
+                                    }
+                                    catch {
+                                        $NoCopyMsg = "Could not copy $( Split-Path -Path "$Source$Suffix" `
+                                            -Leaf ) for $Tag => $( $_.Exception.Message )"
+                                        Show-Message -Message $NoCopyMsg -Level WARNING -AddToLog
+                                    }
+                                }
                             }
+                        }
+                        catch {
+                            $Failures++
+                            $CopyBrowserFailMsg = "Could not copy [ $BrowserName ] database for [ $Tag ] `
+                                => $( $_.Exception.Message )"
+                            Show-Message -Message $CopyBrowserFailMsg -Level ERROR -AddToLog
+                            $Summary.Add([PSCustomObject]@{
+                                User       = $UserLeaf
+                                Browser    = $BrowserName
+                                Profile    = $ProfileDir.Name
+                                SourceFile = $Source
+                                CopiedTo   = ""
+                                Query      = ""
+                                Rows       = 0
+                                Status     = "CopyFailed"
+                                Detail     = $_.Exception.Message
+                            })
+                            continue
+                        }
 
-                            $DbFound++
-                            $Tag = ("$UserLeaf-$BrowserName-$( $ProfileDir.Name )") -replace "[^\w\.\-]", "_"
+                        Show-Message -Message "Browser database copied [ $Tag ]" -Level INFO -AddToLog
 
-                            $BrowserDir = Join-Path $InternetFolder "Browser_Analysis\$BrowserName"
-                            $null       = New-Item -ItemType Directory -Path $BrowserDir -Force
-                            $Db         = Join-Path $BrowserDir "$Tag-$DbName.sqlite"
+                        foreach ($Q in $Queries[$Browser.Type].GetEnumerator()) {
+                            $OutFile = Join-Path -Path $BrowserDir -ChildPath "$Tag-$( $Q.Key ).csv"
+                            $Rows    = 0
+                            $Status  = "OK"
+                            $Detail  = ""
 
-                            # Copy the database plus its -wal/-journal files so
-                            # recent entries are not lost. (-shm is not copied;
-                            # SQLite rebuilds it from the WAL, and a stale copy can
-                            # confuse it.)
                             try {
-                                Copy-SharedFile -Source $Source -Destination $Db
-                                foreach ($Suffix in "-wal", "-journal") {
-                                    if (Test-Path -LiteralPath "$Source$Suffix") {
-                                        try {
-                                            Copy-SharedFile -Source "$Source$Suffix" -Destination "$Db$Suffix"
+                                # NOTE: -header is deliberately omitted;
+                                # the header line is built below from the
+                                # query's AS aliases so it is always written,
+                                # regardless of how this sqlite3 build renders
+                                # its output.
+                                $Raw  = & $SqlitePath -batch -readonly -header -csv $Db $Q.Value 2>&1
+                                $Code = $LASTEXITCODE
+
+                                $ErrText = @($Raw |
+                                    Where-Object {
+                                        $_ -is [System.Management.Automation.ErrorRecord]
+                                    } |
+                                    ForEach-Object { $_.ToString() }
+                                )
+                                $Lines   = @($Raw |
+                                    Where-Object {
+                                        $_ -isnot [System.Management.Automation.ErrorRecord]
+                                    }
+                                )
+
+                                if ($Code -ne 0) {
+                                    $Detail = (($ErrText + $Lines) -join " ").Trim()
+                                    if ($Detail -match "no such table|no such column") {
+                                        $Status = "NotPresent"
+                                        $NotAvailMsg = "[ $Tag ] '$( $Q.Key )' `
+                                            is not available in this database version."
+                                        Show-Message -Message $NotAvailMsg -Level INFO -AddToLog
+                                    }
+                                    else {
+                                        $Status = "Failed"
+                                        $Failures++
+                                        $FailMsg = "sqlite3 failed ($Tag / $( $Q.Key )) => $Detail"
+                                        Show-Message -Message $FailMsg -Level ERROR -AddToLog
+                                    }
+                                }
+                                else {
+                                    # sqlite3 on Windows (csv mode) can emit
+                                    # an extra blank line after every record;
+                                    # drop empty / whitespace-only lines.
+                                    $Clean = @(
+                                        $Lines |
+                                            ForEach-Object { "$_".TrimEnd("`r") } |
+                                            Where-Object { $_.Trim() -ne "" }
+                                    )
+
+                                    if ($Clean.Count -gt 0) {
+                                        # Every query aliases its columns
+                                        # ("... AS ColumnName"), so the header
+                                        # can be derived straight from the
+                                        # SQL text.
+                                        $Columns = [regex]::Matches($Q.Value, `
+                                            '(?i)\bAS\s+([A-Za-z_][A-Za-z0-9_]*)') |
+                                            ForEach-Object { $_.Groups[1].Value }
+
+                                        if ($Columns.Count -gt 0) {
+                                            @(($Columns -join ',')) + $Clean |
+                                                Set-Content -LiteralPath $OutFile -Encoding UTF8
                                         }
-                                        catch {
-                                            $NoCopyMsg = "Could not copy $( Split-Path -Path "$Source$Suffix" `
-                                                -Leaf ) for $Tag => $( $_.Exception.Message )"
-                                            Show-Message -Message $NoCopyMsg -Level WARNING -AddToLog
+                                        else {
+                                            # Should not happen with the current
+                                            # queries, but write the raw output
+                                            # rather than a silently header-less
+                                            # file.
+                                            $Clean | Set-Content -LiteralPath $OutFile -Encoding UTF8
                                         }
+
+                                        # Exact row count from SQLite itself
+                                        $CountOut = & $SqlitePath -batch -readonly $Db `
+                                            "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
+                                        $Parsed   = 0
+                                        if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
+                                            $Rows = $Parsed
+                                        }
+                                        else {
+                                            $Rows = -1  # Written, but the count was unavailable
+                                        }
+                                    }
+                                    else {
+                                        $Status = "NoData"
+                                        "No data was found for that query." |
+                                            Set-Content -LiteralPath $OutFile -Encoding UTF8
                                     }
                                 }
                             }
                             catch {
+                                $Status = "Failed"
                                 $Failures++
-                                $CopyBrowserFailMsg = "Could not copy [ $BrowserName ] database for [ $Tag ] `
-                                    => $( $_.Exception.Message )"
-                                Show-Message -Message $CopyBrowserFailMsg -Level ERROR -AddToLog
-                                $Summary.Add([PSCustomObject]@{
-                                    User       = $UserLeaf
-                                    Browser    = $BrowserName
-                                    Profile    = $ProfileDir.Name
-                                    SourceFile = $Source
-                                    CopiedTo   = ""
-                                    Query      = ""
-                                    Rows       = 0
-                                    Status     = "CopyFailed"
-                                    Detail     = $_.Exception.Message
-                                })
-                                continue
+                                $Detail = $_.Exception.Message
+                                $Msg = "Query '$( $Q.Key )' failed for $Tag => $Detail"
+                                Show-Message -Message $Msg -Level ERROR -AddToLog
                             }
 
-                            Show-Message -Message "Browser database copied [ $Tag ]" -Level INFO -AddToLog
-
-                            foreach ($Q in $Queries[$Browser.Type].GetEnumerator()) {
-                                $OutFile = Join-Path $BrowserDir "$Tag-$( $Q.Key ).csv"
-                                $Rows    = 0
-                                $Status  = "OK"
-                                $Detail  = ""
-
-                                try {
-                                    # NOTE: -header is deliberately omitted;
-                                    # the header line is built below from the
-                                    # query's AS aliases so it is always written,
-                                    # regardless of how this sqlite3 build renders
-                                    # its output.
-                                    $Raw  = & $SqlitePath -batch -readonly -header -csv $Db $Q.Value 2>&1
-                                    $Code = $LASTEXITCODE
-
-                                    $ErrText = @($Raw |
-                                        Where-Object {
-                                            $_ -is [System.Management.Automation.ErrorRecord]
-                                        } |
-                                        ForEach-Object { $_.ToString() }
-                                    )
-                                    $Lines   = @($Raw |
-                                        Where-Object {
-                                            $_ -isnot [System.Management.Automation.ErrorRecord]
-                                        }
-                                    )
-
-                                    if ($Code -ne 0) {
-                                        $Detail = (($ErrText + $Lines) -join " ").Trim()
-                                        if ($Detail -match "no such table|no such column") {
-                                            $Status = "NotPresent"
-                                            $NotAvailMsg = "[ $Tag ] '$( $Q.Key )' `
-                                                is not available in this database version."
-                                            Show-Message -Message $NotAvailMsg -Level INFO -AddToLog
-                                        }
-                                        else {
-                                            $Status = "Failed"
-                                            $Failures++
-                                            $FailMsg = "sqlite3 failed ($Tag / $( $Q.Key )) => $Detail"
-                                            Show-Message -Message $FailMsg -Level ERROR -AddToLog
-                                        }
-                                    }
-                                    else {
-                                        # sqlite3 on Windows (csv mode) can emit
-                                        # an extra blank line after every record;
-                                        # drop empty / whitespace-only lines.
-                                        $Clean = @(
-                                            $Lines |
-                                                ForEach-Object { "$_".TrimEnd("`r") } |
-                                                Where-Object { $_.Trim() -ne "" }
-                                        )
-
-                                        if ($Clean.Count -gt 0) {
-                                            # Every query aliases its columns
-                                            # ("... AS ColumnName"), so the header
-                                            # can be derived straight from the
-                                            # SQL text.
-                                            $Columns = [regex]::Matches($Q.Value, `
-                                                '(?i)\bAS\s+([A-Za-z_][A-Za-z0-9_]*)') |
-                                                ForEach-Object { $_.Groups[1].Value }
-
-                                            if ($Columns.Count -gt 0) {
-                                                @(($Columns -join ',')) + $Clean |
-                                                    Set-Content -LiteralPath $OutFile -Encoding UTF8
-                                            }
-                                            else {
-                                                # Should not happen with the current
-                                                # queries, but write the raw output
-                                                # rather than a silently header-less
-                                                # file.
-                                                $Clean | Set-Content -LiteralPath $OutFile -Encoding UTF8
-                                            }
-
-                                            # Exact row count from SQLite itself
-                                            $CountOut = & $SqlitePath -batch -readonly $Db `
-                                                "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
-                                            $Parsed   = 0
-                                            if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
-                                                $Rows = $Parsed
-                                            }
-                                            else {
-                                                $Rows = -1  # Written, but the count was unavailable
-                                            }
-                                        }
-                                        else {
-                                            $Status = "NoData"
-                                            "No data was found for that query." |
-                                                Set-Content -LiteralPath $OutFile -Encoding UTF8
-                                        }
-                                    }
-                                }
-                                catch {
-                                    $Status = "Failed"
-                                    $Failures++
-                                    $Detail = $_.Exception.Message
-                                    $Msg = "Query '$( $Q.Key )' failed for $Tag => $Detail"
-                                    Show-Message -Message $Msg -Level ERROR -AddToLog
-                                }
-
-                                $Summary.Add([PSCustomObject]@{
-                                    User       = $UserLeaf
-                                    Browser    = $BrowserName
-                                    Profile    = $ProfileDir.Name
-                                    SourceFile = $Source
-                                    CopiedTo   = $Db.Substring($InternetFolder.Length).TrimStart("\")
-                                    Query      = $Q.Key
-                                    Rows       = $Rows
-                                    Status     = $Status
-                                    Detail     = $Detail
-                                })
-                            }
+                            $Summary.Add([PSCustomObject]@{
+                                User       = $UserLeaf
+                                Browser    = $BrowserName
+                                Profile    = $ProfileDir.Name
+                                SourceFile = $Source
+                                CopiedTo   = $Db.Substring($InternetFolder.Length).TrimStart("\")
+                                Query      = $Q.Key
+                                Rows       = $Rows
+                                Status     = $Status
+                                Detail     = $Detail
+                            })
                         }
                     }
                 }
             }
-            finally {
-                if ($OldEncoding) {
-                    try {
-                        [Console]::OutputEncoding = $OldEncoding
-                    }
-                    catch { }
-                }
-            }
-            Write-OutputToCsv -Data $Summary -OutputFile $CsvFile
-            $Msg = "Browser analysis => $DbFound database(s) found, $Failures failure(s)."
-            Show-Message -Message $Msg -Level INFO -AddToLog
         }
-
+        finally {
+            if ($OldEncoding) {
+                try {
+                    [Console]::OutputEncoding = $OldEncoding
+                }
+                catch { }
+            }
+        }
+        Write-OutputToCsv -Data $Summary -OutputFile $CsvFile
+        $Msg = "Browser analysis => $DbFound database(s) found, $Failures failure(s)."
+        Show-Message -Message $Msg -Level INFO -AddToLog
     }
 
-    process {
-
         # ----------------------------------
-        # Run the functions from the module
-        # ----------------------------------
-        $Tasks = @(
-            @{
-                Action  = { Get-StoredCookies }
-                Message = "10.01_Getting Stored Cookie Information..."
-                Files   = "10.01_stored_cookies.csv"
-            }
-            @{
-                Action  = { Get-TypedUrls }
-                Message = "10.02_Getting Typed URL Data..."
-                Files   = "10.02_typed_urls.csv"
-            }
-            @{
-                Action  = { Get-InternetSettings }
-                Message = "10.03_Getting Internet Setting Registry Keys..."
-                Files   = "10.03_internet_settings.csv"
-            }
-            @{
-                Action  = { Get-TrustedInternetDomains }
-                Message = "10.04_Getting Trusted Internet Domain Registry Keys..."
-                Files   = "10.04_trusted_domains.csv"
-            }
-            @{
-                Action  = { Get-BrowserAnalysis }
-                Message = "10.05_Analyzing All Browser Data..."
-                Files   = "10.05_browser_analysis_summary.csv"
-            }
-        )
+    # Run the functions from the module
+    # ----------------------------------
+    $Tasks = @(
+        @{
+            Action  = { Get-StoredCookies }
+            Message = "10.01_Getting Stored Cookie Information..."
+            Files   = "10.01_stored_cookies.csv"
+        }
+        @{
+            Action  = { Get-TypedUrls }
+            Message = "10.02_Getting Typed URL Data..."
+            Files   = "10.02_typed_urls.csv"
+        }
+        @{
+            Action  = { Get-InternetSettings }
+            Message = "10.03_Getting Internet Setting Registry Keys..."
+            Files   = "10.03_internet_settings.csv"
+        }
+        @{
+            Action  = { Get-TrustedInternetDomains }
+            Message = "10.04_Getting Trusted Internet Domain Registry Keys..."
+            Files   = "10.04_trusted_domains.csv"
+        }
+        @{
+            Action  = { Get-BrowserAnalysis }
+            Message = "10.05_Analyzing All Browser Data..."
+            Files   = "10.05_browser_analysis_summary.csv"
+        }
+    )
 
-        Invoke-TriageTaskList -Tasks $Tasks -Folder $InternetFolder
-
-    }
+    Invoke-TriageTaskList -Tasks $Tasks -Folder $InternetFolder
 
 }

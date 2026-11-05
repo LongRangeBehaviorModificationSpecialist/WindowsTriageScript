@@ -69,20 +69,20 @@ WindowsTriageScript/
 |   |-- functions.psm1             Shared helpers (logging, config, hashing helpers, registry, hives)
 |   |-- GuiMain.psm1               GUI
 |   |-- 001_Device.psm1            Collection modules
-|   |-- 002_Users.psm1             "
-|   |-- 003_Network.psm1           "
-|   |-- 004_Processes.psm1         "
-|   |-- 005_System.psm1            "
-|   |-- 006_Prefetch.psm1          "
-|   |-- 007_EventLogs.psm1         "
-|   |-- 008_Firewall.psm1          "
-|   |-- 009_Encryption.psm1        "
-|   |-- 010_Internet.psm1          "
-|   |-- 011_RawArtifacts.psm1      "
+|   |-- 002_Users.psm1             "  "
+|   |-- 003_Network.psm1           "  "
+|   |-- 004_Processes.psm1         "  "
+|   |-- 005_System.psm1            "  "
+|   |-- 006_Prefetch.psm1          "  "
+|   |-- 007_Event_Logs.psm1        "  "
+|   |-- 008_Firewall.psm1          "  "
+|   |-- 009_Encryption.psm1        "  "
+|   |-- 010_Internet.psm1          "  "
+|   |-- 011_Raw_Artifacts.psm1     "  "
 |   |-- Get_ComputerDetails.psm1   Helper function for the 001_Devices.psm1 module
 |   |-- Get_ComputerRam.psm1       Optional captures
-|   |-- Get_RunningProcesses.psm1  "
-|   |-- Invoke_EDD.psm1            "
+|   |-- Get_RunningProcesses.psm1  "  "
+|   |-- Invoke_EDD.psm1            "  "
 |   |-- Get_FileHashes.psm1        File Hashing
 |   |-- Get_CaseArchive.psm1       Archiving
 |-- bin/                           Third-party and trusted binaries (not stored in git)
@@ -170,7 +170,7 @@ The launcher then:
 2. `-Operator` | `-Op` : Examiner name recorded in the log and`case_info.json`.
 3. `-Agency` | `-A` : Agency name (optional).
 4. `-CaseNumber` | `-CN` : Case number recorded in the log and`case_info.json`.
-5. `-Modules` | `-Mods` : One or more of the following : `001_Device`, `002_Users`, `003_Network`, `004_Process`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet` and `011_RawArtufacts`.  Default : all.
+5. `-Modules` | `-Mods` : One or more of the following : `001_Device`, `002_Users`, `003_Network`, `004_Processes`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet` and `011_Raw_Artifacts`.  Default : all.
 6. `-RunEdd` | `-Edd` : Run Encrypted Disk Detector.
 7. `-GetProcesses` | `-Proc` : Run Magnet Process Capture.
 8. `-CaptureRam` | `-Ram` : Run Magnet RAM Capture.
@@ -222,7 +222,7 @@ Each module writes to its own numbered folder inside the case folder. See the fu
 1. **001_Device.**  Computer details (OS, install and boot dates, time zone, BIOS, domain role, license status, minimum password length, USB storage setting), PsInfo output,`Get-ComputerInfo`, `systeminfo`, hardware information, disk partitions, start-up programs (machine and per-user Run keys), full file listing of the system drive with timestamps.
 2. **002_User.**  Current user (`whoami`), user profiles, local users, Win32 user accounts, PowerShell console history for each user profile.
 3. **003_Network.**  IP configuration (`Get-NetIPAddress`, `ipconfig /all`), adapter configuration, established connections with owning process, full `netstat`, `Get-NetTCPConnection`, DNS cache, network locations used by each user (MountPoints2), SMB shares.
-4. **004_Process.**  Running processes with command lines, SHA-256 of every running executable, services hosted by `svchost`, running services, drivers (`driverquery`, system drivers).
+4. **004_Processes.**  Running processes with command lines, SHA-256 of every running executable, services hosted by `svchost`, running services, drivers (`driverquery`, system drivers).
 5. **005_System.**  PnP devices and signed drivers, USB device history, logical and mapped disks, hotfixes, shadow copies, 50 newest DLLs, persistence-related registry locations (AppCertDLLs, AppInit_DLLs, Active Setup, Winlogon values, Session Manager, shell extensions and commands, LSA packages, browser helper objects), UAC and audit policy, boot configuration, Run-dialog history and typed paths (per user), Start menu data, executables under the Windows folder that are not validly signed.
 6. **006_Prefetch.**  Metadata for Prefetch files, file listing of the Windows Temp folder and each profile's `/Roaming/` and `/Temp/` folders.
 7. **007_Event_Logs.**  Native `.evtx` export of the logs named under `EventLogs` (using `wevtutil epl`, nothing is loaded into PowerShell memory), with entry counts shown as each log is exported.
@@ -266,16 +266,16 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 <case folder>/
 |-- case_info.json              How the run was started (operator, case, options, versions)
 |-- 001_Device/                 Contents varies on which modules were selected and which functions ran
-|-- 002_Users/                  "
-|-- 003_Network/                "
-|-- 004_Processes/              "
-|-- 005_System/                 "
-|-- 006_Prefetch/               "
-|-- 007_EventLogs/              "
-|-- 008_Firewall/               "
-|-- 009_Encryptio/              "
-|-- 010_Internet/               "
-|-- 011_RawArtifacts/           "
+|-- 002_Users/                  "  "
+|-- 003_Network/                "  "
+|-- 004_Processes/              "  "
+|-- 005_System/                 "  "
+|-- 006_Prefetch/               "  "
+|-- 007_Event_Logs/             "  "
+|-- 008_Firewall/               "  "
+|-- 009_Encryptio/              "  "
+|-- 010_Internet/               "  "
+|-- 011_Raw_Artifacts/          "  "
 |-- EDD/                        (if selected)
 |-- Logs/
 |   |-- <name>_Script.log       UTC log of everything the tool did

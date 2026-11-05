@@ -1,60 +1,57 @@
 function Invoke-EDD {
     [CmdletBinding()]
+    [OutputType([void])]
     param(
         [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [string]$ResultsFolder
     )
 
-    begin {
+    try {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
-    }
 
-    process {
+        $BeginMsg = "Starting Encrypted Disk Detector on [ $( $ComputerName ) ]"
+        Show-Message -Message $BeginMsg -Level INFO -AddToLog
 
-        try {
-            $BeginMsg = "Starting Encrypted Disk Detector on [ $( $ComputerName ) ]"
-            Show-Message -Message $BeginMsg -Level INFO -AddToLog
+        $EddResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "EDD"
+        $null = New-Item -ItemType Directory -Path $EddResultsFolder -Force
 
-            $EddResultsFolder = Join-Path -Path $ResultsFolder -ChildPath "EDD"
-            $null = New-Item -ItemType Directory -Path $EddResultsFolder -Force
+        Test-IfExists -FolderName $EddResultsFolder -Type FOLDER
 
-            Test-IfExists -FolderName $EddResultsFolder -Type FOLDER
+        # Name the file to which the scan results will be saved
+        $EddResultsFilePath = Join-Path -Path $EddResultsFolder -ChildPath "edd_results.txt"
+        $null               = New-Item -ItemType File -Path $EddResultsFilePath -Force
+        $EddResultsFileName = [System.IO.Path]::GetFileName($EddResultsFilePath)
 
-            # Name the file to which the scan results will be saved
-            $EddResultsFilePath = Join-Path -Path $EddResultsFolder -ChildPath "edd_results.txt"
-            $null               = New-Item -ItemType File -Path $EddResultsFilePath -Force
-            $EddResultsFileName = [System.IO.Path]::GetFileName($EddResultsFilePath)
+        Test-IfExists -FileName $EddResultsFilePath -Type FILE
 
-            Test-IfExists -FileName $EddResultsFilePath -Type FILE
+        # Run the executable
+        Start-Process -NoNewWindow `
+            -FilePath (Get-TriageBinary "EDD") `
+            -ArgumentList "/batch" `
+            -Wait `
+            -RedirectStandardOutput $EddResultsFilePath
 
-            # Run the executable
-            Start-Process -NoNewWindow `
-                -FilePath (Get-TriageBinary "EDD") `
-                -ArgumentList "/batch" `
-                -Wait `
-                -RedirectStandardOutput $EddResultsFilePath
+        $Stopwatch.Stop()
 
-            $Stopwatch.Stop()
+        # Read the contents of the EDD text file and show the results on the screen
+        $EddResults = (Get-Content -Path $EddResultsFilePath -Force) -join "`r`n"
 
-            # Read the contents of the EDD text file and show the results on the screen
-            $EddResults = (Get-Content -Path $EddResultsFilePath -Force) -join "`r`n"
-
-            # Guard against an empty result file
-            if ([string]::IsNullOrWhiteSpace($EddResults)) {
-                $EddResults = "(EDD produced no output => check if the tool ran interactively)"
-            }
-
-            Write-LogMessage -Message $EddResults
-
-            Show-Message -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
+        # Guard against an empty result file
+        if ([string]::IsNullOrWhiteSpace($EddResults)) {
+            $EddResults = "(EDD produced no output => check if the tool ran interactively)"
         }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on `
-                $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
-        }
+
+        Write-LogMessage -Message $EddResults
+
+        Show-Message -File $EddResultsFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
     }
-    end {
+    catch {
+        Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on `
+            $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
+    }
+    finally {
         if ($Stopwatch.IsRunning) {
             $Stopwatch.Stop()
         }

@@ -59,13 +59,12 @@
         "003_Network.psm1",
         "004_Processes.psm1",
         "005_System.psm1",
-        "005A_System.psm1",
         "006_Prefetch.psm1",
-        "007_EventLogs.psm1",
+        "007_Event_Logs.psm1",
         "008_Firewall.psm1",
         "009_Encryption.psm1",
         "010_Internet.psm1",
-        "011_RawArtifacts.psm1",
+        "011_Raw_Artifacts.psm1",
         "Get_CaseArchive.psm1",
         "Get_ComputerDetails.psm1",
         "Get_ComputerRam.psm1",
@@ -80,6 +79,10 @@
         "Get-InitialSetup",
         "Clear-TriageHives",
         "Close-TriageLog",
+        "Close-TriageLogWriter",
+        "Copy-TriageFile",
+        "Copy-TriageFolderBackup",
+        "Copy-TriageRawFile",
         "Disable-PSReadLineHistory",
         "Dismount-TriageUserHives",
         "Export-PerUserRegistry",
@@ -89,6 +92,7 @@
         "Get-ComputerRam",
         "Get-FileHashes",
         "Get-Gui",
+        "Get-LastAccessUpdateState",
         "Get-PerUserRegistrySubKey",
         "Get-PerUserRegistryValue",
         "Get-RunningProcesses",
@@ -103,28 +107,27 @@
         "Get-TriagePrefetchData",
         "Get-TriageProcessData",
         "Get-TriageRawArtifactsData",
+        "Get-TriageScanRoots",
         "Get-TriageSystemData",
         "Get-TriageUserData",
         "Initialize-TriageSystemTools",
         "Invoke-EDD",
         "Invoke-DfirTriageScan",
+        "Invoke-RegistryCommand",
         "Invoke-TriageTask",
         "Invoke-TriageTaskList",
         "Mount-TriageUserHives",
         "Read-LogHost",
+        "Resolve-TriageModuleName",
+        "Save-TriageRegistryHive",
         "Show-Message",
+        "Show-TriageBanner",
         "Test-IfExists",
         "Write-LogMessage",
         "Write-OutputToCsv",
         "Write-OutputToFile",
         "Write-LaunchContext",
-        "Show-TriageBanner",
-        "Write-CaseInfo",
-        "Invoke-RegistryCommand",
-        "Copy-TriageFile",
-        "Copy-TriageRawFile",
-        "Save-TriageRegistryHive",
-        "Copy-TriageFolderBackup"
+        "Write-CaseInfo"
     )
 
     # Kept clean to maximize triage stability and performance
@@ -137,16 +140,15 @@
     # Empty during development to prevent spelling mismatches or missing comma errors
     FileList = @()
 
-    # Private data to pass to the module specified in RootModule/
-    # ModuleToProcess. This may also contain a PSData hashtable with additional
-    # module metadata used by PowerShell.
+    # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also
+    # contain a PSData hashtable with additional module metadata used by PowerShell.
     PrivateData = @{
 
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in
             # online galleries.
-            Tags = @("DFIR", "Forensics", "Triage", "Windows")
+            Tags = @("DFIR", "Forensics", "Triage", "Windows", "PowerShell")
 
             # A URL to the license for this module.
             LicenseUri = "https://github.com/LongRangeBehaviorModificationSpecialist/WindowsTriageScript/blob/main/LICENSE"

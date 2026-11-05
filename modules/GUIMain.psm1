@@ -4,7 +4,10 @@ function Get-Gui {
         Assembles and runs the graphical wrapper managing all worker modules.
     #>
     [CmdletBinding()]
-    param([string]$OutputRoot)
+    [OutputType([void])]
+    param(
+        [string]$OutputRoot
+    )
 
     # Load required .NET GUI and Interaction assemblies explicitly
     Add-Type -AssemblyName System.Windows.Forms
@@ -57,7 +60,6 @@ function Get-Gui {
     $LblUserName.Location  = New-Object System.Drawing.Point(10, 15)
     $LblUserName.Size      = $DefaultLblSize
     $LblUserName.Font      = $GlobalFont
-    # $LblUserName.ForeColor = [System.Drawing.Color]::Black
     $LblUserName.ForeColor = "#f1f1f1"
     $LblUserName.TextAlign = "MiddleLeft"
     $MainForm.Controls.Add($LblUserName)
@@ -175,7 +177,7 @@ function Get-Gui {
         }
     )
 
-    $ModulesChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
+    $ModulesChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::New()
 
     for ($I = 0; $I -lt $ModulesChkLst.Count; $I++) {
         $Item = $ModulesChkLst[$I]
@@ -302,7 +304,7 @@ function Get-Gui {
         }
     )
 
-    $OptsChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::new()
+    $OptsChkBoxes = [System.Collections.Generic.List[System.Windows.Forms.CheckBox]]::New()
 
     # Reset the value of this variable.
     $GpBxColYStart = 30
@@ -410,22 +412,31 @@ function Get-Gui {
     $BtnStartTriage.Forecolor                  = "#f1f1f1"
 
     $ModuleMap = @{
-        DeviceData     = "001_Device";
-        UserData       = "002_Users";
-        NetworkData    = "003_Network"
-        ProcessData    = "004_Process";
-        SystemData     = "005_System";
-        PrefetchData   = "006_Prefetch"
-        EventLogData   = "007_Event_Logs";
-        FirewallData   = "008_Firewall"
-        EncryptionData = "009_Encryption";
-        InternetData   = "010_Internet"
+        DeviceData     = "001"
+        UserData       = "002"
+        NetworkData    = "003"
+        ProcessData    = "004"
+        SystemData     = "005"
+        PrefetchData   = "006"
+        EventLogData   = "007"
+        FirewallData   = "008"
+        EncryptionData = "009"
+        InternetData   = "010"
+        # RawArtifactsData = "011"
     }
     # Checkboxes with no code behind them yet. Refusing is safer than silently ignoring a ticked box.
-    $NotImplemented = @("CopyRegHives", "CopyPrefetch", "CopyNTUser", "ListAllFiles", "CopySRUDB")
+    $NotImplemented = @(
+        "CopyRegHives",
+        "CopyPrefetch",
+        "CopyNTUser",
+        "ListAllFiles",
+        "CopySRUDB"
+    )
 
     $script:SetBusy = {
-        param([bool]$Busy)
+        param(
+            [bool]$Busy
+        )
         foreach ($C in @(
             $TxtboxUserName, $TxtboxAgency, $TxtboxCaseNumber, $GpBxModules, $GpBxOpts, $BtnStartTriage)) {
             $C.Enabled = -not $Busy
@@ -472,7 +483,13 @@ function Get-Gui {
             return
         }
 
-        $Modules = @($ModulesChkBoxes | Where-Object Checked | ForEach-Object { $ModuleMap[$_.Tag] })
+        $Modules = @(
+            $ModulesChkBoxes |
+            Where-Object Checked |
+            ForEach-Object {
+                Resolve-TriageModuleName -Id $ModuleMap[$_.Tag]
+            }
+        )
         if (-not $Modules -and -not ($Ticked.RunEDD -or $Ticked.GetProcesses -or $Ticked.CaptureRAM)) {
             [void][System.Windows.Forms.MessageBox]::Show("Nothing is selected.", "Nothing to do", `
                 "OK", "Information")

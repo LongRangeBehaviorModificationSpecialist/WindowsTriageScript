@@ -2,7 +2,9 @@ function Get-TriageRawArtifactsData {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$RawFolder
+        [string]$RawFolder,
+
+        [string]$CsvFile = (Join-Path -Path $RawFolder -ChildPath "raw_artifacts_manifest.csv")
     )
 
     $Cfg      = Get-TriageConfig -Key "RawArtifacts"
@@ -30,7 +32,8 @@ function Get-TriageRawArtifactsData {
         }
 
         $Root = (Resolve-Path -LiteralPath $Folder).Path.TrimEnd("\")
-        Get-ChildItem -LiteralPath $Folder -Recurse -Force -File -Filter $Filter -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-ChildItem -LiteralPath $Folder -Recurse -Force -File -Filter $Filter `
+            -ErrorAction SilentlyContinue | ForEach-Object {
             [PSCustomObject]@{
                 Kind   = "File"
                 Source = $_.FullName
@@ -75,7 +78,7 @@ function Get-TriageRawArtifactsData {
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 $Base = "Users\$( $Hive.Sid )"
                 $Live = $Hive.Root -and ($Hive.Root -notlike "*TRIAGE_*")
-                $Cls  = Join-Path $Hive.ProfilePath "AppData\Local\Microsoft\Windows\UsrClass.dat"
+                $Cls  = Join-Path -Path $Hive.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\UsrClass.dat"
                 foreach ($Extension in "", ".LOG1", ".LOG2") {
                     [PSCustomObject]@{
                         Kind   = "File"
@@ -87,7 +90,7 @@ function Get-TriageRawArtifactsData {
                     if ($Live) {
                         [PSCustomObject]@{
                             Kind   = "File"
-                            Source = (Join-Path $Hive.ProfilePath "NTUSER.DAT$Extension")
+                            Source = (Join-Path -Path $Hive.ProfilePath -ChildPath "NTUSER.DAT$Extension")
                             Dest   = "$Base\NTUSER.DAT$Extension"
                         }
                     }
@@ -117,7 +120,7 @@ function Get-TriageRawArtifactsData {
             }
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 foreach ($Rel in $Map.Keys) {
-                    Get-FolderFiles -Folder (Join-Path $Hive.ProfilePath $Rel) `
+                    Get-FolderFiles -Folder (Join-Path -Path $Hive.ProfilePath -ChildPath $Rel) `
                         -DestBase "Users\$( $Hive.Sid )\$( $Map[$Rel] )"
                 }
             }
@@ -131,7 +134,7 @@ function Get-TriageRawArtifactsData {
             }
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 foreach ($Browser in (Get-TriageConfig -Key "Browsers")) {
-                    $Root = Join-Path $Hive.ProfilePath $Browser.Root
+                    $Root = Join-Path -Path $Hive.ProfilePath -ChildPath $Browser.Root
                     if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
                         continue
                     }
@@ -139,7 +142,7 @@ function Get-TriageRawArtifactsData {
                             -Force -ErrorAction SilentlyContinue)) {
                         foreach ($File in $Wanted[$Browser.Type]) {
                             foreach ($Suffix in "", "-wal", "-journal") {
-                                $Source = Join-Path $UserProfile.FullName "$File$Suffix"
+                                $Source = Join-Path -Path $UserProfile.FullName -ChildPath "$File$Suffix"
                                 if (Test-Path -LiteralPath $Source -PathType Leaf) {
                                     [PSCustomObject]@{
                                         Kind = "File"
@@ -159,7 +162,7 @@ function Get-TriageRawArtifactsData {
             Get-FolderFiles -Folder "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
                 -DestBase "Startup\AllUsers"
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
-                Get-FolderFiles -Folder (Join-Path $Hive.ProfilePath $StartupDir) `
+                Get-FolderFiles -Folder (Join-Path -Path $Hive.ProfilePath -ChildPath $StartupDir) `
                     -DestBase "Startup\$( $Hive.Sid )"
             }
         }
@@ -229,7 +232,7 @@ function Get-TriageRawArtifactsData {
 
         Invoke-TriageTask -Message "Copying raw artifacts => $Set..." -Action {
             $Rows = foreach ($Item in @(& $Sets[$Set])) {
-                $Dest = Join-Path $RawFolder $Item.Dest
+                $Dest = Join-Path -Path $RawFolder -ChildPath $Item.Dest
                 $R = switch ($Item.Kind) {
                     "File" {
                         Copy-TriageFile -Source $Item.Source -Destination $Dest
@@ -268,5 +271,5 @@ function Get-TriageRawArtifactsData {
             }
         }
     }
-    Write-OutputToCsv -Data $Manifest -OutputFile (Join-Path $RawFolder "raw_artifacts_manifest.csv")
+    Write-OutputToCsv -Data $Manifest -OutputFile $CsvFile
 }

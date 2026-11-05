@@ -1,3 +1,5 @@
+Import-Module -Name (Join-Path -Path (Get-Location) -ChildPath "modules\Get_FileHashes.psm1") -Force
+
 function Get-BinaryFilesHashes {
     <#
     .SYNOPSIS
@@ -10,6 +12,8 @@ function Get-BinaryFilesHashes {
     It is saved here to make it easier to find in the future.
     #>
     [CmdletBinding()]
+    [OutputType([void])]
+    param()
 
     $Folder = Join-Path -Path (Get-Location) -ChildPath "bin"
     $Root   = (Resolve-Path $Folder).Path
@@ -20,7 +24,7 @@ function Get-BinaryFilesHashes {
     $Entries = @(foreach ($File in $Files) {
         [ordered]@{
             Path        = $File.FullName.Substring($Root.Length).TrimStart("\")
-            SHA256      = (Get-FileHash -LiteralPath $File.FullName -Algorithm SHA256).Hash
+            SHA256      = (Get-StreamHash -LiteralPath $File.FullName -IncludeMd5:$false).SHA256
             Length      = $File.Length
             FileVersion = $File.VersionInfo.FileVersion
         }

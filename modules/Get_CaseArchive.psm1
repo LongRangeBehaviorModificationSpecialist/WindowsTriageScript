@@ -1,94 +1,97 @@
 function Invoke-CaseArchive {
     [CmdletBinding()]
+    [OutputType([void])]
     param(
         [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [string]$ResultsFolder,
 
         [string[]]$ExcludeFolders = (Get-TriageConfig).Defaults.ArchiveExcludeFolders
     )
 
-    begin {
+    try {
         $Stopwatch    = [System.Diagnostics.Stopwatch]::StartNew()
         $ComputerName = $env:COMPUTERNAME
-    }
-
-    process {
         $Zip = $null
-        try {
-            Add-Type -AssemblyName System.IO.Compression
-            Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-            $Root    = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
-            $Name    = Split-Path -Path $Root -Leaf
-            $ZipPath = Join-Path -Path (Split-Path -Path $Root -Parent) -ChildPath "$Name.zip"
+        Add-Type -AssemblyName System.IO.Compression
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-            if (Test-Path -LiteralPath $ZipPath) {
-                throw "Archive already exists [ $ZipPath ]"
-            }
+        $Root    = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
+        $Name    = Split-Path -Path $Root -Leaf
+        $ZipPath = Join-Path -Path (Split-Path -Path $Root -Parent) -ChildPath "$Name.zip"
 
-            Show-Message -Message "Creating case archive => $Name.zip; excluding: `
-                [ $( $ExcludeFolders -join ', ' ) ]" -Level INFO
+        if (Test-Path -LiteralPath $ZipPath) {
+            throw "Archive already exists [ $ZipPath ]"
+        }
 
-            $Skip  = @($ExcludeFolders | ForEach-Object { (Join-Path -Path $Root -ChildPath $_) + "\" })
-            $Files = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -File | Where-Object {
-                $Path = $_.FullName
-                -not ($Skip | Where-Object { $Path.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase) })
-            })
+        Show-Message -Message "Creating case archive => $Name.zip; excluding: `
+            [ $( $ExcludeFolders -join ', ' ) ]" -Level INFO -AddToLog
 
-            $Zip   = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
-            $Added = 0
-            foreach ($File in $Files) {
-                $Rel = $File.FullName.Substring($Root.Length + 1).Replace("\", "/")
-                try {
-                    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                        $Zip, $File.FullName, "$Name/$Rel", [System.IO.Compression.CompressionLevel]::Optimal)
-                    $Added++
-                }
-                catch {
-                    Show-Message -Message "Not added to archive [ $Rel ] => $( $_.Exception.Message )" -Level ERROR
-                }
-            }
-            $Zip.Dispose()
-            $Zip = $null
+        $Skip  = @($ExcludeFolders | ForEach-Object { (Join-Path -Path $Root -ChildPath $_) + "\" })
+        $Files = @(Get-ChildItem -LiteralPath $Root -Recurse -Force -File | Where-Object {
+            $Path = $_.FullName
+            -not ($Skip | Where-Object { $Path.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase) })
+        })
 
-            # Sanity check => re-open and count entries
-            $Check = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+        $Zip   = [System.IO.Compression.ZipFile]::Open($ZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+        $Added = 0
+        foreach ($File in $Files) {
+            $Rel = $File.FullName.Substring($Root.Length + 1).Replace("\", "/")
             try {
-                $Entries = $Check.Entries.Count
+                [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                    $Zip,
+                    $File.FullName,
+                    "$Name/$Rel",
+                    [System.IO.Compression.CompressionLevel]::Optimal
+                )
+                $Added++
             }
-            finally {
-                $Check.Dispose()
-            }
-
-            if ($Entries -ne $Added) {
-                throw "Archive holds $Entries entries but $Added files were added."
-            }
-
-            # Hash the zip and write a sidecar file next to it (outside of
-            # the archive)
-            $Sha = (Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash
-            "$Sha *$(
-                Split-Path -Path $ZipPath -Leaf )" | Set-Content -LiteralPath "$ZipPath.sha256" -Encoding ASCII
-
-            Show-Message -Message "Archive complete => $Added files in `
-                $( [int]$Stopwatch.Elapsed.TotalSeconds )s." -Level INFO
-
-            [PSCustomObject]@{
-                ZipPath  = $ZipPath
-                Sha256   = $Sha
-                Excluded = $ExcludeFolders
+            catch {
+                Show-Message -Message "Not added to archive [ $Rel ] => $( $_.Exception.Message )" `
+                    -Level ERROR -AddToLog
             }
         }
-        catch {
-            Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR
+        $Zip.Dispose()
+        $Zip = $null
+
+        # Sanity check => re-open and count entries
+        $Check = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+
+        try {
+            $Entries = $Check.Entries.Count
         }
         finally {
-            if ($Zip) {
-                $Zip.Dispose()
-            }
+            $Check.Dispose()
+        }
+
+        if ($Entries -ne $Added) {
+            throw "Archive holds $Entries entries but $Added files were added."
+        }
+
+        # Hash the zip and write a sidecar file next to it (outside of
+        # the archive)
+        $Sha = (Get-StreamHash -LiteralPath $ZipPath -IncludeMd5:$false).SHA256
+        "$Sha *$(Split-Path -Path $ZipPath -Leaf )" |
+            Set-Content -LiteralPath "$ZipPath.sha256" -Encoding ASCII
+
+        Show-Message -Message "Archive complete => $Added files in `
+            $( [int]$Stopwatch.Elapsed.TotalSeconds )s." -Level INFO
+
+        [PSCustomObject]@{
+            ZipPath  = $ZipPath
+            Sha256   = $Sha
+            Excluded = $ExcludeFolders
         }
     }
-    end {
+    catch {
+        $Msg = "Execution failed during $( $MyInvocation.MyCommand.Name ) on $( $ComputerName ).  Error => $( $_.Exception.Message )"
+        Show-Message -Message $Msg -Level ERROR
+    }
+    finally {
+        if ($Zip) {
+            $Zip.Dispose()
+        }
         if ($Stopwatch.IsRunning) {
             $Stopwatch.Stop()
         }

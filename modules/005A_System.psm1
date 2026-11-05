@@ -12,7 +12,7 @@
 function Get-LinkFiles {
     param(
         [string]$TxtFile = (
-            Join-Path $SystemFolder "link_files.txt"
+            Join-Path -Path $SystemFolder -ChildPath "link_files.txt"
         )
     )
     $Data = Get-CimInstance -ClassName Win32_ShortcutFile |
@@ -35,7 +35,7 @@ function Get-LinkFiles {
 function Get-CompressedFiles {
     param(
         [string]$TxtFile = (
-            Join-Path $SystemFolder "compressed_files.txt"
+            Join-Path -Path $SystemFolder -ChildPath "compressed_files.txt"
         )
     )
     $Data = Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes |
@@ -47,7 +47,7 @@ function Get-CompressedFiles {
 function Get-EncryptedFiles {
     param(
         [string]$TxtFile = (
-            Join-Path $SystemFolder "encrypted_files.txt"
+            Join-Path -Path $SystemFolder -ChildPath "encrypted_files.txt"
         )
     )
     $Data = Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes |
@@ -59,7 +59,7 @@ function Get-EncryptedFiles {
 function Get-TimelineOfExecutables {
     param(
         [string]$TxtFile = (
-            Join-Path $SystemFolder "timeline_of_executables.txt"
+            Join-Path -Path $SystemFolder -ChildPath "timeline_of_executables.txt"
         )
     )
     $Data = Get-ChildItem -LiteralPath $env:SystemDrive -Recurse -Force -Include $ExecutableFileTypes |

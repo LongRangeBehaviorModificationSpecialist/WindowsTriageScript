@@ -11,7 +11,7 @@
         "001_Device",
         "002_Users",
         "003_Network",
-        "004_Process",
+        "004_Processes",
         "005_System",
         "006_Prefetch",
         "007_Event_Logs",
@@ -37,7 +37,7 @@
         qwinsta              = "bin\qwinsta.exe"
         RawCopy              = "bin\RawCopy.exe"
         reg                  = "bin\reg.exe"
-        robocopy             = "bin\Robocopy.eve"
+        robocopy             = "bin\Robocopy.exe"
         SQLite3              = "bin\sqlite3.exe"
         systeminfo           = "bin\systeminfo.exe"
         wevtutil             = "bin\wevtutil.exe"
@@ -47,7 +47,7 @@
     Defaults = @{
         ScratchFolder         = "_scratch"
         HashIncludeMd5        = $true
-        ArchiveExcludeFolders = @("Ram_Capture", "011_Raw_Atrifacts\NTFS")
+        ArchiveExcludeFolders = @("Ram_Capture", "011_Raw_Artifacts\NTFS")
         TimestampFormat       = "yyyy-MM-ddTHH:mm:ss.fffZ"
     }
 
@@ -67,6 +67,32 @@
         "*.JAR", "*.JOB", "*.JSE", "*.MSI", "*.PAF", "*.PS1", "*.SCR",
         "*.SCRIPT", "*.VB", "*.VBE", "*.VBS", "*.VBSCRIPT", "*.WS", "*.WSF"
     )
+
+    ScanFolders = @{
+        # Relative to each user's profile folder
+        UserSubFolders = @(
+            "Downloads",
+            "Desktop",
+            "Documents",
+            "AppData\Local\Temp",
+            "AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
+        )
+        # Relative to the system drive root
+        SharedFolders = @(
+            "Temp",
+            "Windows\Temp",
+            "Users\Public",
+            "ProgramData"
+        )
+        # Signature checks, NOT searched recursively
+        SystemExeFolders = @(
+            "Windows",
+            "Windows\System32",
+            "Windows\SysWOW64",
+            "Windows\System32\wbem",
+            "Windows\System32\WindowsPowerShell\v1.0"
+        )
+    }
 
     # An array, because hashtables in a .psd1 are unordered
     EventLogs = @(
