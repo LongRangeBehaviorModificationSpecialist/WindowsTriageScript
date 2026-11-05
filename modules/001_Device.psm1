@@ -100,38 +100,13 @@ function Get-TriageDeviceData {
         Write-OutputToCsv -Data $Data -OutputFile $CsvFile
     }
 
-
-    function Get-UserAccounts {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $DeviceFolder -ChildPath "01.09_user_accounts.csv"
-            )
-        )
-        $Data = Get-CimInstance -ClassName Win32_UserProfile |
-            Select-Object -Property *, @{ Name = "last used"; Expression = { $_.lastusetime } }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
-    }
-
-
-    function Get-LogonSessions {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $DeviceFolder -ChildPath "01.10_logon_sessions.txt"
-            )
-        )
-        $Data = Get-CimInstance -ClassName Win32_LogonSession |
-            Select-Object -Property *
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
-    }
-
-
     function Get-StartUpApps {
         param(
             [string]$TxtFile = (
-                Join-Path -Path $DeviceFolder -ChildPath "01.11a_start_up_apps.txt"
+                Join-Path -Path $DeviceFolder -ChildPath "01.09a_start_up_apps.txt"
             ),
             [string]$CsvFile = (
-                Join-Path -Path $DeviceFolder -ChildPath "01.11b_start_up_apps.csv"
+                Join-Path -Path $DeviceFolder -ChildPath "01.09b_start_up_apps.csv"
             )
         )
         $Data = Get-CimInstance -ClassName Win32_StartupCommand |
@@ -168,7 +143,7 @@ function Get-TriageDeviceData {
     function Get-MotherboardInfo {
         param(
             [string]$TxtFile = (
-                Join-Path -Path $DeviceFolder -ChildPath "01.12_motherboard.txt"
+                Join-Path -Path $DeviceFolder -ChildPath "01.10_motherboard.txt"
             )
         )
         $Data = Get-CimInstance -ClassName Win32_BaseBoard |
@@ -188,7 +163,7 @@ function Get-TriageDeviceData {
         [CmdletBinding()]
         param(
             [string]$CsvFile = (
-                Join-Path -Path $DeviceFolder -ChildPath "01.13_disk_info.csv"
+                Join-Path -Path $DeviceFolder -ChildPath "01.11_disk_info.csv"
             )
         )
         Get-Volume |
@@ -226,70 +201,60 @@ function Get-TriageDeviceData {
 
     $Tasks = @(
         @{
-            Action  = { Get-MiscDeviceData }
-            Message = "01.01_Gathering Overall Device Information..."
-            Files   = "01.01_device_info.txt"
+            Action    = { Get-MiscDeviceData }
+            Message   = "01.01_Gathering Overall Device Information..."
+            Files     = "01.01_device_info.txt"
         }
         @{
-            Action  = { Get-SystemProcesses }
-            Message = "01.02_Running SysInternals PSInfo.exe..."
-            Files   = "01.02_PS_info.txt"
+            Action    = { Get-SystemProcesses }
+            Message   = "01.02_Running SysInternals PSInfo.exe..."
+            Files     = "01.02_PS_info.txt"
         }
         @{
-            Action  = { Get-CurrentComputerInfo }
-            Message = "01.03_Parsing Computer Information..."
-            Files   = "01.03_computer_info.txt"
+            Action    = { Get-CurrentComputerInfo }
+            Message   = "01.03_Parsing Computer Information..."
+            Files     = "01.03_computer_info.txt"
         }
         @{
-            Action  = { Get-SystemInfo1 }
-            Message = "01.04_Parsing System Information (First)..."
-            Files   = "01.04_system_info1.txt"
+            Action    = { Get-SystemInfo1 }
+            Message   = "01.04_Parsing System Information (First)..."
+            Files     = "01.04_system_info1.txt"
         }
         @{
-            Action  = { Get-SystemInfo2 }
-            Message = "01.05_Parsing System Information (Second)..."
-            Files   = "01.05_system_info2.txt"
+            Action    = { Get-SystemInfo2 }
+            Message   = "01.05_Parsing System Information (Second)..."
+            Files     = "01.05_system_info2.txt"
         }
         @{
-            Action  = { Get-PhysicalMemory }
-            Message = "01.06_Getting Physical Memory Information..."
-            Files   = "01.06_physical_memory.txt"
+            Action    = { Get-PhysicalMemory }
+            Message   = "01.06_Getting Physical Memory Information..."
+            Files     = "01.06_physical_memory.txt"
         }
         @{
-            Action  = { Get-EnvVars }
-            Message = "01.07_Getting Environment Variables..."
-            Files   = "01.07_env_vars.txt"
+            Action    = { Get-EnvVars }
+            Message   = "01.07_Getting Environment Variables..."
+            Files     = "01.07_env_vars.txt"
         }
         @{
-            Action  = { Get-DiskPart }
-            Message = "01.08_Getting Disk Partition Information..."
-            Files   = "01.08_disk_partitions.csv"
+            Action    = { Get-DiskPart }
+            Message   = "01.08_Getting Disk Partition Information..."
+            Files     = "01.08_disk_partitions.csv"
         }
         @{
-            Action  = { Get-UserAccounts }
-            Message = "01.09_Getting User Accounts & Login Info..."
-            Files   = "01.09_user_accounts.csv"
+            Action    = { Get-StartUpApps }
+            Message   = "01.09_Parsing Startup Apps..."
+            Files     = "01.09a_start_up_apps.txt",
+                        "01.09b_start_up_apps.csv"
         }
         @{
-            Action  = { Get-LogonSessions }
-            Message = "01.10_Getting Logon Sessions..."
-            Files   = "01.10_logon_sessions.txt"
+            Action    = { Get-MotherboardInfo }
+            Message   = "01.10_Gathering Motherboard Properties..."
+            Files     = "01.10_motherboard.txt"
         }
         @{
-            Action  = { Get-StartUpApps }
-            Message = "01.11_Parsing Startup Apps..."
-            Files   = "01.11a_start_up_apps.txt",
-                        "01.11b_start_up_apps.csv"
-        }
-        @{
-            Action  = { Get-MotherboardInfo }
-            Message = "01.12_Gathering Motherboard Properties..."
-            Files   = "01.12_motherboard.txt"
-        }
-        @{
-            Action  = { Get-DiskInfo }
-            Message = "01.13_Gathering Disk Information..."
-            Files   = "01.13_disk_info.csv"
+            Action    = { Get-DiskInfo }
+            Message   = "01.11_Gathering Disk Information..."
+            Files     = "01.11_disk_info.csv"
         }
     )
 
