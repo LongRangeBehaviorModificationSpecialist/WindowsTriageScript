@@ -1,4 +1,107 @@
 function Get-TriageNetworkData {
+    <#
+    .SYNOPSIS
+        Collects network configuration, connections, caches, shares, and SMB
+        activity (module 003_Network).
+
+    .DESCRIPTION
+        Runs a series of read-only collection tasks and writes the results to
+        the module folder:
+
+            03.01_ip_config_all.txt
+                `ipconfig /all`.
+            03.02_local_ip_info.csv
+                IP addresses (`Get-NetIPAddress`).
+            03.03_network_config.txt
+                Enabled adapters (`Win32_NetworkAdapterConfiguration`).
+            03.04_netstat_all_connections.csv
+                All connections from `netstat -nao`.
+            03.05_net_tcp_connections.csv
+                TCP connections (`Get-NetTCPConnection`).
+            03.06_dns_cache.txt
+                DNS client cache (`ipconfig /displaydns`).
+            03.07_dns_cache_by_record.txt
+                The DNS cache arranged by record name.
+            03.08_network_shares.csv
+                Mapped drives and network locations remembered in each user's
+                registry (Explorer\MountPoints2).
+            03.09_smb_shares.csv
+                Shares this computer offers (`Get-SmbShare`).
+            03.10_arp_neighbor_cache.csv
+                ARP and neighbor cache (`Get-NetNeighbor`).
+            03.11_routing_table.csv
+                Routing table (`Get-NetRoute`).
+            03.12a_smb_sessions.csv,
+            03.12b_smb_open_files.csv,
+            03.12c_smb_client_connections.csv
+                Inbound SMB sessions and open files, and computer's outbound
+                SMB connections.
+            03.13_wlan_profiles.txt
+                Wireless network profiles list (`netsh wlan show profiles` &
+                `netsh wlan showinterfaces`)
+
+        The inbound SMB sessions and open files (03.13a and 03.13b) are
+        collected only if the Server service (LanmanServer) is running;
+        otherwise those two files contain a note indicating that it is
+        not running.
+
+        Outbound connections are always collected.
+
+    .PARAMETER NetworkFolder
+        Path of the folder where this module writes its files.
+
+        `Invoke-DfirTriageScan` creates it as `<ResultsFolder>\003_Network`.
+
+    .INPUTS
+        None.
+
+        This function does not accept pipeline input.
+
+    .OUTPUTS
+        None.
+
+        Results are written to files in NetworkFolder, and progress is
+        written to the screen and the log.
+
+    .EXAMPLE
+        Get-TriageNetworkData `
+            -NetworkFolder "E:\Triage\Case-2026-0142\003_Network"
+
+        Writes the 03.xx files into that folder.
+
+    .EXAMPLE
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
+            -CaseNumber "2026-0142" -Modules "003_Network"
+
+        The usual way this module runs, on its own.
+
+    .NOTES
+        Requires an elevated session. The `ipconfig` and `netstat` copies from
+        `\bin` are found with `Get-TriageBinary`, which only works after
+        `Initialize-TriageSystemTools` has run, so call this function through
+        `Invoke-DfirTriageScan`.
+
+        Task 03.09 reads the user registry hives that `Invoke-DfirTriageScan`
+        mounts, so it needs those hives (in `$global:TriageUserHives`) to be
+        available.
+
+        Connection, DNS, and ARP data are volatile and change from moment to
+        moment; the timestamp of each file shows when it was captured.
+
+        Process ownership in 03.04 reflects the moment `netstat` ran.
+
+        Each task is isolated: if one fails, the error is logged and the next
+        task still runs.
+
+        A task whose output file is missing or empty is also reported as an
+        error.
+
+    .LINK
+        Invoke-DfirTriageScan
+
+    .LINK
+        Invoke-TriageTaskList
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -42,40 +145,10 @@ function Get-TriageNetworkData {
     }
 
 
-    function Get-EstablishedConnections {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.04_established_connections.csv"
-            )
-        )
-        $Procs = @{}
-        Get-CimInstance Win32_Process | ForEach-Object {
-            $Procs[[int]$_.ProcessId] = $_
-        }
-        $Data = & (Get-TriageBinary "netstat") -nao |
-            Select-String "ESTABLISHED" |
-            ForEach-Object {
-                # Proto, Local, Remote, State, PID
-                $F = ($_.Line -split "\s+") | Where-Object { $_ }
-                $P = $Procs[[int]$F[4]]
-                [PSCustomObject]@{
-                    Local       = $F[1]
-                    Remote      = $F[2]
-                    PID         = $F[4]
-                    ProcessName = $P.Name
-                    Path        = $P.ExecutablePath
-                    CommandLine = $P.CommandLine
-                    Created     = $P.CreationDate
-                }
-            }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
-    }
-
-
     function Get-AllConnections {
         param(
             [string]$CsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.05_netstat_all_connections.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.04_netstat_all_connections.csv"
             )
         )
         $Data = & (Get-TriageBinary "netstat") -nao 2>&1 |
@@ -87,7 +160,7 @@ function Get-TriageNetworkData {
     function Get-NetTcpConnections {
         param(
             [string]$CsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.06_net_tcp_connections.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.05_net_tcp_connections.csv"
             )
         )
         $Data = Get-NetTCPConnection |
@@ -100,7 +173,7 @@ function Get-TriageNetworkData {
     function Get-DnsCache {
         param(
             [string]$TxtFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.07_dns_cache.txt"
+                Join-Path -Path $NetworkFolder -ChildPath "03.06_dns_cache.txt"
             )
         )
         $Data = & (Get-TriageBinary "ipconfig") /displaydns
@@ -111,7 +184,7 @@ function Get-TriageNetworkData {
     function Get-DnsCacheByRecordName {
         param(
             [string]$TxtFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.08_dns_cache_by_record.txt"
+                Join-Path -Path $NetworkFolder -ChildPath "03.07_dns_cache_by_record.txt"
             )
         )
         $Data = & (Get-TriageBinary "ipconfig") /displaydns |
@@ -124,7 +197,7 @@ function Get-TriageNetworkData {
     function Get-NetworkShares {
         param(
             [string]$CsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.09_network_shares.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.08_network_shares.csv"
             ),
             [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2"
         )
@@ -135,7 +208,7 @@ function Get-TriageNetworkData {
     function Get-SmbShareData {
         param(
             [string]$CsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.10_smb_shares.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.09_smb_shares.csv"
             )
         )
         $Data = Get-SmbShare | Select-Object -Property *
@@ -146,7 +219,7 @@ function Get-TriageNetworkData {
     function Get-ArpCache {
         param(
             [string]$CsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.11_arp_neighbor_cache.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.10_arp_neighbor_cache.csv"
             )
         )
         $Data = Get-NetNeighbor -ErrorAction SilentlyContinue |
@@ -159,7 +232,7 @@ function Get-TriageNetworkData {
     function Get-RoutingTable {
         param(
             [string]$CsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.12_routing_table.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.11_routing_table.csv"
             )
         )
         $Data = Get-NetRoute -ErrorAction SilentlyContinue |
@@ -173,13 +246,13 @@ function Get-TriageNetworkData {
     function Get-SmbActivity {
         param(
             [string]$SessionCsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.13a_smb_sessions.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.12a_smb_sessions.csv"
             ),
             [string]$OpensCsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.13b_smb_open_files.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.12b_smb_open_files.csv"
             ),
             [string]$ConnectionsCsvFile = (
-                Join-Path -Path $NetworkFolder -ChildPath "03.13c_smb_client_connections.csv"
+                Join-Path -Path $NetworkFolder -ChildPath "03.12c_smb_client_connections.csv"
             )
         )
         $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
@@ -202,77 +275,89 @@ function Get-TriageNetworkData {
         Write-OutputToCsv -Data $Connections -OutputFile $ConnectionsCsvFile
     }
 
+
+    function Get-WlanProfiles {
+        param(
+            [string]$TxtFile = (
+                Join-Path -Path $NetworkFolder -ChildPath "03.13_wlan_profiles.txt"
+            )
+        )
+        $Netsh = & (Get-TriageBinary "netsh")
+        $Data  = @(& $Netsh wlan show profiles) + @(& $Netsh wlan show interfaces)  # key=clear
+        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+    }
+
     # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
 
     $Tasks = @(
         @{
-            Action  = { Get-IpConfig }
-            Message = "03.01_Gathering All IpConfig Data..."
-            Files   = "03.01_ip_config_all.txt"
+            Action    = { Get-IpConfig }
+            Message   = "03.01_Gathering All IpConfig Data..."
+            Files     = "03.01_ip_config_all.txt"
         }
         @{
-            Action  = { Get-LocalIPInfoAsCsv }
-            Message = "03.02_Collecting Local IP Info (CSV)..."
-            Files   = "03.02_local_ip_info.csv"
+            Action    = { Get-LocalIPInfoAsCsv }
+            Message   = "03.02_Collecting Local IP Info (CSV)..."
+            Files     = "03.02_local_ip_info.csv"
         }
         @{
-            Action  = { Get-NetworkConfig }
-            Message = "03.03_Getting Network Configuration Information..."
-            Files   = "03.03_network_config.txt"
+            Action    = { Get-NetworkConfig }
+            Message   = "03.03_Getting Network Configuration Information..."
+            Files     = "03.03_network_config.txt"
         }
         @{
-            Action  = { Get-EstablishedConnections }
-            Message = "03.04_Gathering Established Connections..."
-            Files   = "03.04_established_connections.csv"
+            Action    = { Get-AllConnections }
+            Message   = "03.04_Getting Basic Internet Connection Information..."
+            Files     = "03.04_netstat_all_connections.csv"
         }
         @{
-            Action  = { Get-AllConnections }
-            Message = "03.05_Getting Basic Internet Connection Information..."
-            Files   = "03.05_netstat_all_connections.csv"
+            Action    = { Get-NetTcpConnections }
+            Message   = "03.05_Getting Network Connection Information..."
+            Files     = "03.05_net_tcp_connections.csv"
         }
         @{
-            Action  = { Get-NetTcpConnections }
-            Message = "03.06_Getting Network Connection Information..."
-            Files   = "03.06_net_tcp_connections.csv"
+            Action    = { Get-DnsCache }
+            Message   = "03.06_Parsing DNS Cache..."
+            Files     = "03.06_dns_cache.txt"
         }
         @{
-            Action  = { Get-DnsCache }
-            Message = "03.07_Parsing DNS Cache..."
-            Files   = "03.07_dns_cache.txt"
+            Action    = { Get-DnsCacheByRecordName }
+            Message   = "03.07_Parsing DNS Cache by Record Name..."
+            Files     = "03.07_dns_cache_by_record.txt"
         }
         @{
-            Action  = { Get-DnsCacheByRecordName }
-            Message = "03.08_Parsing DNS Cache by Record Name..."
-            Files   = "03.08_dns_cache_by_record.txt"
+            Action    = { Get-NetworkShares }
+            Message   = "03.08_Parsing Network Shares..."
+            Files     = "03.08_network_shares.csv"
         }
         @{
-            Action  = { Get-NetworkShares }
-            Message = "03.09_Parsing Network Shares..."
-            Files   = "03.09_network_shares.csv"
+            Action    = { Get-SmbShareData }
+            Message   = "03.09_Parsing SMB Shares..."
+            Files     = "03.09_smb_shares.csv"
         }
         @{
-            Action  = { Get-SmbShareData }
-            Message = "03.10_Parsing SMB Shares..."
-            Files   = "03.10_smb_shares.csv"
+            Action    = { Get-ArpCache }
+            Message   = "03.10_Getting ARP/neighbor cache..."
+            Files     = "03.10_arp_neighbor_cache.csv"
         }
         @{
-            Action  = { Get-ArpCache }
-            Message = "03.11_Getting ARP/neighbor cache..."
-            Files   = "03.11_arp_neighbor_cache.csv"
+            Action    = { Get-RoutingTable }
+            Message   = "03.11_Getting routing table..."
+            Files     = "03.11_routing_table.csv"
         }
         @{
-            Action  = { Get-RoutingTable }
-            Message = "03.12_Getting routing table..."
-            Files   = "03.12_routing_table.csv"
+            Action    = { Get-SmbActivity }
+            Message   = "03.12_Getting SMB sessions and open files..."
+            Files     = "03.12a_smb_sessions.csv",
+                        "03.12b_smb_open_files.csv",
+                        "03.12c_smb_client_connections.csv"
         }
         @{
-            Action  = { Get-SmbActivity }
-            Message = "03.13_Getting SMB sessions and open files..."
-            Files   = "03.13a_smb_sessions.csv",
-                        "03.13b_smb_open_files.csv",
-                        "03.13c_smb_client_connections.csv"
+            Action    = { Get-WlanProfiles }
+            Message   = "03.13_Getting saved Wi-Fi profiles..."
+            Files     = "03.13_wlan_profiles.txt"
         }
     )
 

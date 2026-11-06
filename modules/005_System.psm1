@@ -242,8 +242,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "appinit_dll_key.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" |
-            Select-Object AppInit_DLLs
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" | Select-Object AppInit_DLLs }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -255,8 +254,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "uac_group_policy.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" |
-            Select-Object -Property * -ExcludeProperty PS*
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" | Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -268,9 +266,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "active_setup_installs.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" |
-            Select-Object ComponentID, Version, "(Default)", StubPath |
-            Format-List
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" | Select-Object ComponentID, Version, "(Default)", StubPath | Format-List }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -282,9 +278,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "app_path_reg_keys.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\*" |
-            Select-Object PSChildName, "(Default)" |
-            Format-List
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\*" | Select-Object PSChildName, "(Default)" | Format-List }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -296,8 +290,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "dlls_loaded_by_explorer_shell.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" |
-            Select-Object "(Default)", DllName
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" | Select-Object "(Default)", DllName }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -309,8 +302,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "shell_and_user_init_values.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" |
-            Select-Object -Property * -ExcludeProperty PS*
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -322,8 +314,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "svc_values.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" |
-            Select-Object -Property * -ExcludeProperty PS*
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" | Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -370,8 +361,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "prog_exe_by_session_manager.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" |
-            Select-Object -Property * -ExcludeProperty PS*
+        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" | Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -383,7 +373,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "shell_folders.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -395,7 +385,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "approved_shell_exts.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved"
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -407,7 +397,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "app_cert_dlls.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls"
+        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -419,7 +409,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "exe_file_shell_commands.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Classes\exefile\shell\open\command"
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\exefile\shell\open\command" }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -431,8 +421,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "shell_commands.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SOFTWARE\Classes\http\shell\open\command" |
-            Select-Object "(Default)"
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\http\shell\open\command" | Select-Object "(Default)" }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -444,10 +433,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "bcd_related_data.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\BCD00000000\*\*\*\*" |
-            Select-Object Element |
-            Select-String "exe" |
-            Select-Object Line
+        $Command = { Get-ItemProperty "HKLM:\BCD00000000\*\*\*\*" | Select-Object Element | Select-String "exe" | Select-Object Line }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -459,8 +445,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "loaded_lsa_packages.txt"
             )
         )
-        $Command = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" |
-            Select-Object -Property *
+        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" | Select-Object -Property * }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -472,9 +457,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "browser_helper_objects.txt"
             )
         )
-        $Command = Get-ItemProperty `
-            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
-            Select-Object "(Default)"
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" | Select-Object "(Default)" }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -486,9 +469,7 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "browser_helper_objects_x64.txt"
             )
         )
-        $Command = Get-ItemProperty `
-            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" |
-            Select-Object "(Default)"
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" | Select-Object "(Default)" }
         $Data = Invoke-RegistryCommand -Command $Command
         Write-OutputToFile -Data $Data -OutputFile $TxtFile
     }
@@ -503,13 +484,13 @@ function Get-TriageSystemData {
                 Join-Path -Path $SystemFolder -ChildPath "usb_devices_from_Control-USBSTOR.csv"
             )
         )
-        $Command1 = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USB\*\*" |
-            Select-Object -Property *
+        $Command1 = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USB\*\*" |
+            Select-Object -Property * }
         $Data1 = Invoke-RegistryCommand -Command $Command1
         Write-OutputToCsv -Data $Data1 -OutputFile $CsvFile1
 
-        $Command2 = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\usbstor\*\*" |
-            Select-Object -Property *
+        $Command2 = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\usbstor\*\*" |
+            Select-Object -Property * }
         $Data2 = Invoke-RegistryCommand -Command $Command2
         Write-OutputToCsv -Data $Data2 -OutputFile $CsvFile2
     }
@@ -584,8 +565,8 @@ function Get-TriageSystemData {
         )
         $Data = Get-CimInstance -ClassName Win32_OptionalFeature |
             Select-Object Name, Caption, @{
-                N = "InstallState"
-                E = {
+                Name       = "InstallState"
+                Expression = {
                     switch ($_.InstallState) {
                         1 { "Enabled" }
                         2 { "Disabled" }

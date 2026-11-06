@@ -60,10 +60,10 @@ function Get-InitialSetup {
     }
 
     if (-not $Ipv4) {
-        $Ipv4 = "NoIPv4"
+        $Ipv4 = "0.0.0.0"
     }
 
-    $MergedName           = [string]::Format("{0}_{1}_{2}", $RunDate, $Ipv4, $env:COMPUTERNAME)
+    $MergedName           = ('{0}_{1}_{2}' -f $RunDate, $Ipv4, $env:COMPUTERNAME)
     $global:ResultsFolder = Join-Path -Path $OutputRoot -ChildPath $MergedName
     $null                 = New-Item -ItemType Directory -Path $global:ResultsFolder -Force
 
@@ -211,7 +211,7 @@ function Show-Message {
         if ($Level -eq "SUCCESS" -and $File) {
             $Names   = @($File | ForEach-Object { [System.IO.Path]::GetFileName($_) })
             $Joined  = $Names -join ", "
-            $Message = [string]::Format("Process completed. Output saved to [ {0} ]", $Joined)
+            $Message = ('Process completed. Output saved to [ {0} ]' -f $Joined)
             if ($ExecutionTime) {
                 $Message += " ($ExecutionTime)."
             }
@@ -226,8 +226,8 @@ function Show-Message {
         }
 
         # Build the log entry (for file logging - plain text only)
-        $LogEntryPrefix = [string]::Format("[{0}] [{1}]", $Timestamp, $Level)
-        $LogMessage = [string]::Format("{0} {1}", $LogEntryPrefix, $Message)
+        $LogEntryPrefix = ('[{0}] [{1}]' -f $Timestamp, $Level)
+        $LogMessage = ('{0} {1}' -f $LogEntryPrefix, $Message)
 
         # Determine display color based on Level
         switch ($Level) {
@@ -242,11 +242,11 @@ function Show-Message {
             Write-Host $Message -ForegroundColor $DisplayColor
         }
         elseif ($SpaceAbove) {
-            Write-Host [string]::Format("`n[{0}] ", $Timestamp) -ForegroundColor $TimestampColor -NoNewLine
+            Write-Host "`n[$Timestamp] " -ForegroundColor $TimestampColor -NoNewLine
             Write-Host $Message -ForegroundColor $DisplayColor
         }
         else {
-            Write-Host [string]::Format("[{0}] ", $Timestamp) -ForegroundColor $TimestampColor -NoNewLine
+            Write-Host "[$Timestamp] " -ForegroundColor $TimestampColor -NoNewLine
             Write-Host $Message -ForegroundColor $DisplayColor
         }
 
@@ -257,7 +257,7 @@ function Show-Message {
             }
             catch {
                 # If writing to the USB log fails, tell the examiner
-                $Msg = [string]::Format("Error occured during {0} => CRITICAL: Unable to write to triage log file! Error => {1}", $MyInvocation.MyCommand.Name, $_.Exception.Message)
+                $Msg = "Error occured during $( $MyInvocation.MyCommand.Name ) => CRITICAL: Unable to write to triage log file! Error => $( $_.Exception.Message )"
                 Write-Host $Msg -ForegroundColor Red
             }
         }
@@ -959,8 +959,8 @@ function Write-LaunchContext {
     $NoProf  = [bool]($ArgList | Where-Object { $_ -like "-NoProf*" })
 
     Show-Message -Message "Launch command line => [ $( [Environment]::CommandLine ) ]" -Level INFO -AddToLog
-    $Msg = "PowerShell $( $PSVersionTable.PSVersion ), -NoProfile used: $NoProf, operator account: `
-        $env:USERDOMAIN\$env:USERNAME"
+    $Msg = "PowerShell $( $PSVersionTable.PSVersion ), -NoProfile used: $NoProf, operator account:" +
+        "$env:USERDOMAIN\$env:USERNAME"
     Show-Message -Message $Msg -Level INFO -AddToLog
 
     if (-not $NoProf) {
@@ -1205,6 +1205,8 @@ function Write-CaseInfo {
     }
     $LastAccess = Get-LastAccessUpdateState
     $Info.LastAccessUpdates = $LastAccess
+    $Info.ToolkitFileHashes = @(Get-ToolkitScriptHashes)
+    $Info.TimeZoneId        = (Get-TimeZone).Id
     Show-Message -Message "NTFS last-access updates => $( $LastAccess.Summary )" -Level INFO -AddToLog
 
     $Info | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $JsonFile -Encoding UTF8
@@ -1502,17 +1504,17 @@ function Invoke-TriageTask {
         Runs one collection task with timing, error handling and output verification.
     .DESCRIPTION
         Standard wrapper for a unit of work. It:
-          1. Logs Message as INFO.
-          2. Runs Action inside a try/catch and discards its output. An exception is logged as ERROR and
-             the task is marked "Failed".
-          3. Stops the timer and formats the elapsed time.
-          4. If the action did not throw, checks each path in ExpectedFile (wildcards allowed) for at least
-             one non-empty file, then sets the status:
-                 MissingOutput        an expected file is missing or empty (logged as ERROR)
-                 CompletedWithErrors  errors were logged during the task (logged as WARNING)
-                 OK                   success; the output files and time are logged as SUCCESS
-          5. Adds a record (StartedUtc, Task, Seconds, Status) to $global:TriageTimings when that
-             collection exists.
+            1.  Logs Message as INFO.
+            2.  Runs Action inside a try/catch and discards its output. An exception is logged as ERROR and
+                the task is marked "Failed".
+            3.  Stops the timer and formats the elapsed time.
+            4.  If the action did not throw, checks each path in ExpectedFile (wildcards allowed) for at least
+                one non-empty file, then sets the status:
+                    MissingOutput        an expected file is missing or empty (logged as ERROR)
+                    CompletedWithErrors  errors were logged during the task (logged as WARNING)
+                    OK                   success; the output files and time are logged as SUCCESS
+            5.  Adds a record (StartedUtc, Task, Seconds, Status) to $global:TriageTimings when that
+                collection exists.
 
         Errors are detected by comparing $global:TriageErrorCount before and after the task, so any
         Show-Message call at ERROR level during the task counts.
@@ -1589,14 +1591,11 @@ function Invoke-TriageTask {
 
         if ($Missing.Count -gt 0) {
             $Status = "MissingOutput"
-            Show-Message -Message "[ $Message ] finished ($Time) but expected output is missing or empty => `
-            $( ($Missing |
-            ForEach-Object { Split-Path -Path $_ -Leaf }) -join ', ' )" -Level ERROR -AddToLog
+            Show-Message -Message "[ $Message ] finished ($Time) but expected output is missing or empty => $( ($Missing | ForEach-Object { Split-Path -Path $_ -Leaf }) -join ', ' )" -Level ERROR -AddToLog
         }
         elseif ($NewErrors -gt 0) {
             $Status = "CompletedWithErrors"
-            Show-Message -Message "[ $Message ] completed with $NewErrors error(s) ($Time). `
-            See application log." -Level WARNING -AddToLog
+            Show-Message -Message "[ $Message ] completed with $NewErrors error(s) ($Time). See application log." -Level WARNING -AddToLog
         }
         elseif ($Present.Count -gt 0) {
             Show-Message -File $Present -ExecutionTime $Time -Level SUCCESS -AddToLog
@@ -2039,6 +2038,36 @@ function Add-TriageLogLine {
     <#
     .SYNOPSIS
         Appends one line to the triage log through a writer that stays open for the whole run.
+    .DESCRIPTION
+        Writes a single line of text to the file named by $global:LogFile. Instead of opening and closing the
+        file for every message (as Out-File -Append does), the function opens a StreamWriter the first time it
+        is called and keeps it in $global:TriageLogWriter for later calls.
+
+        The writer is opened lazily, so a GUI worker runspace opens its own writer the first time it logs. If
+        $global:LogFile changes, the old writer is closed and a new one is opened on the new path.
+
+        The file is opened with FileMode.Append and FileShare.ReadWrite, which lets the GUI read (tail) the log
+        while it is being written and lets two runspaces append to it. Text is written as UTF-8 without a byte
+        order mark, and AutoFlush is on, so each line reaches the operating system immediately and a crash or
+        power loss loses at most the line being written.
+
+        If $global:LogFile is empty or $null, the function does nothing. Call Close-TriageLogWriter before the
+        log is hashed or archived.
+    .PARAMETER Line
+        The complete line of text to append. The function adds the line ending.
+    .INPUTS
+        None. This function does not accept pipeline input.
+    .OUTPUTS
+        None.
+    .EXAMPLE
+        Add-TriageLogLine -Line " [2026-11-06 10:15:02] Starting collection..."
+
+        Appends one line to the current triage log.
+    .NOTES
+        Uses these global variables: LogFile (input), TriageLogWriter and TriageLogWriterPath (internal state).
+        The folder that holds the log must already exist; FileMode.Append creates a missing file but not a
+        missing folder. A file that cannot be opened raises an IOException.
+        Show-Message and Write-LogMessage call this function; call it directly only for file-only log entries.
     #>
     [CmdletBinding()]
     [OutputType([void])]
@@ -2070,6 +2099,26 @@ function Close-TriageLogWriter {
     <#
     .SYNOPSIS
         Flushes and closes the log writer opened by Add-TriageLogLine.
+    .DESCRIPTION
+        Disposes the StreamWriter stored in $global:TriageLogWriter, which flushes any buffered text and
+        releases the file handle, then clears $global:TriageLogWriter and $global:TriageLogWriterPath.
+
+        It is safe to call when no writer is open, and safe to call more than once. Errors raised while
+        disposing are ignored so that cleanup never stops a run.
+
+        Close-TriageLog calls this function before the log is hashed, so the file does not change after its
+        hash is recorded. Add-TriageLogLine also calls it when $global:LogFile changes.
+    .INPUTS
+        None. This function does not accept pipeline input.
+    .OUTPUTS
+        None.
+    .EXAMPLE
+        Close-TriageLogWriter
+
+        Closes the log file so it can be hashed or archived.
+    .NOTES
+        Uses these global variables: TriageLogWriter and TriageLogWriterPath.
+        A later call to Add-TriageLogLine opens a new writer if $global:LogFile is still set.
     #>
     [CmdletBinding()]
     [OutputType([void])]
@@ -2091,8 +2140,39 @@ function Get-LastAccessUpdateState {
     .SYNOPSIS
         Reports, read-only, whether NTFS updates last-access timestamps when files are read.
     .DESCRIPTION
-        Reads HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\NtfsDisableLastAccessUpdate. Nothing is changed.
-        The lowest bit set means updates are disabled; the top bit set means Windows manages the setting.
+        Reads the NtfsDisableLastAccessUpdate value under
+        HKLM\SYSTEM\CurrentControlSet\Control\FileSystem. Nothing is changed on the computer.
+
+        The lowest bit of the value set means last-access updates are disabled. The top bit set (a negative
+        value when read as a signed integer) means Windows manages the setting itself; otherwise an
+        administrator set it.
+
+        The result describes how the operating system is configured, not proof of what happened to any
+        particular file. It applies to NTFS volumes only. Record it in the case notes so that readers of the
+        evidence know whether reading files during triage could have altered last-access times.
+    .INPUTS
+        None. This function does not accept pipeline input.
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        An object with three properties:
+            RawValue        The registry value as hex text such as 0x80000003, or $null if not found.
+            UpdatesEnabled  $true, $false, or $null when the value is not found.
+            Summary         A one-line, human-readable description.
+    .EXAMPLE
+        Get-LastAccessUpdateState
+
+        Returns the current setting, for example UpdatesEnabled = $false with a Summary of "DISABLED (System
+        managed)...".
+    .EXAMPLE
+        (Get-LastAccessUpdateState).Summary
+
+        Returns only the one-line description, ready to write to the log.
+    .NOTES
+        Registry read only. If the value does not exist, UpdatesEnabled is $null and the Summary says the
+        state could not be determined.
+        Write-CaseInfo stores the result in case_info.json under LastAccessUpdates.
+        To confirm the decoding once on a lab computer, compare against: fsutil behavior query disablelastaccess
     #>
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
@@ -2117,6 +2197,7 @@ function Get-LastAccessUpdateState {
     else {
         "Set by an administrator"
     }
+
     [PSCustomObject]@{
         RawValue       = ('0x{0:X8}' -f $Raw)
         UpdatesEnabled = -not $Disabled
@@ -2134,9 +2215,36 @@ function Resolve-TriageModuleName {
     <#
     .SYNOPSIS
         Turns a module number such as "004" into its full name from TriageConfig.psd1.
+    .DESCRIPTION
+        TriageConfig.psd1 is the single source of truth for module names (for example 004_Process). Code that
+        only knows a module's three-digit number calls this function to get the full name, so renaming a
+        module in the configuration file needs no other edit.
+
+        The function reads the Modules list through Get-TriageConfig and returns the one entry that starts
+        with the number followed by an underscore. It throws a terminating error if no entry matches or more
+        than one does, which catches a missing or duplicated number in the configuration.
+    .PARAMETER Id
+        The module number, such as "004". Matching uses -like, so do not include wildcard characters.
+    .INPUTS
+        None. This function does not accept pipeline input.
+    .OUTPUTS
+        System.String
+
+        The full module name exactly as written in the configuration file.
+    .EXAMPLE
+        Resolve-TriageModuleName -Id "004"
+
+        Returns the Modules entry that begins with 004_.
+    .EXAMPLE
+        $Name = Resolve-TriageModuleName -Id "011"
+        $RawFolder = Join-Path $ResultsFolder $Name
+
+        Builds a results folder path from the configured module name.
+    .NOTES
+        Throws when the number matches zero or several entries. Used by Invoke-DfirTriageScan and the GUI.
     #>
     [CmdletBinding()]
-    [OutputType([void])]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory)]
         [string]$Id
@@ -2154,8 +2262,38 @@ function Get-TriageScanRoots {
     <#
     .SYNOPSIS
         Returns the existing priority folders (from TriageConfig.psd1, ScanFolders) for file-hunting scans.
+    .DESCRIPTION
+        Builds the list of folders that file-hunting scans search instead of walking the whole drive.
+
+        For every user profile in $global:TriageUserHives, each ScanFolders.UserSubFolders entry is joined to
+        the profile path. Each ScanFolders.SharedFolders entry is joined to the system drive root. Only
+        folders that exist are returned, and duplicates are removed.
+
+        Profiles with no ProfilePath (for example, a hive that failed to mount) are skipped.
+        ScanFolders.SystemExeFolders is not part of this list; it is used separately for signature checks.
+    .INPUTS
+        None. This function does not accept pipeline input.
+    .OUTPUTS
+        System.String
+
+        Full paths of existing folders, one string per folder.
+    .EXAMPLE
+        Get-TriageScanRoots
+
+        Lists the Downloads, Desktop, Documents, Temp, and shared folders that exist on this computer.
+    .EXAMPLE
+        foreach ($Root in (Get-TriageScanRoots)) {
+            Get-ChildItem -LiteralPath $Root -Recurse -File -Filter "*.exe" -ErrorAction SilentlyContinue
+        }
+
+        Searches only the priority folders for executables.
+    .NOTES
+        Requires user profiles to be mounted first ($global:TriageUserHives is filled before the collector
+        modules run). ScanFolders paths are relative because a .psd1 data file cannot contain variables such
+        as $env:SystemDrive.
     #>
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     $Cfg   = Get-TriageConfig -Key "ScanFolders"
@@ -2173,4 +2311,69 @@ function Get-TriageScanRoots {
         $Roots.Add((Join-Path -Path "$env:SystemDrive\" -ChildPath $Sub))
     }
     $Roots | Where-Object { Test-Path -LiteralPath $_ -PathType Container } | Select-Object -Unique
+}
+
+
+function Get-ToolkitScriptHashes {
+    <#
+    .SYNOPSIS
+        Computes SHA256 hashes of the toolkit's own scripts and configuration files.
+    .DESCRIPTION
+        Hashes the code that is actually running, so the case record shows which version of the toolkit
+        produced the evidence and whether any file was changed afterwards.
+
+        The toolkit root is the parent of the folder that holds this file. The files hashed are:
+            run-triage.*        the launcher scripts in the toolkit root
+            modules\*.ps*1      .ps1, .psm1, and .psd1 files in the modules folder
+            config\*.psd1       the configuration files
+
+        Each hash is computed with Get-StreamHash (SHA256 only, MD5 skipped). Paths in the output are
+        relative to the toolkit root. Files that cannot be listed are skipped.
+    .INPUTS
+        None. This function does not accept pipeline input.
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        One object per file with these properties:
+            File    Path relative to the toolkit root, for example modules\functions.psm1.
+            Sha256  Uppercase hexadecimal SHA256 hash.
+    .EXAMPLE
+        Get-ToolkitScriptHashes
+
+        Lists the hash of every toolkit script and configuration file.
+    .EXAMPLE
+        $Info.ToolkitFileHashes = @(Get-ToolkitScriptHashes)
+
+        Stores the hashes in the case information record, as Write-CaseInfo does.
+    .NOTES
+        This file must stay in the modules folder, because the toolkit root is derived from $PSScriptRoot.
+        The bin folder is not included; its files are verified separately against bin\__hashes.json.
+        If Get-StreamHash cannot read a file, a warning is logged and that file's SHA256 is $null; the other
+        files are still hashed.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSCustomObject])]
+    param()
+
+    $Root  = Split-Path -Path $PSScriptRoot -Parent
+    $Paths = @(
+        Join-Path -Path $Root -ChildPath "run-triage.*"
+        Join-Path -Path $Root -ChildPath "modules\*.ps*1"
+        Join-Path -Path $Root -ChildPath "config\*.psd1"
+    )
+    Get-ChildItem -Path $Paths -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $File = $_
+        $Hash = try {
+            (Get-StreamHash -LiteralPath $File.FullName -IncludeMd5:$false).SHA256
+        }
+        catch {
+            $Msg = "Could not hash toolkit file [ $( $File.FullName ) ] => $( $_.Exception.Message )"
+            Show-Message -Message $Msg -Level WARNING -AddToLog
+            $null
+        }
+        [PSCustomObject]@{
+            File   = $File.FullName.Substring($Root.Length + 1)
+            Sha256 = $Hash
+        }
+    }
 }

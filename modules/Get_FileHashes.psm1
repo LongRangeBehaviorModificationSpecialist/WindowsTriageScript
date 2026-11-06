@@ -1,29 +1,51 @@
 function Get-StreamHash {
     <#
     .SYNOPSIS
-        Calculates SHA256 and optionally MD5 hashes for a file in a single read pass.
+        Calculates SHA256 and optionally MD5 hashes for a file in a single
+        read pass.
+
     .DESCRIPTION
-        Opens a file stream with sequential scan optimization and reads it in 1MB chunks.
-        Each data block is fed simultaneously into both the SHA256 and MD5 cryptographic
-        hash algorithms, minimizing disk I/O overhead.
+        Opens a file stream with sequential scan optimization and reads it
+        in 1MB chunks.
+
+        Each data block is fed simultaneously into both the SHA256 and MD5
+        cryptographic hash algorithms, minimizing disk I/O overhead.
+
     .PARAMETER LiteralPath
-        The literal path to the file that will be hashed. Wildcards are not supported.
+        The literal path to the file that will be hashed.
+
+        Wildcards are not supported.
+
     .PARAMETER IncludeMd5
-        A boolean switch determining whether to calculate an MD5 hash alongside the
-        SHA256 hash. Defaults to the value specified in `(Get-TriageConfig).Defaults.HashIncludeMd5`.
+        A boolean switch determining whether to calculate an MD5 hash
+        alongside the SHA256 hash.
+
+        Defaults to the value specified in
+        `(Get-TriageConfig).Defaults.HashIncludeMd5`.
+
     .EXAMPLE
         Get-StreamHash -LiteralPath "C:\Evidence\file.bin" -IncludeMd5 $true
 
-        Calculates both SHA256 and MD5 hashes for the specified file and returns a custom object.
+        Calculates both SHA256 and MD5 hashes for the specified file and
+        returns a custom object.
+
     .INPUTS
-        None. This function does not accept pipeline input.
+        None
+
+        This function does not accept pipeline input.
+
     .OUTPUTS
-        System.Management.Automation.PSCustomObject with the following properties:
-            SHA256 - Uppercase hexadecimal string of the SHA256 hash.
-            MD5    - Uppercase hexadecimal string of the MD5 hash (or $null if omitted).
+        System.Management.Automation.PSCustomObject with the following
+        properties:
+
+            SHA256  -   Uppercase hexadecimal string of the SHA256 hash.
+
+            MD5     -   Uppercase hexadecimal string of the MD5 hash (or
+                        $null if omitted).
+
     .NOTES
-        The file is opened with shared read/write access and automatically disposed in a
-        finally block regardless of success or failure.
+        The file is opened with shared read/write access and automatically
+        disposed in a `finally` block regardless of success or failure.
     #>
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
@@ -83,30 +105,55 @@ function Get-StreamHash {
 function Get-FileHashes {
     <#
     .SYNOPSIS
-        Recursively hashes files within a triage results folder and exports the report to CSV.
+        Recursively hashes files within a triage results folder and exports
+        the report to CSV.
+
     .DESCRIPTION
-        Scans the specified results directory recursively while excluding log folders and previous
-        hash directories. It utilizes `Get-StreamHash` to calculate file hashes in a single pass,
-        gathers metadata (sizes, UTC timestamps, attributes), and handles FIPS fallback scenarios
-        for MD5. Results are written out to a CSV file inside the `Hash_Results` subfolder.
+        Scans the specified results directory recursively while excluding
+        log folders and previous hash directories.
+
+        It utilizes `Get-StreamHash` to calculate file hashes in a single
+        pass, gathers metadata (sizes, UTC timestamps, attributes), and
+        handles FIPS fallback scenarios for MD5.
+
+        Results are written out to a CSV file inside the `Hash_Results`
+        subfolder.
+
     .PARAMETER ResultsFolder
-        The root path of the triage results folder containing the files to be hashed.
+        The root path of the triage results folder containing the files to
+        be hashed.
+
     .PARAMETER IncludeMd5
-        Indicates whether to include MD5 hash calculation. Defaults to $true (subject to FIPS compliance checks).
+        Indicates whether to include MD5 hash calculation.
+
+        Defaults to $true (subject to FIPS compliance checks).
+
     .PARAMETER ExcludedFiles
-        An array of file patterns or filters to exclude from the hashing process. Defaults to
-        transcripts and existing hash value files.
+        An array of file patterns or filters to exclude from the hashing
+        process.
+
+        Defaults to transcripts and existing hash value files.
+
     .EXAMPLE
         Get-FileHashes -ResultsFolder "D:\TriageOutput" -IncludeMd5 $true
 
-        Hashes all eligible files in "D:\TriageOutput", logs progress, and saves the CSV report.
+        Hashes all eligible files in "D:\TriageOutput", logs progress, and
+        saves the CSV report.
+
     .INPUTS
-        None. This function does not accept pipeline input directly.
+        None.
+
+        This function does not accept pipeline input directly.
+
     .OUTPUTS
-        None. Writes progress messages to logging/console and generates a CSV report on disk.
+        None.
+
+        Writes progress messages to logging/console and generates a CSV
+        report on disk.
+
     .NOTES
-        Measures execution time using a Stopwatch and logs errors individually if individual
-        files fail to hash.
+        Measures execution time using a Stopwatch and logs errors individually
+        if individual files fail to hash.
     #>
     [CmdletBinding()]
     [OutputType([void])]
@@ -151,8 +198,8 @@ function Get-FileHashes {
             -not $_.FullName.StartsWith("$LogsDir\", [System.StringComparison]::OrdinalIgnoreCase) -and
             -not $_.FullName.StartsWith("$HashFolder\", [System.StringComparison]::OrdinalIgnoreCase)
         })
-        Show-Message -Message "Hashing $( $Files.Count ) files `
-            (log files are hashed when the log is closed)..." -Level INFO -AddToLog
+        Show-Message -Message "Hashing $( $Files.Count ) files (log files are hashed when the log is closed)..." `
+            -Level INFO -AddToLog
 
         $Rows = foreach ($File in $Files) {
             $Sha = $null
@@ -187,8 +234,9 @@ function Get-FileHashes {
             (Format-TriageDuration -Span $Stopwatch.Elapsed) -Level INFO -AddToLog
     }
     catch {
-        Show-Message -Message "Execution failed during $( $MyInvocation.MyCommand.Name ) on `
-            $( $ComputerName ).  Error => $( $_.Exception.Message )" -Level ERROR -AddToLog
+        $ErrorMsg = "Execution failed during $( $MyInvocation.MyCommand.Name ) on " +
+            "$( $ComputerName ).  Error => $( $_.Exception.Message )"
+        Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
     }
     finally {
         if ($Stopwatch.IsRunning) {
@@ -200,29 +248,45 @@ function Get-FileHashes {
 function Close-TriageLog {
     <#
     .SYNOPSIS
-        Finalizes the triage session by closing logs and generating final integrity hashes.
+        Finalizes the triage session by closing logs and generating final
+        integrity hashes.
+
     .DESCRIPTION
-        Stops active logging writes, flushes and closes the triage log writer, and computes
-        SHA256 hashes for all accumulated log files and intermediate hash CSVs. It outputs a
-        comprehensive final CSV report named `final_hashes.csv` under the `Hash_Results` directory
-        and returns a status summary object.
+        Stops active logging writes, flushes and closes the triage log
+        writer, and computes SHA256 hashes for all accumulated log files and
+        intermediate hash CSVs.
+
+        It outputs a comprehensive final CSV report named `final_hashes.csv`
+        under the `Hash_Results` directory and returns a status summary
+        object.
+
     .PARAMETER ResultsFolder
         The root directory path of the active triage session.
+
     .EXAMPLE
         Close-TriageLog -ResultsFolder "D:\TriageOutput"
 
-        Closes logs, hashes all log and report files, writes `final_hashes.csv`, and returns
-        the session summary object.
+        Closes logs, hashes all log and report files, writes
+        `final_hashes.csv`, and returns the session summary object.
+
     .INPUTS
-        None. This function does not accept pipeline input.
+        None.
+
+        This function does not accept pipeline input.
+
     .OUTPUTS
-        System.Management.Automation.PSCustomObject with the following properties:
-            LogFile           - Path to the closed log file.
-            FinalHashesFile   - Path to the generated `final_hashes.csv` file.
-            FinalHashesSha256 - SHA256 hash value of the final hashes file itself.
+        System.Management.Automation.PSCustomObject with the following
+        properties:
+
+            LogFile             -   Path to the closed log file.
+            FinalHashesFile     -   Path to the generated `final_hashes.csv`
+                                    file.
+            FinalHashesSha256   -   SHA256 hash value of the final hashes
+                                    file itself.
+
     .NOTES
-        Modifies global state by clearing `$global:LogFile` to restrict subsequent messages
-        to console output only.
+        Modifies global state by clearing `$global:LogFile` to restrict
+        subsequent messages to console output only.
     #>
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
@@ -241,14 +305,26 @@ function Close-TriageLog {
 
     Close-TriageLogWriter
 
-    $Targets = @(Get-ChildItem -LiteralPath $LogsDir -Recurse -Force -File) +
-            @(Get-ChildItem -LiteralPath $HashFolder -Filter "*_hash_values.csv" -File)
+    $Targets = @(
+            Get-ChildItem `
+                -LiteralPath $LogsDir `
+                -Recurse `
+                -Force `-File
+        ) +
+            @(
+                Get-ChildItem `
+                    -LiteralPath $HashFolder `
+                    -Filter "*_hash_values.csv" `
+                    -File
+            )
 
     $Rows = foreach ($F in $Targets) {
         [PSCustomObject]@{
             RelativePath = $F.FullName.Substring($Root.Length + 1)
             SizeBytes    = $F.Length
-            SHA256       = (Get-StreamHash -LiteralPath $F.FullName -IncludeMd5:$false).SHA256
+            SHA256       = (Get-StreamHash `
+                                -LiteralPath $F.FullName `
+                                -IncludeMd5:$false).SHA256
         }
     }
 
@@ -258,6 +334,8 @@ function Close-TriageLog {
     [PSCustomObject]@{
         LogFile           = $LogPath
         FinalHashesFile   = $FinalFile
-        FinalHashesSha256 = (Get-StreamHash -LiteralPath $FinalFile -IncludeMd5:$false).SHA256
+        FinalHashesSha256 = (Get-StreamHash `
+                                -LiteralPath $FinalFile `
+                                -IncludeMd5:$false).SHA256
     }
 }

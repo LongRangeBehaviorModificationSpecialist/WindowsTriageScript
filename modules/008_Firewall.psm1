@@ -31,7 +31,7 @@ function Get-TriageFirewallData {
     function Copy-DefenderLogs {
         param(
             [string]$TxtFile = (
-                Join-Path FirewallFolder "08.03_defender_log_files.txt"
+                Join-Path -Path $FirewallFolder -ChildPath "08.03_defender_log_files.txt"
             )
         )
         $MpOutputFolder = Join-Path -Path $FirewallFolder -ChildPath "Defender_Log_Files"
@@ -85,25 +85,25 @@ function Get-TriageFirewallData {
 
     $Tasks = @(
         @{
-            Action  = { Get-FirewallRules }
-            Message = "08.01_Getting Device Firewall Configuration..."
-            Files   = "08.01_firewall_rules.txt"
+            Action    = { Get-FirewallRules }
+            Message   = "08.01_Getting Device Firewall Configuration..."
+            Files     = "08.01_firewall_rules.txt"
         }
         @{
-            Action  = { Get-DefenderPreferences }
-            Message = "08.02_Parsing Windows Defender Preferences..."
-            Files   = "08.02_defender_preferences.txt"
+            Action    = { Get-DefenderPreferences }
+            Message   = "08.02_Parsing Windows Defender Preferences..."
+            Files     = "08.02_defender_preferences.txt"
         }
         @{
-            Action  = { Copy-DefenderLogs }
-            Message = "08.03_Copying Windows Defender Log Files..."
-            Files   = "08.03_defender_log_files.txt"
+            Action    = { Copy-DefenderLogs }
+            Message   = "08.03_Copying Windows Defender Log Files..."
+            Files     = "08.03_defender_log_files.txt"
         }
         @{
-            Action  = { Get-DefenderDetections }
-            Message = "08.04_Listing Windows Defender Detections..."
-            Files   = "08.04a_defender_threat_detections.csv",
-                        "08.4b_defender_threats.csv",
+            Action    = { Get-DefenderDetections }
+            Message   = "08.04_Listing Windows Defender Detections..."
+            Files     = "08.04a_defender_threat_detections.csv",
+                        "08.04b_defender_threats.csv",
                         "08.04c_defender_status.txt"
         }
     )

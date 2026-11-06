@@ -4,7 +4,9 @@ function Get-TriageRawArtifactsData {
         [Parameter(Mandatory)]
         [string]$RawFolder,
 
-        [string]$CsvFile = (Join-Path -Path $RawFolder -ChildPath "raw_artifacts_manifest.csv")
+        [string]$CsvFile = (
+            Join-Path -Path $RawFolder -ChildPath "raw_artifacts_manifest.csv"
+        )
     )
 
     $Cfg      = Get-TriageConfig -Key "RawArtifacts"
@@ -78,7 +80,8 @@ function Get-TriageRawArtifactsData {
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 $Base = "Users\$( $Hive.Sid )"
                 $Live = $Hive.Root -and ($Hive.Root -notlike "*TRIAGE_*")
-                $Cls  = Join-Path -Path $Hive.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\UsrClass.dat"
+                $File = "AppData\Local\Microsoft\Windows\UsrClass.dat"
+                $Cls  = Join-Path -Path $Hive.ProfilePath -ChildPath $File
                 foreach ($Extension in "", ".LOG1", ".LOG2") {
                     [PSCustomObject]@{
                         Kind   = "File"
@@ -128,9 +131,10 @@ function Get-TriageRawArtifactsData {
 
         BrowserDatabases = {
             $Wanted = @{
-                Chromium = "History", "Favicons", "Shortcuts", "Top Sites", "Web Data", "Network\Cookies",
-                    "Cookies"
-                Firefox  = "places.sqlite", "cookies.sqlite", "formhistory.sqlite", "favicons.sqlite"
+                Chromium = "History", "Favicons", "Shortcuts", "Top Sites", "Web Data",
+                    "Network\Cookies", "Cookies", "Bookmarks", "Preferences"
+                Firefox  = "places.sqlite", "cookies.sqlite", "formhistory.sqlite",
+                    "favicons.sqlite"
             }
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 foreach ($Browser in (Get-TriageConfig -Key "Browsers")) {
@@ -138,8 +142,19 @@ function Get-TriageRawArtifactsData {
                     if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
                         continue
                     }
-                    foreach ($UserProfile in (Get-ChildItem -LiteralPath $Root -Directory `
-                            -Force -ErrorAction SilentlyContinue)) {
+                    # foreach ($UserProfile in (Get-ChildItem -LiteralPath $Root -Directory `
+                    #         -Force -ErrorAction SilentlyContinue)) {
+                    $Profiles = if ($Browser.Direct) {
+                            Get-Item -LiteralPath $Root -Force
+                        }
+                        else {
+                            Get-ChildItem `
+                                -LiteralPath $Root `
+                                -Directory `
+                                -Force `
+                                -ErrorAction SilentlyContinue
+                        }
+                    foreach ($UserProfile in $Profiles) {
                         foreach ($File in $Wanted[$Browser.Type]) {
                             foreach ($Suffix in "", "-wal", "-journal") {
                                 $Source = Join-Path -Path $UserProfile.FullName -ChildPath "$File$Suffix"
@@ -147,7 +162,8 @@ function Get-TriageRawArtifactsData {
                                     [PSCustomObject]@{
                                         Kind = "File"
                                         Source = $Source
-                                        Dest = "Browsers\$( $Hive.Sid )\$( $Browser.Name )\$( $UserProfile.Name )\$File$Suffix"
+                                        Dest = "Browsers\$( $Hive.Sid )\$( $Browser.Name )\" +
+                                            "$( $UserProfile.Name )\$File$Suffix"
                                     }
                                 }
                             }
@@ -159,7 +175,8 @@ function Get-TriageRawArtifactsData {
 
         StartupFolders = {
             $StartupDir = "AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
-            Get-FolderFiles -Folder "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
+            Get-FolderFiles `
+                -Folder "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" `
                 -DestBase "Startup\AllUsers"
             foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
                 Get-FolderFiles -Folder (Join-Path -Path $Hive.ProfilePath -ChildPath $StartupDir) `
@@ -168,13 +185,20 @@ function Get-TriageRawArtifactsData {
         }
 
         WmiRepository = {
-            Get-FolderFiles -Folder "$SysRoot\System32\wbem\Repository" -DestBase "WMI_Repository"
+            Get-FolderFiles `
+                -Folder "$SysRoot\System32\wbem\Repository" `
+                -DestBase "WMI_Repository"
         }
         Bits = {
-            Get-FolderFiles -Folder "$env:ProgramData\Microsoft\Network\Downloader" -DestBase "BITS"
+            Get-FolderFiles `
+                -Folder "$env:ProgramData\Microsoft\Network\Downloader" `
+                -DestBase "BITS"
         }
         WindowsUpdate = {
-            Get-FolderFiles -Folder "$SysRoot\Logs\WindowsUpdate" -DestBase "WindowsUpdate" -Filter "*.etl"
+            Get-FolderFiles `
+                -Folder "$SysRoot\Logs\WindowsUpdate" `
+                -DestBase "WindowsUpdate" `
+                -Filter "*.etl"
             [PSCustomObject]@{
                 Kind   = "File"
                 Source = "$SysRoot\SoftwareDistribution\ReportingEvents.log"
@@ -214,6 +238,54 @@ function Get-TriageRawArtifactsData {
                 Dest   = "NTFS\UsnJrnl_J"
             }
         }
+
+        ScheduledTasks = {
+            Get-FolderFiles `
+                -Folder "$SysRoot\System32\Tasks" `
+                -DestBase "ScheduledTasks"
+        }
+
+        SetupApi = {
+            Get-FolderFiles `
+                -Folder "$SysRoot\INF" `
+                -DestBase "SetupApi" `
+                -Filter "setupapi*.log"
+        }
+
+        WerReports = {
+            Get-FolderFiles `
+                -Folder "$env:ProgramData\Microsoft\Windows\WER" `
+                -DestBase "WER" `
+                -Filter "*.wer"
+        }
+
+        # Single quotes matter here: $Recycle and $I would otherwise expand
+        # as variables
+        RecycleBin = {
+            Get-FolderFiles `
+                -Folder ('{0}\$Recycle.Bin' -f $SysDrive) `
+                -DestBase "RecycleBin" `
+                -Filter '$I*'
+        }
+
+        # Config-driven per-user folders: add new artifacts in TriageConfig.psd1
+        # without touching code
+        UserArtifacts = {
+            foreach ($Hive in ($global:TriageUserHives | Where-Object ProfilePath)) {
+                foreach ($Item in (Get-TriageConfig -Key "UserArtifacts")) {
+                    $Filter = if ($Item.Filter) {
+                        $Item.Filter
+                    }
+                    else {
+                        "*"
+                    }
+                    Get-FolderFiles `
+                        -Folder (Join-Path $Hive.ProfilePath $Item.Path) `
+                        -DestBase "Users\$( $Hive.Sid )\$( $Item.Name )" `
+                        -Filter $Filter
+                }
+            }
+        }
     }
 
     foreach ($Set in $Cfg.Enabled) {
@@ -224,8 +296,8 @@ function Get-TriageRawArtifactsData {
         }
 
         if ($Set -in $Cfg.LargeSets -and $FreeGb -lt $Cfg.MinFreeGbForLargeSets) {
-            $NoSpaceMsg = "Skipping [ $Set ] => only $( [int]$FreeGb ) GB free (minimum `
-                $( $Cfg.MinFreeGbForLargeSets ) GB)."
+            $NoSpaceMsg = "Skipping [ $Set ] => only $( [int]$FreeGb ) GB free " +
+                "(minimum $( $Cfg.MinFreeGbForLargeSets ) GB)."
             Show-Message -Message $NoSpaceMsg -Level WARNING -AddToLog
             continue
         }
@@ -259,7 +331,8 @@ function Get-TriageRawArtifactsData {
             $Failed = @($Rows | Where-Object Status -eq "Failed").Count
 
             if ($Failed) {
-                $FailedMsg = "[ $Set ] $Ok copied, $Failed failed, $Locked locked. See raw_artifacts_manifest.csv."
+                $FailedMsg = "[ $Set ] $Ok copied, $Failed failed, $Locked locked. " +
+                    "See raw_artifacts_manifest.csv."
                 Show-Message -Message $FailedMsg -Level ERROR -AddToLog
             }
             elseif ($Locked) {

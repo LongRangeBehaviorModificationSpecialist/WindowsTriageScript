@@ -4,8 +4,9 @@
     Branding = @{
         ToolName = "NOVA ICAC VECTOR Triage Application"
         Author   = "SA Michael Sponheimer"
-        DLU      = "02-Nov-2026"
+        DLU      = "06-Nov-2026"
     }
+
 
     Modules = @(
         "001_Device",
@@ -20,6 +21,7 @@
         "010_Internet",
         "011_Raw_Artifacts"
     )
+
 
     # Relative to the toolkit root. The loader turns these into full paths.
     Binaries = @{
@@ -44,6 +46,7 @@
         whoami               = "bin\whoami.exe"
     }
 
+
     Defaults = @{
         ScratchFolder         = "_scratch"
         HashIncludeMd5        = $true
@@ -51,22 +54,63 @@
         TimestampFormat       = "yyyy-MM-ddTHH:mm:ss.fffZ"
     }
 
+
     RawArtifacts = @{
         Enabled = @(
             "SystemHives", "Amcache", "UserHives", "Prefetch", "Srum",
             "LnkAndJumpLists", "BrowserDatabases", "StartupFolders",
             "WmiRepository", "Bits", "WindowsUpdate", "Defender", "Mft",
-            "UsnJrnl"
+            "UsnJrnl", "ScheduledTasks", "SetupApi", "WerReports",
+            "RecycleBin", "UserArtifacts"
         )
         LargeSets             = @("Mft", "UsnJrnl")
         MinFreeGbForLargeSets = 10
     }
+
+
+    UserArtifacts = @(
+        @{
+            Name = "ActivitiesCache"
+            Path = "AppData\Local\ConnectedDevicesPlatform"
+            Filter = "ActivitiesCache.db*"
+        }
+        @{
+            Name = "Thumbcache"
+            Path = "AppData\Local\Microsoft\Windows\Explorer"
+            Filter = "thumbcache_*.db"
+        }
+        @{
+            Name = "IconCache"
+            Path = "AppData\Local\Microsoft\Windows\Explorer"
+            Filter = "iconcache_*.db"
+        }
+        @{
+            Name = "Notifications"
+            Path = "AppData\Local\Microsoft\Windows\Notifications"
+            Filter = "wpndatabase.db*"
+        }
+        @{
+            Name = "RdpBitmapCache"
+            Path = "AppData\Local\Microsoft\Terminal Server Client\Cache"
+        }
+        @{
+            Name = "OneDriveLogs"
+            Path = "AppData\Local\Microsoft\OneDrive\logs"
+        }
+        @{
+            Name = "AnyDesk"
+            Path = "AppData\Roaming\AnyDesk"
+            Filter = "*.trace"
+        }
+    )
+
 
     ExecutableFileTypes = @(
         "*.BAT", "*.BIN", "*.CGI", "*.CMD", "*.COM", "*.DLL", "*.EXE",
         "*.JAR", "*.JOB", "*.JSE", "*.MSI", "*.PAF", "*.PS1", "*.SCR",
         "*.SCRIPT", "*.VB", "*.VBE", "*.VBS", "*.VBSCRIPT", "*.WS", "*.WSF"
     )
+
 
     ScanFolders = @{
         # Relative to each user's profile folder
@@ -94,6 +138,7 @@
         )
     }
 
+
     # An array, because hashtables in a .psd1 are unordered
     EventLogs = @(
         "Application",
@@ -116,8 +161,16 @@
         "Microsoft-Windows-Bits-Client/Operational",
         "Microsoft-Windows-WinRM/Operational",
         "Microsoft-Windows-CodeIntegrity/Operational",
-        "Microsoft-Windows-Windows Firewall With Advanced Security/Firewall"
+        "Microsoft-Windows-Windows Firewall With Advanced Security/Firewall",
+        "Microsoft-Windows-NetworkProfile/Operational",
+        "Microsoft-Windows-WLAN-AutoConfig/Operational",
+        "Microsoft-Windows-SmbClient/Security",
+        "Microsoft-Windows-AppLocker/EXE and DLL",
+        "Microsoft-Windows-VHDMP/Operational",
+        "Microsoft-Windows-TerminalServices-RdpCoreTS/Operational",
+        "OAlerts"
     )
+
 
     Browsers = @(
         @{
@@ -144,6 +197,18 @@
             Name = "Vivaldi"
             Type = "Chromium"
             Root = "AppData\Local\Vivaldi\User Data"
+        }
+        @{
+            Name = "Opera"
+            Type = "Chromium"
+            Root = "AppData\Roaming\Opera Software\Opera Stable"
+            Direct = $true
+        }
+        @{
+            Name = "OperaGX"
+            Type = "Chromium"
+            Root = "AppData\Roaming\Opera Software\Opera GX Stable"
+            Direct = $true
         }
     )
 

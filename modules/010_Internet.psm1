@@ -115,7 +115,8 @@ function Get-TriageInternetData {
             $SqlitePath = [string](Get-TriageBinary "SQLite3")
         }
         catch {
-            $SqlUnavailMsg = "sqlite3.exe is unavailable. Skipping browser analysis => $($_.Exception.Message)"
+            $SqlUnavailMsg = "sqlite3.exe is unavailable. Skipping browser analysis => " +
+                "$($_.Exception.Message)"
             Show-Message -Message $SqlUnavailMsg -Level ERROR -AddToLog
             return
         }
@@ -149,20 +150,41 @@ function Get-TriageInternetData {
         # All times are UTC
         $Queries = @{
             "Chromium" = [ordered]@{
-                "Urls"        = "SELECT datetime((last_visit_time / 1000000) - 11644473600, 'unixepoch') AS VisitTimeUTC, visit_count AS VisitCount, typed_count AS TypedCount, title AS Title, url AS Url FROM urls ORDER BY last_visit_time DESC"
+                "Urls" = "SELECT datetime((last_visit_time / 1000000) - 11644473600, " +
+                "'unixepoch') AS VisitTimeUTC, visit_count AS VisitCount, typed_count " +
+                "AS TypedCount, title AS Title, url AS Url FROM urls ORDER BY " +
+                "last_visit_time DESC"
 
-                "Visits"      = "SELECT datetime((v.visit_time / 1000000) - 11644473600, 'unixepoch') AS VisitTimeUTC, u.url AS Url, u.title AS Title, v.transition AS Transition FROM visits v JOIN urls u ON u.id = v.url ORDER BY v.visit_time DESC"
+                "Visits"      = "SELECT datetime((v.visit_time / 1000000) - 11644473600, " +
+                "'unixepoch') AS VisitTimeUTC, u.url AS Url, u.title AS Title, " +
+                "v.transition AS Transition FROM visits v JOIN urls u ON u.id = v.url " +
+                "ORDER BY v.visit_time DESC"
 
-                "SearchTerms" = "SELECT datetime((u.last_visit_time / 1000000) - 11644473600, 'unixepoch') AS LastVisitUTC, k.term AS SearchTerm, u.url AS Url FROM keyword_search_terms k JOIN urls u ON u.id = k.url_id ORDER BY u.last_visit_time DESC"
+                "SearchTerms" = "SELECT datetime((u.last_visit_time / 1000000) - 11644473600, " +
+                "'unixepoch') AS LastVisitUTC, k.term AS SearchTerm, u.url AS Url FROM " +
+                "keyword_search_terms k JOIN urls u ON u.id = k.url_id ORDER BY u.last_visit_time DESC"
 
-                "Downloads"   = "SELECT datetime((start_time / 1000000) - 11644473600, 'unixepoch') AS DownloadStartUTC, datetime((end_time / 1000000) - 11644473600, 'unixepoch') AS DownloadEndUTC, round(total_bytes / 1048576.0, 3) AS SizeMB, mime_type AS MimeType, opened AS OpenedFromBrowser, current_path AS SavedPath, tab_url AS DownloadedFrom FROM downloads ORDER BY start_time DESC"
+                "Downloads"   = "SELECT datetime((start_time / 1000000) - 11644473600, " +
+                "'unixepoch') AS DownloadStartUTC, datetime((end_time / 1000000) - 11644473600, " +
+                "'unixepoch') AS DownloadEndUTC, round(total_bytes / 1048576.0, 3) AS SizeMB, " +
+                "mime_type AS MimeType, opened AS OpenedFromBrowser, current_path AS SavedPath, " +
+                "tab_url AS DownloadedFrom FROM downloads ORDER BY start_time DESC"
             }
             "Firefox" = [ordered]@{
-                "Urls"      = "SELECT datetime(last_visit_date / 1000000, 'unixepoch') AS LastVisitUTC, visit_count AS VisitCount, title AS Title, url AS Url FROM moz_places WHERE last_visit_date IS NOT NULL ORDER BY last_visit_date DESC"
+                "Urls"      = "SELECT datetime(last_visit_date / 1000000, 'unixepoch') AS " +
+                "LastVisitUTC,  visit_count AS VisitCount, title AS Title, url AS Url FROM " +
+                "moz_places WHERE last_visit_date IS NOT NULL ORDER BY last_visit_date DESC"
 
-                "Visits"    = "SELECT datetime(v.visit_date / 1000000, 'unixepoch') AS VisitTimeUTC, p.url AS Url, p.title AS Title, v.visit_type AS VisitType FROM moz_historyvisits v JOIN moz_places p ON p.id = v.place_id ORDER BY v.visit_date DESC"
+                "Visits"    = "SELECT datetime(v.visit_date / 1000000, 'unixepoch') AS " +
+                "VisitTimeUTC, p.url AS Url, p.title AS Title, v.visit_type AS VisitType " +
+                "FROM moz_historyvisits v JOIN moz_places p ON p.id = v.place_id ORDER BY " +
+                "v.visit_date DESC"
 
-                "Downloads" = "SELECT datetime(a.dateAdded / 1000000, 'unixepoch') AS AddedUTC, n.name AS Attribute, a.content AS Content, p.url AS Url FROM moz_annos a JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id JOIN moz_places p ON p.id = a.place_id WHERE n.name LIKE 'downloads/%' ORDER BY a.dateAdded DESC"
+                "Downloads" = "SELECT datetime(a.dateAdded / 1000000, 'unixepoch') AS " +
+                "AddedUTC, n.name AS Attribute, a.content AS Content, p.url AS Url FROM " +
+                "moz_annos a JOIN moz_anno_attributes n ON n.id = a.anno_attribute_id " +
+                "JOIN moz_places p ON p.id = a.place_id WHERE n.name LIKE 'downloads/%' " +
+                "ORDER BY a.dateAdded DESC"
             }
         }
 
@@ -176,10 +198,14 @@ function Get-TriageInternetData {
             ForEach-Object { $_.ProfilePath })
 
         if ($ProfilePaths.Count -eq 0) {
-            $NoMountedMsg = "No mounted user profiles were found. Falling back to [ $env:SystemDrive\Users ]."
+            $NoMountedMsg = "No mounted user profiles were found. Falling back to " +
+                "[ $env:SystemDrive\Users ]."
             Show-Message -Message $NoMountedMsg -Level WARNING -AddToLog
 
-            $ProfilePaths = @(Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force `
+            $ProfilePaths = @(Get-ChildItem `
+                -LiteralPath "$env:SystemDrive\Users" `
+                -Directory `
+                -Force `
                 -ErrorAction SilentlyContinue |
                 ForEach-Object { $_.FullName })
         }
@@ -202,7 +228,9 @@ function Get-TriageInternetData {
 
         try {
             foreach ($ProfilePath in $ProfilePaths) {
-                Show-Message -Message "Profile found => [ $ProfilePath ]" -MessageColor Magenta
+                Show-Message `
+                    -Message "Profile found => [ $ProfilePath ]" `
+                    -MessageColor Magenta
                 $UserLeaf = Split-Path -Path $ProfilePath -Leaf
 
                 foreach ($BrowserName in $Browsers.Keys) {
@@ -221,9 +249,14 @@ function Get-TriageInternetData {
                         "places.sqlite"
                     }
 
-                    foreach ($ProfileDir in (Get-ChildItem -LiteralPath $Root -Directory `
-                            -Force -ErrorAction SilentlyContinue)) {
-                        $Source = Join-Path -Path $ProfileDir.FullName -ChildPath $DbName
+                    foreach ($ProfileDir in (Get-ChildItem `
+                                            -LiteralPath $Root `
+                                            -Directory `
+                                            -Force `
+                                            -ErrorAction SilentlyContinue)) {
+                        $Source = Join-Path `
+                                  -Path $ProfileDir.FullName `
+                                  -ChildPath $DbName
                         if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
                             continue
                         }
@@ -231,9 +264,16 @@ function Get-TriageInternetData {
                         $DbFound++
                         $Tag = ("$UserLeaf-$BrowserName-$( $ProfileDir.Name )") -replace "[^\w\.\-]", "_"
 
-                        $BrowserDir = Join-Path -Path $InternetFolder -ChildPath "Browser_Analysis\$BrowserName"
-                        $null       = New-Item -ItemType Directory -Path $BrowserDir -Force
-                        $Db         = Join-Path -Path $BrowserDir -ChildPath "$Tag-$DbName.sqlite"
+                        $BrowserDir = Join-Path `
+                                    -Path $InternetFolder `
+                                    -ChildPath "Browser_Analysis\$BrowserName"
+                        $null       = New-Item `
+                                    -ItemType Directory `
+                                    -Path $BrowserDir `
+                                    -Force
+                        $Db         = Join-Path `
+                                    -Path $BrowserDir `
+                                    -ChildPath "$Tag-$DbName.sqlite"
 
                         # Copy the database plus its -wal/-journal files so
                         # recent entries are not lost. (-shm is not copied;
@@ -247,17 +287,20 @@ function Get-TriageInternetData {
                                         Copy-SharedFile -Source "$Source$Suffix" -Destination "$Db$Suffix"
                                     }
                                     catch {
-                                        $NoCopyMsg = "Could not copy $( Split-Path -Path "$Source$Suffix" `
-                                            -Leaf ) for $Tag => $( $_.Exception.Message )"
-                                        Show-Message -Message $NoCopyMsg -Level WARNING -AddToLog
+                                        $NoCopyMsg = "Could not copy $( Split-Path -Path " +
+                                            "$Source$Suffix -Leaf ) for $Tag => $( $_.Exception.Message )"
+                                        Show-Message `
+                                            -Message $NoCopyMsg `
+                                            -Level WARNING `
+                                            -AddToLog
                                     }
                                 }
                             }
                         }
                         catch {
                             $Failures++
-                            $CopyBrowserFailMsg = "Could not copy [ $BrowserName ] database for [ $Tag ] `
-                                => $( $_.Exception.Message )"
+                            $CopyBrowserFailMsg = "Could not copy [ $BrowserName ] database " +
+                                "for [ $Tag ] => $( $_.Exception.Message )"
                             Show-Message -Message $CopyBrowserFailMsg -Level ERROR -AddToLog
                             $Summary.Add([PSCustomObject]@{
                                 User       = $UserLeaf
@@ -273,10 +316,15 @@ function Get-TriageInternetData {
                             continue
                         }
 
-                        Show-Message -Message "Browser database copied [ $Tag ]" -Level INFO -AddToLog
+                        Show-Message `
+                            -Message "Browser database copied [ $Tag ]" `
+                            -Level INFO `
+                            -AddToLog
 
                         foreach ($Q in $Queries[$Browser.Type].GetEnumerator()) {
-                            $OutFile = Join-Path -Path $BrowserDir -ChildPath "$Tag-$( $Q.Key ).csv"
+                            $OutFile = Join-Path `
+                                       -Path $BrowserDir
+                                       -ChildPath "$Tag-$( $Q.Key ).csv"
                             $Rows    = 0
                             $Status  = "OK"
                             $Detail  = ""
@@ -306,8 +354,8 @@ function Get-TriageInternetData {
                                     $Detail = (($ErrText + $Lines) -join " ").Trim()
                                     if ($Detail -match "no such table|no such column") {
                                         $Status = "NotPresent"
-                                        $NotAvailMsg = "[ $Tag ] '$( $Q.Key )' `
-                                            is not available in this database version."
+                                        $NotAvailMsg = "[ $Tag ] '$( $Q.Key )' is not " +
+                                            "available in this database version."
                                         Show-Message -Message $NotAvailMsg -Level INFO -AddToLog
                                     }
                                     else {
@@ -338,21 +386,26 @@ function Get-TriageInternetData {
 
                                         if ($Columns.Count -gt 0) {
                                             @(($Columns -join ',')) + $Clean |
-                                                Set-Content -LiteralPath $OutFile -Encoding UTF8
+                                                Set-Content `
+                                                    -LiteralPath $OutFile `
+                                                    -Encoding UTF8
                                         }
                                         else {
                                             # Should not happen with the current
                                             # queries, but write the raw output
                                             # rather than a silently header-less
                                             # file.
-                                            $Clean | Set-Content -LiteralPath $OutFile -Encoding UTF8
+                                            $Clean | Set-Content `
+                                                -LiteralPath $OutFile `
+                                                -Encoding UTF8
                                         }
 
                                         # Exact row count from SQLite itself
                                         $CountOut = & $SqlitePath -batch -readonly $Db `
                                             "SELECT COUNT(*) FROM ($( $Q.Value ))" 2>$null
                                         $Parsed   = 0
-                                        if ([int]::TryParse(([string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
+                                        if ([int]::TryParse((
+                                            [string]($CountOut | Select-Object -First 1)).Trim(), [ref]$Parsed)) {
                                             $Rows = $Parsed
                                         }
                                         else {
@@ -398,14 +451,16 @@ function Get-TriageInternetData {
                 catch { }
             }
         }
+
         Write-OutputToCsv -Data $Summary -OutputFile $CsvFile
         $Msg = "Browser analysis => $DbFound database(s) found, $Failures failure(s)."
         Show-Message -Message $Msg -Level INFO -AddToLog
     }
 
-        # ----------------------------------
+    # ----------------------------------
     # Run the functions from the module
     # ----------------------------------
+
     $Tasks = @(
         @{
             Action  = { Get-StoredCookies }

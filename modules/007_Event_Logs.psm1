@@ -30,7 +30,7 @@ function Get-TriageEventLogData {
         param(
             [string]$LogName
         )
-        $Info = Get-WinEvent -ListLog $LogName #  -ErrorAction SilentlyContinue
+        $Info = Get-WinEvent -ListLog $LogName -ErrorAction SilentlyContinue
         if (-not $Info) {
             return $null
         }
@@ -58,7 +58,7 @@ function Get-TriageEventLogData {
 
         if ($Code -ne 0) {
             # Do not leave a half-written export behind as if it were evidence
-            Remove-Item -LiteralPath $OutputFile -Force #  -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $OutputFile -Force -ErrorAction SilentlyContinue
             throw "wevtutil exited with code $Code => $( ($Raw | ForEach-Object { "$_" }) -join ' ' )"
         }
     }
@@ -68,7 +68,7 @@ function Get-TriageEventLogData {
     try {
         $Need = 0L
         foreach ($Name in (Get-TriageConfig -Key "EventLogs")) {
-            $Info = Get-WinEvent -ListLog $Name #  -ErrorAction SilentlyContinue
+            $Info = Get-WinEvent -ListLog $Name -ErrorAction SilentlyContinue
             if ($Info) {
                 $Need += [long]$Info.FileSize
             }

@@ -1,10 +1,94 @@
 function Get-Gui {
     <#
     .SYNOPSIS
-        Assembles and runs the graphical wrapper managing all worker modules.
+        Shows the graphical front end for the triage toolkit and runs the
+        collection when the operator clicks `Start Triage`.
+
+    .DESCRIPTION
+        Builds and displays a Windows Forms window titled "NOVA ICAC VECTOR
+        Triage Application".
+
+        The operator enters a user name, agency, and case number, ticks the
+        modules and options to run, and clicks `Start Triage`.
+
+        The function blocks until the window is closed.
+
+        Before starting, the window checks that a user name and case number
+        are present, that no option without code behind it is ticked, and
+        that at least one module or optional capture is selected.
+
+        When a run starts, the function disables the input controls, calls
+        `Get-InitialSetup` to create the results folder and log, calls
+        `Disable-PSReadLineHistory` and `Write-LaunchContext`, and then runs
+        `Invoke-DfirTriageScan` in a separate runspace so the window stays
+        responsive.
+
+        A timer reads new lines from the log every 500 milliseconds and shows
+        them in the log box.
+
+        When the worker finishes, the controls are re-enabled and the status
+        line shows the exit code and results folder.
+
+        The window cannot be closed while a collection is running.
+
+    .PARAMETER OutputRoot
+        The folder under which the case results folder is created, passed on
+        to `Get-InitialSetup`.
+
+        When it is empty, `Get-InitialSetup` uses its default (normally the
+        toolkit folder). Use external media so that results are not written
+        to the examined computer.
+
+    .INPUTS
+        None.
+
+        This function does not accept pipeline input.
+
+    .OUTPUTS
+        System.Management.Automation.PSCustomObject
+
+        The result of the last run (the same object that
+        `Invoke-DfirTriageScan` stores in `$global:TriageResult`), with
+        ExitCode, Errors, Warnings, ResultsFolder, LogFile, and Duration.
+
+        If the worker produced no result, an object whose only property is
+        ExitCode = 3 is returned.
+
+        If the window is closed without a run, the return value is $null.
+
+    .EXAMPLE
+        $Result = Get-Gui -OutputRoot "E:\Triage"
+        if ($Result) { "Exit code: $( $Result.ExitCode )" }
+
+        Opens the window, waits for it to be closed, and reports the outcome
+        of the last run.
+
+    .EXAMPLE
+        Get-Gui
+
+        Opens the window using the default output location.
+
+    .NOTES
+        Requires an interactive desktop session (it cannot run over a
+        non-interactive remote session) and an elevated PowerShell.
+
+        The worker runspace loads the toolkit through `modules\triage.psd1`
+        and has its own set of global variables, which is why `ResultsFolder`
+        and `LogFile` are passed to it explicitly.
+
+
+        The mapping from module checkboxes to module names is held in
+        `$ModuleMap`; the options listed in `$NotImplemented` are refused
+        if ticked.
+
+    .LINK
+        Invoke-DfirTriageScan
+
+    .LINK
+        Get-InitialSetup
     #>
     [CmdletBinding()]
-    [OutputType([void])]
+    [OutputType([System.Management.Automation.PSCustomObject])]
     param(
         [string]$OutputRoot
     )

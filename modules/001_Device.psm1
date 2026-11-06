@@ -1,4 +1,100 @@
 function Get-TriageDeviceData {
+    <#
+    .SYNOPSIS
+        Collects hardware, operating system, disk, memory, session, and startup
+        information about the computer (module 001_Device).
+
+    .DESCRIPTION
+        Runs a series of read-only collection tasks and writes each result as
+        a text or CSV file in the module folder.  Tasks run one after another
+        in this order:
+
+            01.01_device_info.txt
+                Overall record from Get-ComputerDetails: operating system,
+                hardware, BIOS, license, time zone, uptime, and settings.
+            01.02_PS_info.txt
+                Sysinternals PsInfo (installed software, hotfixes, and disk
+                volumes), run from the verified bin folder.
+            01.03_computer_info.txt
+                Output of `Get-ComputerInfo`.
+            01.04_system_info1.txt
+                Output of `systeminfo` in list format.
+            01.05_system_info2.txt
+                `Win32_ComputerSystem` properties.
+            01.06_physical_memory.txt
+                Installed memory modules (`Win32_PhysicalMemory`).
+            01.07_env_vars.txt
+                Environment variables of the running session.
+            01.08_disk_partitions.csv
+                Disk partitions (`Win32_DiskPartition`).
+            01.09a_start_up_apps.txt,
+            01.09b_start_up_apps.csv
+                Startup commands (`Win32_StartupCommand`), plus the contents
+                of the HKLM Run, RunOnce, and Policies\Explorer\Run keys
+                (both 32-bit and 64-bit views) appended to the text file.
+            01.10_motherboard.txt
+                Motherboard properties (`Win32_BaseBoard`).
+            01.11_disk_info.csv
+                Volumes joined to their partitions and physical disks.
+            01.12_key_folder_listing.csv
+                List key folders present on the examined device.
+
+    .PARAMETER DeviceFolder
+        Path of the folder where this module writes its files.
+
+        `Invoke-DfirTriageScan` creates it as `<ResultsFolder>\001_Device`.
+
+    .INPUTS
+        None.
+
+        This function does not accept pipeline input.
+
+    .OUTPUTS
+        None.
+
+        Results are written to files in DeviceFolder, and progress is written
+        to the screen and the log.
+
+    .EXAMPLE
+        Get-TriageDeviceData `
+            -DeviceFolder "E:\Triage\Case-2026-0142\001_Device"
+
+        Writes the 01.xx files into that folder.
+
+        The toolkit must already be loaded and its tools verified (see NOTES).
+
+    .EXAMPLE
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
+            -CaseNumber "2026-0142" -Modules "001_Device"
+
+        The usual way this module runs, on its own.
+
+    .NOTES
+        Requires an elevated session.  The tools used from bin (`PSInfo`,
+        `systeminfo`) are looked up with `Get-TriageBinary`, which only works
+        after `Initialize-TriageSystemTools` has run, so call this function
+        through `Invoke-DfirTriageScan` rather than from a fresh session.
+
+        Footprint: `PsInfo` is started with `-accepteula`, which creates the
+        `HKCU\Software\Sysinternals\PsInfo\EulaAccepted` key in the registry
+        of the account running the toolkit.  The code appends a note saying
+        so to `PS_info.txt`.  Record it in the case notes.
+
+        Each task is isolated: if one fails, the error is logged and the next
+        task still runs.
+
+        A task whose output file is missing or empty is also reported as an
+        error.
+
+    .LINK
+        Invoke-DfirTriageScan
+
+    .LINK
+        Get-ComputerDetails
+
+    .LINK
+        Invoke-TriageTaskList
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -25,8 +121,11 @@ function Get-TriageDeviceData {
         )
         & (Get-TriageBinary "PSInfo") -accepteula -s -h -d > $TxtFile 2>&1
 
-        $Msg = "`n`nPsInfo was run with `-accepteula`, which creates `HKCU\Software\Sysinternals\PsInfo\EulaAccepted (DWORD = 1)` in the `NTUSER.DAT` of the account used to run the tool (<DOMAIN\user>). This change was made by the examiner's tool, not by the subject. In the current execution order, the snapshot of that account's registry hive is taken before PsInfo runs, so the collected copy will not contain the value."
-
+        $Msg = "`n`nPsInfo was run with `-accepteula`, which creates `HKCU\Software\Sysinternals" +
+            "\PsInfo\EulaAccepted (DWORD = 1)` in the `NTUSER.DAT` of the account used to run the " +
+            "tool (<DOMAIN\user>). This change was made by the examiner's tool, not by the subject. " +
+            "In the current execution order, the snapshot of that account's registry hive is taken " +
+            "before PsInfo runs, so the collected copy will not contain the value."
         Add-Content -Path $TxtFile -Value $Msg -Encoding UTF8
     }
 
@@ -170,7 +269,7 @@ function Get-TriageDeviceData {
             Where-Object DriveLetter |
             ForEach-Object {
                 $L = $_.DriveLetter; Get-Partition -DriveLetter $L `
-                    -ErrorAction SilentlyContinue |
+                -ErrorAction SilentlyContinue |
                 Get-Disk |
                 Select-Object -Property @{
                     Name = "DriveLetter"
@@ -178,22 +277,49 @@ function Get-TriageDeviceData {
                 }, * -ExcludeProperty Cim*
             } |
             Sort-Object -Property DriveLetter |
-            Select-Object -Property DriveLetter, DiskNumber, PartitionStyle, `
-            ProvisioningType, OperationalStatus, HealthStatus, BusType, `
-            UniqueIdFormat, OfflineReason, ObjectID, PassThroughClass, `
-            PassThroughIds, PassThroughNamespace, PassThroughServer, UniqueId, `
+            Select-Object -Property DriveLetter, DiskNumber, PartitionStyle, ProvisioningType, `
+            OperationalStatus, HealthStatus, BusType, UniqueIdFormat, OfflineReason, ObjectID, `
+            PassThroughClass, PassThroughIds, PassThroughNamespace, PassThroughServer, UniqueId, `
             AdapterSerialNumber, @{
                 Name = "AllocatedSize (GB)"
                 Expression = { "{0:N2}" -f ($_.AllocatedSize / 1GB) }
-            }, BootFromDisk, FirmwareVersion, FriendlyName, Guid, IsBoot, `
-            IsClustered, IsHighlyAvailable, IsOffline, IsReadOnly, IsScaleOut, `
-            IsSystem, LargestFreeExtent, Location, LogicalSectorSize, Manufacturer, `
-            Model, Number, NumberOfPartitions, Path, PhysicalSectorSize, @{
+            }, BootFromDisk, FirmwareVersion, FriendlyName, Guid, IsBoot, IsClustered, `
+            IsHighlyAvailable, IsOffline, IsReadOnly, IsScaleOut, IsSystem, `
+            LargestFreeExtent, Location, LogicalSectorSize, Manufacturer, Model, Number, `
+            NumberOfPartitions, Path, PhysicalSectorSize, @{
                 Name = "SerialNumber"
                 Expression = { "$( $_.SerialNumber )".Trim() }
             }, Signature, Size, PSComputerName |
             Export-Csv -Path $CsvFile -NoTypeInformation -Encoding UTF8
     }
+
+
+    function Get-KeyFolderListing {
+        param(
+            [string]$CsvFile = (
+                Join-Path -Path $DeviceFolder -ChildPath "01.12_key_folder_listing.csv"
+            )
+        )
+        $Paths = @(
+            "$env:SystemDrive\",
+            "$env:SystemDrive\Users",
+            $env:ProgramData,
+            "$env:SystemDrive\Program Files",
+            ${env:ProgramFiles(x86)}
+        )
+        foreach ($H in $global:TriageUserHives) {
+            if ($H.ProfilePath) {
+                $Paths += (Join-Path -Path $H.ProfilePath -ChildPath "Desktop"),
+                    (Join-Path -Path $H.ProfilePath -ChildPath "Downloads")
+            }
+        }
+        $Data = foreach ($P in $Paths) {
+            Get-ChildItem -LiteralPath $P -Force -ErrorAction SilentlyContinue |
+                Select-Object FullName, Attributes, Length, CreationTimeUtc, LastWriteTimeUtc, LastAccessTimeUtc
+        }
+        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+    }
+
 
     # ----------------------------------
     # Run the functions from the module
@@ -255,6 +381,11 @@ function Get-TriageDeviceData {
             Action    = { Get-DiskInfo }
             Message   = "01.11_Gathering Disk Information..."
             Files     = "01.11_disk_info.csv"
+        }
+        @{
+            Action    = { Get-KeyFolderListing }
+            Message   = "01.12_Listing key folders..."
+            Files     = "01.12_key_folder_listing.csv"
         }
     )
 
