@@ -65,13 +65,13 @@ function Get-TriageNetworkData {
 
     .EXAMPLE
         Get-TriageNetworkData `
-            -NetworkFolder "E:\Triage\Case-2026-0142\003_Network"
+            -NetworkFolder "E:\Triage\Case-2026-12345\003_Network"
 
         Writes the 03.xx files into that folder.
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
-            -CaseNumber "2026-0142" -Modules "003_Network"
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
+            -CaseNumber "2026-12345" -Modules "003_Network"
 
         The usual way this module runs, on its own.
 

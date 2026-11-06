@@ -167,25 +167,25 @@ The launcher then:
 
 
 1. `-Gui` : Show the graphical interface.
-2. `-Operator` | `-Op` : Examiner name recorded in the log and`case_info.json`.
+2. `-Operator` | `-O` : Examiner name recorded in the log and `case_info.json`.
 3. `-Agency` | `-A` : Agency name (optional).
-4. `-CaseNumber` | `-CN` : Case number recorded in the log and`case_info.json`.
+4. `-CaseNumber` | `-CN` : Case number recorded in the log and `case_info.json`.
 5. `-Modules` | `-Mods` : One or more of the following : `001_Device`, `002_Users`, `003_Network`, `004_Processes`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet` and `011_Raw_Artifacts`.  Default : all.
 6. `-RunEdd` | `-Edd` : Run Encrypted Disk Detector.
-7. `-GetProcesses` | `-Proc` : Run Magnet Process Capture.
+7. `-GetProcesses` | `-GP` : Run Magnet Process Capture.
 8. `-CaptureRam` | `-Ram` : Run Magnet RAM Capture.
 9. `-Archive` | `-Zip` : Create a zip of the case folder when finished.
-10. `-OutputRoot` : Folder in which the case folder is created.  Default : the toolkit folder.
+10. `-OutputRoot` | `Out` : Folder in which the case folder is created.  Default : the toolkit folder.
 11. The following parameters have aliases to keep the length of the command line as short as possible :
 
 | Parameter       | Alias   |
 | --------------- | ------- |
-| `-Operator`     | `-Op`   |
+| `-Operator`     | `-O`    |
 | `-Agency`       | `-A`    |
 | `-CaseNumber`   | `-CN`   |
 | `-Modules`      | `-Mods` |
 | `-RunEdd`       | `-Edd`  |
-| `-GetProcesses` | `-Proc` |
+| `-GetProcesses` | `-GP`   |
 | `-CaptureRam`   | `-Ram`  |
 | `-Archive`      | `-Zip`  |
 
@@ -194,10 +194,10 @@ The launcher then:
 ```bat
 run-triage.cmd
 run-triage.cmd -Gui
-run-triage.cmd -Operator "J. Smith" -Agency "Example PD" -CaseNumber 2026-0142 -RunEdd -CaptureRam -Archive -RunEdd -Modules [<Modules>]
+run-triage.cmd -Operator "SA John Doe" -Agency "Example PD" -CaseNumber "2026-12345" -RunEdd -CaptureRam -Archive -RunEdd -Modules [<Modules>]
 
 # Using the parameter aliases:
-run-triage.cmd -Op "Operator" -A "Agency" -CN 26-00001 -Edd -Proc -Ram -Zip -Mods "001","005"
+run-triage.cmd -O "Operator" -A "Agency" -CN 26-00001 -Edd -GP -Ram -Zip -Mods "001","005"
 ```
 
 Run `Get-Help .\run-triage.ps1 -full` for the full built-in help.

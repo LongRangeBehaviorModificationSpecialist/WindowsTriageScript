@@ -55,10 +55,10 @@ function Invoke-CaseArchive {
         On failure, an error message is shown and nothing is returned.
 
     .EXAMPLE
-        Invoke-CaseArchive -ResultsFolder "E:\Triage\Case-2026-0142"
+        Invoke-CaseArchive -ResultsFolder "E:\Triage\Case-2026-12345"
 
-        Creates `E:\Triage\Case-2026-0142.zip` and
-        `E:\Triage\Case-2026-0142.zip.sha256`, leaving out the folders named
+        Creates `E:\Triage\Case-2026-12345.zip` and
+        `E:\Triage\Case-2026-12345.zip.sha256`, leaving out the folders named
         in the configuration file.
 
     .EXAMPLE

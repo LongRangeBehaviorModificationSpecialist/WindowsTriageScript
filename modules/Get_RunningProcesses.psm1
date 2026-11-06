@@ -38,14 +38,14 @@ function Get-RunningProcesses {
         written to the screen and the log.
 
     .EXAMPLE
-        Get-RunningProcesses -ResultsFolder "E:\Triage\Case-2026-0142"
+        Get-RunningProcesses -ResultsFolder "E:\Triage\Case-2026-12345"
 
         Saves process memory dumps under
-        `E:\Triage\Case-2026-0142\Process_Capture`.
+        `E:\Triage\Case-2026-12345\Process_Capture`.
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
-            -CaseNumber "2026-0142" -GetProcesses
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
+            -CaseNumber "26-12345" -GetProcesses
 
         The usual way this function runs: Invoke-DfirTriageScan calls it when
         `-GetProcesses` is given.

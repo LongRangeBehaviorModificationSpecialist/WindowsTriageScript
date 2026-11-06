@@ -57,15 +57,15 @@ function Get-TriageDeviceData {
 
     .EXAMPLE
         Get-TriageDeviceData `
-            -DeviceFolder "E:\Triage\Case-2026-0142\001_Device"
+            -DeviceFolder "E:\Triage\Case-2026-12345\001_Device"
 
         Writes the 01.xx files into that folder.
 
         The toolkit must already be loaded and its tools verified (see NOTES).
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
-            -CaseNumber "2026-0142" -Modules "001_Device"
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
+            -CaseNumber "2026-12345" -Modules "001_Device"
 
         The usual way this module runs, on its own.
 

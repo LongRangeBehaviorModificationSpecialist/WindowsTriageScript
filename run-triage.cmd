@@ -17,12 +17,13 @@ exit /b %ERRORLEVEL%
 
 REM ----- TO TEST APP USING THE PARAMETERS -----
 
-REM powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\run-triage.ps1 -Operator test -CaseNumber T1 -Modules 001_Device
+REM powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\run-triage.ps1 -O "SA John Doe" -CN "2026-T1" -Mods 001_Device
+
 REM echo %ERRORLEVEL%
 
 REM Expect 0 (or 1, which means a collector logged an error and tells you to read the log). Re-run without -CaseNumber and expect 2. Then run .\run-triage.ps1 interactively and .\run-triage.ps1 -Gui to check the other two paths.
 
-REM .\run-triage.cmd -Op "MAS" -CN 26-0001 -A "VSP" -Mods "001"
+REM .\run-triage.cmd -O "MAS" -CN 26-0001 -A "VSP" -Mods "001"
 
 REM To unload the reg hives, use =>
 REM reg unload HKU\TRIAGE_S-1-5-21-2365395819-2293360843-1847361048-1001

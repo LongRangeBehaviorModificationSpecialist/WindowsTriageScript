@@ -22,14 +22,14 @@ function Get-ComputerRam {
             of the installed RAM.
 
         After the tool exits, the function confirms that the exit code is 0
-        nd that at least one .raw file exists in the folder.
+        and that at least one .raw file exists in the folder.
 
         It then logs success and the elapsed time.  The image is hashed later,
         together with all other evidence, by `Get-FileHashes`.
 
-        A RAM image is the largest item the toolkit produces and is by far the
-        most volatile, so the output folder should be on external NTFS or
-        exFAT media, not the computer being examined.
+        A RAM image is the largest item the toolkit produces and is by far
+        the most volatile, so the output folder should be on external NTFS
+        or exFAT media, not the computer being examined.
 
     .PARAMETER ResultsFolder
         Path of the case results folder.
@@ -44,17 +44,17 @@ function Get-ComputerRam {
     .OUTPUTS
         None.
 
-        The image is written to <ResultsFolder>\Ram_Capture, and progress is
+        The image is written to `<ResultsFolder>\Ram_Capture`, and progress is
         written to the screen and the log.
 
     .EXAMPLE
-        Get-ComputerRam -ResultsFolder "E:\Triage\Case-2026-0142"
+        Get-ComputerRam -ResultsFolder "E:\Triage\Case-2026-12345"
 
-        Captures memory to E:\Triage\Case-2026-0142\Ram_Capture\*.raw.
+        Captures memory to E:\Triage\Case-2026-12345\Ram_Capture\*.raw.
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
-            -CaseNumber "2026-0142" -CaptureRam
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
+            -CaseNumber "26-12345" -CaptureRam
 
         The usual way this function runs: Invoke-DfirTriageScan calls it
         when the `-CaptureRam` argument is given.
@@ -124,8 +124,11 @@ function Get-ComputerRam {
         $SuccessMsg = "RAM capture completed successfully from computer => $( $ComputerName )"
         Show-Message -Message $SuccessMsg -Level INFO -AddToLog
 
-        Show-Message -File $RamCaptureFileName -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) `
-            -Level INFO -AddToLog
+        Show-Message `
+            -File $RamCaptureFileName `
+            -ExecutionTime (Format-TriageDuration -Span $Stopwatch.Elapsed) `
+            -Level INFO `
+            -AddToLog
 
         $Stopwatch.Stop()
     }

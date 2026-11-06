@@ -60,14 +60,14 @@ function Get-TriageUserData {
 
     .EXAMPLE
         Get-TriageUserData `
-            -UserFolder "E:\Triage\Case-2026-0142\002_Users"
+            -UserFolder "E:\Triage\Case-2026-12345\002_Users"
 
         Writes the 02.xx files, and a PowerShell_History subfolder of copied
         history files.
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
-            -CaseNumber "2026-0142" -Modules "002_Users"
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
+            -CaseNumber "2026-12345" -Modules "002_Users"
 
         The usual way this module runs, on its own.
 

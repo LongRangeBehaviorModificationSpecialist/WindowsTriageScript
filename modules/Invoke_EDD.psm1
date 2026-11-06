@@ -15,10 +15,10 @@ function Invoke-EDD {
         The function waits for the tool to finish.
 
         The report is then read and written into the log with
-        `Write-LogMessage` (log only, not the screen), so the finding is part
-        of the permanent record. If EDD produced no output, a placeholder
-        line saying so is written to the log instead; the file itself is left
-        as the tool wrote it.
+        `Write-LogMessage` (log only, not the screen), so the finding is
+        part of the permanent record. If EDD produced no output, a
+        placeholder line saying so is written to the log instead; the file
+        itself is left as the tool wrote it.
 
         Finally, the file name and elapsed time are logged.
 
@@ -44,14 +44,14 @@ function Invoke-EDD {
         progress is written to the screen and the log.
 
     .EXAMPLE
-        Invoke-EDD -ResultsFolder "E:\Triage\Case-2026-0142"
+        Invoke-EDD -ResultsFolder "E:\Triage\Case-2026-12345"
 
         Writes the detector's report to
-        `E:\Triage\Case-2026-0142\EDD\edd_results.txt`.
+        `E:\Triage\Case-2026-12345\EDD\edd_results.txt`.
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
-            -CaseNumber "2026-0142" -RunEdd
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
+            -CaseNumber "26-12345" -RunEdd
 
         The usual way this function runs: `Invoke-DfirTriageScan` calls it
         when the `-RunEdd` parameter is given.

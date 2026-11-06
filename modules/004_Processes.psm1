@@ -62,13 +62,13 @@ function Get-TriageProcessData {
 
     .EXAMPLE
         Get-TriageProcessData `
-            -ProcessesFolder "E:\Triage\Case-2026-0142\004_Process"
+            -ProcessesFolder "E:\Triage\Case-2026-12345\004_Process"
 
         Writes the 04.xx files into that folder.
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "J. Smith" `
-            -CaseNumber "2026-0142" -Modules "004_Process"
+        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
+            -CaseNumber "2026-12345" -Modules "004_Process"
 
         The usual way this module runs, on its own.
 
