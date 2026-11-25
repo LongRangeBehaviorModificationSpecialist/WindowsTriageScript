@@ -295,12 +295,10 @@ function Close-TriageLog {
         [string]$ResultsFolder
     )
 
-    $Root       = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
-    $LogsDir    = Join-Path -Path $Root -ChildPath "Logs"
-    $HashFolder = Join-Path -Path $Root -ChildPath "Hash_Results"
-
+    $Root           = (Resolve-Path -LiteralPath $ResultsFolder).Path.TrimEnd("\")
+    $LogsDir        = Join-Path -Path $Root -ChildPath "Logs"
+    $HashFolder     = Join-Path -Path $Root -ChildPath "Hash_Results"
     $LogPath        = $global:LogFile
-    # Show-Message now prints to the console only
     $global:LogFile = $null
 
     Close-TriageLogWriter
