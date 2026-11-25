@@ -173,8 +173,8 @@ function Invoke-DfirTriageScan {
         [switch]$Archive
     )
 
-    $global:TriageTimings = [System.Collections.Generic.List[object]]::New()
-    $StartTime = Get-Date
+    $global:TriageTimings      = [System.Collections.Generic.List[object]]::New()
+    $StartTime                 = Get-Date
     $global:TriageErrorCount   = 0
     $global:TriageWarningCount = 0
     $global:TriageResult       = $null
@@ -183,6 +183,7 @@ function Invoke-DfirTriageScan {
         -Message "Script Log for VECTOR DFIR Script Usage" `
         -Level INFO `
         -AddToLog
+
     Show-Message `
         -Message "[ $( $MyInvocation.MyCommand.Name ) ] execution started." `
         -Level INFO `
