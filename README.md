@@ -76,7 +76,7 @@ WindowsTriageScript/
 |-- run-triage.cmd                 Launcher ( recommended )
 |-- run-triage.ps1                 Entry point: console, unattended and GUI modes
 |-- config/
-|   |-- TriageConfig.psd1          Shared settings (module list, binaries, event logs, browsers, defaults)
+|   |-- TriageConfig.psd1          Shared settings ( module list, binaries, event logs, browsers, defaults )
 |-- modules/
 |   |-- triage.psd1                Module manifest
 |   |-- triage.psm1                Orchestrator ( Invoke-DfirTriageScan )
