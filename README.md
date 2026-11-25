@@ -3,7 +3,7 @@
 
 A PowerShell toolkit for fast, live triage of a Windows computer.  It is run from removable media, collects volatile and system artifacts, writes everything to a time-stamped case folder on that media, logs every action in UTC, and hashes the results so they can be verified later.
 
-> **Legal notice.**  Use this tool only with lawful authority (a warrant, valid consent, or agency policy).  Validate it on a test system before using it on a live case. The examiner is responsible for documenting its use.
+> **Legal notice.**  Use this tool only with lawful authority ( a warrant, valid consent, or agency policy ).  Validate it on a test system before using it on a live case. The examiner is responsible for documenting its use.
 
 > **Important.**  Do not open the collected files on the target computer.  Move the collection drive to a forensic workstation first.
 
@@ -31,16 +31,26 @@ A PowerShell toolkit for fast, live triage of a Windows computer.  It is run fro
 ## 1. Features
 
 
-- Eleven collection modules (*device*, *users*, *network*, *processes*, *system*, *prefetch*, *event logs*, *firewall*, *encryption*, *internet*, and *raw artifacts*) that can be run all together or selected individually.
+- Eleven collection modules ( *device*, *users*, *network*, *processes*, *system*, *prefetch*, *event logs*, *firewall*, *encryption*, *internet*, and *raw artifacts* ) that can be run all together or selected individually.
+
 - Optional captures using third-party tools : **Encrypted Disk Detector**, **Magnet Process Capture**, and **Magnet RAM Capture**.
-- Per-user registry data for **every** profile on the machine (logged-on or not), not only the account running the script.
-- Browser history, searches and downloads for Chrome, Edge, Brave, Vivaldi, and Firefox (all profiles).
-- Three ways to run it : interactive console, fully unattended (for EDR or remote shells), and a GUI.
+
+- Per-user registry data for **every** profile on the machine ( logged-on or not ), not only the account running the script.
+
+- Browser history, searches and downloads for Chrome, Edge, Brave, Vivaldi, and Firefox ( all profiles ).
+
+- Three ways to run it : interactive console, fully unattended ( for EDR or remote shells ), and a GUI.
+
 - Meaningful exit codes for automation.
+
 - Trusted-binary checks : tools in `/bin/` are verified against a SHA-256 manifest and refused if they do not match.
+
 - UTC timestamps in a single log file.
+
 - A `case_info.json` record of how the run was started.
-- SHA-256 (and MD5) hashes of all evidence.
+
+- SHA-256 ( and MD5 ) hashes of all evidence.
+
 - Optional zip archive with its own hash.
 
 
@@ -48,9 +58,13 @@ A PowerShell toolkit for fast, live triage of a Windows computer.  It is run fro
 
 
 1. Operating System : Windows 10 / 11 or Windows Server.
-2. PowerShell : Windows PowerShell 5.1 (the tested platform).
-3. Privileges : Local Administrator (the tool exits with code 2 otherwise).
-4. Collection drive : NTFS or exFAT.  Do not use FAT32 (4 GB file limit breaks RAM images).  When capturing RAM, free space should exceed installed RAM by about 10 percent.
+
+2. PowerShell : Windows PowerShell 5.1 ( the tested platform ).
+
+3. Privileges : Local Administrator ( the tool exits with code 2 otherwise ).
+
+4. Collection drive : NTFS or exFAT.  Do not use FAT32 ( 4 GB file limit breaks RAM images ).  When capturing RAM, free space should exceed installed RAM by about 10 percent.
+
 5. Binaries : The files listed in [Setup](#4-setup), placed in the `/bin/` directory.
 
 
@@ -59,14 +73,14 @@ A PowerShell toolkit for fast, live triage of a Windows computer.  It is run fro
 
 ```
 WindowsTriageScript/
-|-- run-triage.cmd                 Launcher (recommended)
+|-- run-triage.cmd                 Launcher ( recommended )
 |-- run-triage.ps1                 Entry point: console, unattended and GUI modes
 |-- config/
 |   |-- TriageConfig.psd1          Shared settings (module list, binaries, event logs, browsers, defaults)
 |-- modules/
 |   |-- triage.psd1                Module manifest
-|   |-- triage.psm1                Orchestrator (Invoke-DfirTriageScan)
-|   |-- functions.psm1             Shared helpers (logging, config, hashing helpers, registry, hives)
+|   |-- triage.psm1                Orchestrator ( Invoke-DfirTriageScan )
+|   |-- functions.psm1             Shared helpers ( logging, config, hashing helpers, registry, hives )
 |   |-- GuiMain.psm1               GUI
 |   |-- 001_Device.psm1            Collection modules
 |   |-- 002_Users.psm1             "  "
@@ -85,8 +99,8 @@ WindowsTriageScript/
 |   |-- Invoke_EDD.psm1            "  "
 |   |-- Get_FileHashes.psm1        File Hashing
 |   |-- Get_CaseArchive.psm1       Archiving
-|-- bin/                           Third-party and trusted binaries (not stored in git)
-|-- _scratch/                      Temporary working folder (created and removed automatically)
+|-- bin/                           Third-party and trusted binaries ( not stored in git )
+|-- _scratch/                      Temporary working folder ( created and removed automatically )
 |-- Get_BinaryFileHashes.ps1       File that hashes files in the /bin/ folder and creates the .json file
 |-- LICENSE
 |-- README.md
@@ -122,7 +136,7 @@ To avoid running executables from the computer being examined, copy these from a
 - `auditpol.exe`
 - `driverquery.exe`
 - `ipconfig.exe`
-- `net.exe` (and `net1.exe`)
+- `net.exe` ( and `net1.exe` )
 - `netsh.exe`
 - `NETSTAT.EXE`
 - `openfiles.exe`
@@ -133,7 +147,7 @@ To avoid running executables from the computer being examined, copy these from a
 - `wevtutil.exe`
 - `whoami.exe`
 
-Also copy each tool's resource file from `/en-US/` (for example `/en-US/netstat.exe.mui`) if it has one.  The list is defined under `Binaries` in `/config/TriageConfig.psd1`.
+Also copy each tool's resource file from `/en-US/` ( for example `/en-US/netstat.exe.mui` ) if it has one.  The list is defined under `Binaries` in `/config/TriageConfig.psd1`.
 
 Make sure you place all of the `.mui` files in a sub-directory of the `/bin/` folder.  This sub-folder needs to be named `/en-US/` or else the binaries will not work properly.
 
@@ -143,7 +157,7 @@ Make sure you place all of the `.mui` files in a sub-directory of the `/bin/` fo
 
 Every file in `/bin/` must be listed in `/bin/__hashes.json`.  At start-up the tool re-hashes each file and registers only those that match.  A missing or modified tool is refused, and the collector that needs it logs an error instead of running the target's copy.
 
-The helper file `Get_BinaryFilesHashes.ps1` creates the manifest.  Run it from the toolkit root after any change to `/bin/`, and make sure it writes `/bin/__hashes.json` (the file name the loader reads).
+The helper file `Get_BinaryFilesHashes.ps1` creates the manifest.  Run it from the toolkit root after any change to `/bin/`, and make sure it writes `/bin/__hashes.json` ( the file name the loader reads ).
 
 Record the SHA-256 of `__hashes.json` in your SOP so you can detect tampering with the manifest itself.
 
@@ -151,7 +165,7 @@ Record the SHA-256 of `__hashes.json` in your SOP so you can detect tampering wi
 ## 5. Running The Application
 
 
-### 5.1 Command Line (Recommended)
+### 5.1 Command Line ( Recommended )
 
 
 Right-click `run-triage.cmd` and choose **Run as administrator**.
@@ -159,7 +173,9 @@ Right-click `run-triage.cmd` and choose **Run as administrator**.
 The launcher then:
 
 1. Checks for administrator rights.
-2. Starts PowerShell with `-NoLogo -NoProfile -ExecutionPolicy Bypass` (the target's profile scripts are not run, and the launch command is not recorded in PowerShell history).
+
+2. Starts PowerShell with `-NoLogo -NoProfile -ExecutionPolicy Bypass` ( the target's profile scripts are not run, and the launch command is not recorded in PowerShell history ).
+
 3. Passes any arguments through to `run-triage.ps1`.
 
 
@@ -167,15 +183,25 @@ The launcher then:
 
 
 1. `-Gui` : Show the graphical interface.
+
 2. `-Operator` | `-O` : Examiner name recorded in the log and `case_info.json`.
-3. `-Agency` | `-A` : Agency name (optional).
+
+3. `-Agency` | `-A` : Agency name ( optional ).
+
 4. `-CaseNumber` | `-CN` : Case number recorded in the log and `case_info.json`.
-5. `-Modules` | `-Mods` : One or more of the following : `001_Device`, `002_Users`, `003_Network`, `004_Processes`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet` and `011_Raw_Artifacts`.  Default : all.
+
+5. `-Modules` | `-Mods` : One or more of the following : `001_Device`, `002_Users`, `003_Network`, `004_Processes`, `005_System`, `006_Prefetch`, `007_Event_Logs`, `008_Firewall`, `009_Encryption`, `010_Internet`, and `011_Raw_Artifacts`.  Default : all.
+
 6. `-RunEdd` | `-Edd` : Run Encrypted Disk Detector.
+
 7. `-GetProcesses` | `-GP` : Run Magnet Process Capture.
+
 8. `-CaptureRam` | `-Ram` : Run Magnet RAM Capture.
+
 9. `-Archive` | `-Zip` : Create a zip of the case folder when finished.
+
 10. `-OutputRoot` | `Out` : Folder in which the case folder is created.  Default : the toolkit folder.
+
 11. The following parameters have aliases to keep the length of the command line as short as possible :
 
 | Parameter       | Alias   |
@@ -219,16 +245,26 @@ Run `Get-Help .\run-triage.ps1 -full` for the full built-in help.
 
 Each module writes to its own numbered folder inside the case folder. See the functions in each `.psm1` for the complete list.
 
-1. **001_Device.**  Computer details (OS, install and boot dates, time zone, BIOS, domain role, license status, minimum password length, USB storage setting), PsInfo output,`Get-ComputerInfo`, `systeminfo`, hardware information, disk partitions, start-up programs (machine and per-user Run keys), full file listing of the system drive with timestamps.
-2. **002_User.**  Current user (`whoami`), user profiles, local users, Win32 user accounts, PowerShell console history for each user profile.
-3. **003_Network.**  IP configuration (`Get-NetIPAddress`, `ipconfig /all`), adapter configuration, established connections with owning process, full `netstat`, `Get-NetTCPConnection`, DNS cache, network locations used by each user (MountPoints2), SMB shares.
-4. **004_Processes.**  Running processes with command lines, SHA-256 of every running executable, services hosted by `svchost`, running services, drivers (`driverquery`, system drivers).
-5. **005_System.**  PnP devices and signed drivers, USB device history, logical and mapped disks, hotfixes, shadow copies, 50 newest DLLs, persistence-related registry locations (AppCertDLLs, AppInit_DLLs, Active Setup, Winlogon values, Session Manager, shell extensions and commands, LSA packages, browser helper objects), UAC and audit policy, boot configuration, Run-dialog history and typed paths (per user), Start menu data, executables under the Windows folder that are not validly signed.
+1. **001_Device.**  Computer details ( OS, install and boot dates, time zone, BIOS, domain role, license status, minimum password length, USB storage setting ), PsInfo output,`Get-ComputerInfo`, `systeminfo`, hardware information, disk partitions, start-up programs ( machine and per-user Run keys ), full file listing of the system drive with timestamps.
+
+2. **002_User.**  Current user ( `whoami` ), user profiles, local users, Win32 user accounts, PowerShell console history for each user profile.
+
+3. **003_Network.**  IP configuration ( `Get-NetIPAddress`, `ipconfig /all` ), adapter configuration, established connections with owning process, full `netstat`, `Get-NetTCPConnection`, DNS cache, network locations used by each user ( MountPoints2 ), SMB shares.
+
+4. **004_Processes.**  Running processes with command lines, SHA-256 of every running executable, services hosted by `svchost`, running services, drivers ( `driverquery`, system drivers ).
+
+5. **005_System.**  PnP devices and signed drivers, USB device history, logical and mapped disks, hotfixes, shadow copies, 50 newest DLLs, persistence-related registry locations ( AppCertDLLs, AppInit_DLLs, Active Setup, Winlogon values, Session Manager, shell extensions and commands, LSA packages, browser helper objects ), UAC and audit policy, boot configuration, Run-dialog history and typed paths ( per user ), Start menu data, executables under the Windows folder that are not validly signed.
+
 6. **006_Prefetch.**  Metadata for Prefetch files, file listing of the Windows Temp folder and each profile's `/Roaming/` and `/Temp/` folders.
-7. **007_Event_Logs.**  Native `.evtx` export of the logs named under `EventLogs` (using `wevtutil epl`, nothing is loaded into PowerShell memory), with entry counts shown as each log is exported.
+
+7. **007_Event_Logs.**  Native `.evtx` export of the logs named under `EventLogs` ( using `wevtutil epl`, nothing is loaded into PowerShell memory ), with entry counts shown as each log is exported.
+
 8. **008_Firewall.**  Windows Firewall rules, Microsoft Defender preferences and exclusions, Defender support logs.
-9. **009_Encryption.**  BitLocker volume status and recovery protectors (**sensitive**).
-10. **010_Internet.**  Cookies, typed URLs, Internet settings and trusted domains (per user), browser history, visits, search terms and downloads for every profile of every supported browser, with a summary file listing what was found.
+
+9. **009_Encryption.**  BitLocker volume status and recovery protectors ( **sensitive** ).
+
+10. **010_Internet.**  Cookies, typed URLs, Internet settings and trusted domains ( per user ), browser history, visits, search terms and downloads for every profile of every supported browser, with a summary file listing what was found.
+
 11. **011_Raw_Artifacts**
 
 
@@ -237,9 +273,9 @@ Each module writes to its own numbered folder inside the case folder. See the fu
 
 | Switch          | Tool                                           | Output                 |
 | --------------- | ---------------------------------------------- | ---------------------- |
-| `-RunEdd`       | Encrypted Disk Detector (`/batch`)             | `/EDD/edd_results.txt` |
-| `-GetProcesses` | Magnet Process Capture (`/saveall`)            | `/Process_Capture/`    |
-| `-CaptureRam`   | Magnet RAM Capture (`/accepteula /go /silent`) | `/Ram_Capture/*.raw`   |
+| `-RunEdd`       | Encrypted Disk Detector ( `/batch` )             | `/EDD/edd_results.txt` |
+| `-GetProcesses` | Magnet Process Capture ( `/saveall` )            | `/Process_Capture/`    |
+| `-CaptureRam`   | Magnet RAM Capture ( `/accepteula /go /silent` ) | `/Ram_Capture/*.raw`   |
 
 Before a RAM capture the tool checks that the destination media is not FAT32 and has enough free space, and afterwards checks that a `.raw` file was actually produced.
 
@@ -250,6 +286,7 @@ Before a RAM capture the tool checks that the destination media is not FAT32 and
 For every local, domain or Entra ID profile the tool finds:
 
 - **Logged-on user :**  the live hive under `HKEY_USERS/<SID>` is read, and a snapshot is saved with `reg save`.
+
 - **Logged-off user :**  `NTUSER.DAT` and its `.LOG1` / `.LOG2` files are copied unchanged into `Registry_Hives/<SID>/`.
 
 A **working copy** is loaded temporarily as `HKU/TRIAGE_<SID>`, read, and unloaded.  The original is never loaded.
@@ -264,7 +301,7 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 
 ```
 <case folder>/
-|-- case_info.json              How the run was started (operator, case, options, versions)
+|-- case_info.json              How the run was started ( operator, case, options, versions )
 |-- 001_Device/                 Contents varies on which modules were selected and which functions ran
 |-- 002_Users/                  "  "
 |-- 003_Network/                "  "
@@ -276,7 +313,7 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 |-- 009_Encryptio/              "  "
 |-- 010_Internet/               "  "
 |-- 011_Raw_Artifacts/          "  "
-|-- EDD/                        (if selected)
+|-- EDD/                        ( if selected )
 |-- Logs/
 |   |-- <name>_Script.log       UTC log of everything the tool did
 |   |-- task_timings.csv        Time taken by each task
@@ -284,9 +321,9 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 |   |-- <name>_hash_values.csv  Hashes of all evidence files
 |   |-- final_hashes.csv        Hashes of the closed log and of the CSV above
 |-- Registry_Hives/<SID>/       Pristine NTUSER.DAT copies or reg-save snapshots
-|-- Process_Capture/            (if selected)
-|-- Ram_Capture/                (if selected)
-|-- <case folder>.zip               (if selected; RAM image excluded)
+|-- Process_Capture/            ( if selected )
+|-- Ram_Capture/                ( if selected )
+|-- <case folder>.zip               ( if selected; RAM image excluded )
 |-- <case folder>.zip.sha256        Hash of the zip, stored beside it
 ----------------------------------------------------------------------
 ```
@@ -295,11 +332,16 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 ## 8. Logging, Hashing & Chain Of Custody
 
 
-1. **Log.**  Every message is written to `/Logs/<name>_Script.log` as `[ISO-8601 UTC] [LEVEL] <message>`.  Levels are *INFO*, *SUCCESS*, *WARNING*, and *ERROR*.  A task that finishes prints how long it took, for example `Process completed. Output saved to 'available_log_files.txt' (3.45 seconds)`.
+1. **Log.**  Every message is written to `/Logs/<name>_Script.log` as `[ISO-8601 UTC] [LEVEL] <message>`.  Levels are *INFO*, *SUCCESS*, *WARNING*, and *ERROR*.  A task that finishes prints how long it took, for example `Process completed. Output saved to 'available_log_files.txt' ( 3.45 seconds )`.
+
 2. **Case record.**  The `case_info.json` file stores operator, agency, case number, computer, the account that ran the tool, start time in UTC with the local offset, PowerShell version, the full command line, the options selected, and the SHA-256 of the configuration file used.
-3. **Evidence hashes.**  After collection, every file outside `/Logs/` and `/Hash_Results/` is hashed (SHA-256 and MD5, one read per file) into `/Hash_Results/<name>_hash_values.csv`.  Paths are relative to the case folder, so the CSV stays valid after the folder is copied.
+
+3. **Evidence hashes.**  After collection, every file outside `/Logs/` and `/Hash_Results/` is hashed ( SHA-256 and MD5, one read per file ) into `/Hash_Results/<name>_hash_values.csv`.  Paths are relative to the case folder, so the CSV stays valid after the folder is copied.
+
 4. **Closing the log.**  The log is then closed, and nothing more is written to it.  `final_hashes.csv` records the SHA-256 of every file in `/Logs/` and of the evidence hash CSV.
-5. **Archive.**  With `-Archive`, the case folder is zipped (without the `/Ram_Capture/` directory), re-opened to confirm the entry count, and hashed into `<name>.zip.sha256`.
+
+5. **Archive.**  With `-Archive`, the case folder is zipped ( without the `/Ram_Capture/` directory ), re-opened to confirm the entry count, and hashed into `<name>.zip.sha256`.
+
 6. **Record two values.**  The tool prints the SHA-256 of `final_hashes.csv` and of the zip when it finishes.  ***Write both in your case notes.***  To verify later, hash each file listed in the CSV and compare it with the recorded value.
 
 
@@ -309,13 +351,20 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 Shared settings are in `/config/TriageConfig.psd1` and are read through `Get-TriageConfig`.  The file is a PowerShell **data file** : it can contain only literal values (strings, numbers, `$true`, `$false`, `$null`, arrays and hashtables).  Variables such as `$PSScriptRoot` or `$env:...` are not allowed and cause the tool to exit with code `2`.
 
 1. `SchemaVersion` : Version of the configuration layout.
+
 2. `Branding` : Tool name, author, and last-updated date shown in the banner.
+
 3. `Modules` : Module names, in run order.
-4. `Binaries` : Tool name to path (relative to the toolkit root).
+
+4. `Binaries` : Tool name to path ( relative to the toolkit root ).
+
 5. `Defaults` : `ScratchFolder`, `HashIncludeMd5`, `ArchiveExcludeFolders`, `TimestampFormat`.
+
 6. `ExecutableFileTypes` : File patterns used by the executable searches.
+
 7. `EventLogs` : List of log channel names to export. File names are derived from the channel name.
-8. `Browsers` : Browser name, type (`Chromium` or `Firefox`) and profile root.
+
+8. `Browsers` : Browser name, type ( `Chromium` or `Firefox` ) and profile root.
 
 The loader adds `ToolkitRoot`, the full binary paths, and the SHA-256 of the configuration file itself.
 
@@ -326,18 +375,30 @@ The loader adds `ToolkitRoot`, the full binary paths, and the SHA-256 of the con
 The tool is designed to change as little as possible, but running any program changes a live system.  Document these in your case notes :
 
 1. **PowerShell history.**  Launching from `run-triage.cmd` keeps the launch command out of PSReadLine history.  As a safety net the script also turns off history saving for its own session.
+
 2. **Profiles.**  `-NoProfile` stops the target's PowerShell profile scripts from running.
+
 3. **PsInfo EULA.**  `PsInfo.exe -accepteula` creates `HKCU\Software\Sysinternals\PsInfo\EulaAccepted` for the account running the tool.
+
 4. **Temporary hives.**  Logged-off users' hive copies are loaded briefly under `HKU\TRIAGE_<SID>` from a working copy in `/_scratch/` on the toolkit drive, then unloaded and deleted.
-5. **Execution artifacts.**  `powershell.exe` and each tool run from `/bin/` leave the usual traces (e.g., Prefetch, Amcache, ShimCache, event logs).
+
+5. **Execution artifacts.**  `powershell.exe` and each tool run from `/bin/` leave the usual traces ( e.g., Prefetch, Amcache, ShimCache, event logs ).
+
 6. `reg save` of `SAM` and `SECURITY` will probably trip EDR.  It matches the classic credential-dumping pattern and may also appear in the Security log if object auditing is on.  Tell whoever runs the endpoint protection before a live collection.  These files, and the copies from `SystemHives`, contain password hashes, so treat the case folder as sensitive.
-7. `reg save` is a consolidated export, not the same bytes as the file on disk.  The on-disk copy with `.LOG1`/`.LOG2` (via RawCopy) is the higher-fidelity one, which is why both are collected.
+
+7. `reg save` is a consolidated export, not the same bytes as the file on disk.  The on-disk copy with `.LOG1`/`.LOG2` ( via RawCopy ) is the higher-fidelity one, which is why both are collected.
+
 8. Shared-read copies of live databases can be inconsistent.  SRUM and browser databases may be mid-write when copied.  The manifest's `Method` column shows which files were copied that way.
-9. `$MFT` and `$UsnJrnl:$J` can be large (hundreds of MB to several GB).  The free-space check and the `011_Raw_Artifacts\NTFS` zip exclusion above cover the disk side.  Both go through RawCopy only.  I haven't confirmed how it writes the sparse `$J` stream, so check the output size on a lab VM.
+
+9. `$MFT` and `$UsnJrnl:$J` can be large ( hundreds of MB to several GB ).  The free-space check and the `011_Raw_Artifacts\NTFS` zip exclusion above cover the disk side.  Both go through RawCopy only.  I haven't confirmed how it writes the sparse `$J` stream, so check the output size on a lab VM.
+
 10. Defender quarantine could contains live malware, in an obfuscated form.  Keep it away from other people's machines, and expect antivirus on your workstation to react to it.  The `robocopy /B` approach relies on the backup privilege that an elevated administrator token holds.  Confirm on a lab VM that the Quarantine folder actually copies.
+
 11. Reading files can update last-access times on volumes where that tracking is turned on.  The manifest records the source's times first, but add it to your footprint notes.
+
 12. History is copied twice.  The `010_Internet` module copies browser History to query it, and `BrowserDatabases` keeps an untouched copy.
-13. **GUI.**  The new module has no checkbox yet, so GUI runs skip it until you add one in `GuiMain.psm1`.  This is also a natural place to wire the unimplemented options (copy registry hives, Prefetch, NTUSER.DAT, SRUDB).
+
+13. **GUI.**  The new module has no checkbox yet, so GUI runs skip it until you add one in `GuiMain.psm1`.  This is also a natural place to wire the unimplemented options ( copy registry hives, Prefetch, NTUSER.DAT, SRUDB ).
 
 
 ## 11. Sensitive Data
@@ -346,10 +407,15 @@ The tool is designed to change as little as possible, but running any program ch
 The case folder can contain one (or more) of the following items :
 
 1. BitLocker recovery passwords from the `009_Encryption` module.
+
 2. Browser history, searches, downloads and cookie data.
+
 3. PowerShell console history, which may contain credentials.
+
 4. Copies of user registry hives and, optionally, a RAM image.
+
 5. Copies of the `SAM` and `SECURITY` registry hives.
+
 6. Windows Defender quarantine files.
 
 Treat the collection drive as sensitive media.  Consider protecting it with **BitLocker To Go**.  Recovery passwords are written only to the BitLocker output file, not to the console or the log.
@@ -359,12 +425,19 @@ Treat the collection drive as sensitive media.  Consider protecting it with **Bi
 
 
 1. This is a **triage** tool, not a forensic imager.  The system keeps changing while it runs.
-2. RAM is captured through the MAGNET Forensics tool.  The order in which items are collected is set in `Invoke-DfirTriageScan` (which can be changed according to the user's needs)
+
+2. RAM is captured through the MAGNET Forensics tool.  The order in which items are collected is set in `Invoke-DfirTriageScan` ( which can be changed according to the user's needs )
+
 3. Browser databases of a running browser may be locked.  The tool retries with shared-read access, and reports a `CopyFailed` row in the browser summary if that also fails.
+
 4. Event logs are not converted to CSV on the target.  Parse the `.evtx` files on your workstation.
-5. Some parsing depends on English output (for example, `net accounts`).
-6. Windows PowerShell 5.1 is the supported platform.  Several cmdlets used (BitLocker and others) are not available in PowerShell 7.
-7. GUI checkboxes for options not yet written (copy of **registry hives**, **Prefetch**, **NTUSER.DAT**, **SRUDB**, and a **full file list**) are refused.
+
+5. Some parsing depends on English output ( for example, `net accounts` ).
+
+6. Windows PowerShell 5.1 is the supported platform.  Several cmdlets used ( BitLocker and others ) are not available in PowerShell 7.
+
+7. GUI checkboxes for options not yet written ( copy of **registry hives**, **Prefetch**, **NTUSER.DAT**, **SRUDB**, and a **full file list** ) are refused.
+
 8. Firefox cookies, saved logins and form history are not read.
 
 
@@ -390,9 +463,13 @@ Treat the collection drive as sensitive media.  Consider protecting it with **Bi
 
 
 1. Write the function inside the relevant `Get-Triage<Name>Data` function.  Return data to `Write-OutputToCsv` or `Write-OutputToFile`.
-2. Register it in that module's task list with a message and the output file names.  The shared runner (`Invoke-TriageTask`) logs the start, catches errors, checks the expected files exist, and prints the elapsed time.
+
+2. Register it in that module's task list with a message and the output file names.  The shared runner ( `Invoke-TriageTask` ) logs the start, catches errors, checks the expected files exist, and prints the elapsed time.
+
 3. Read `HKLM` values through `Invoke-RegistryCommand`.  Read per-user registry data through `Export-PerUserRegistry`.
+
 4. Run an external program through `Get-TriageBinary`, and add the tool under `Binaries` in the configuration file.  Capture its output with `2>&1` so error text cannot reach the screen.
+
 5. Rebuild `/bin/__hashes.json` if a new binary or other file was added.
 
 
@@ -409,8 +486,10 @@ Import-PowerShellDataFile -Path .\config\TriageConfig.psd1
 ### 14.3 Repository Conventions
 
 
-- Save `.ps1`, `.psm1` and `.psd1` files as UTF-8 with BOM (required for non-ASCII text in Windows PowerShell 5.1) and CRLF line endings.
+- Save `.ps1`, `.psm1` and `.psd1` files as UTF-8 with BOM ( required for non-ASCII text in Windows PowerShell 5.1 ) and CRLF line endings.
+
 - A `.gitattributes` line such as `*.ps1 *.psm1 *.psd1 text eol=crlf` keeps them consistent.
+
 - Test on a lab virtual machine with one logged-on and one logged-off user before using a change on a case.
 
 
