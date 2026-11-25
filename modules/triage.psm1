@@ -1,150 +1,155 @@
 function Invoke-DfirTriageScan {
     <#
     .SYNOPSIS
-        Runs a complete triage collection: case record, optional captures,
-        the selected modules, evidence hashing, and an optional case archive.
+    Runs a complete triage collection: case record, optional captures,
+    the selected modules, evidence hashing, and an optional case archive.
 
     .DESCRIPTION
-        This is the main entry point of the toolkit.  Both `run-triage.ps1`
-        and the GUI call it. In order, it:
+    This is the main entry point of the toolkit.  Both `run-triage.ps1`
+    and the GUI call it. In order, it:
 
-            1.  Resets the error and warning counters, the task timing list,
-                and `$global:TriageResult`, and writes the opening lines to
-                the log.
-            2.  Writes the case record (`case_info.json`) with
-                `Write-CaseInfo`.
-            3.  Verifies the tools in the `\bin\ folder with
-                `Initialize-TriageSystemTools`.
-            4.  Runs the optional captures that were selected, in this order:
-                (a) Magnet RAM Capture [-CaptureRam | -Ram],
-                (b) Encrypted Disk Detector [-RunEdd | -Edd], and
-                (c) Magnet Process Capture [-GetProcesses | -GP].
-            5.  Mounts the user registry hives, runs each selected module
-                into its own subfolder of the results folder, and dismounts
-                the hives.  The dismount happens even if a module fails.
-            6.  Saves the task timings to `\Logs\task_timings.csv`, hashes all
-                evidence with `Get-FileHashes`, and closes and hashes the
-                log with `Close-TriageLog`.
-            7.  Creates a ZIP of the results folder if -Archive was given
-                (`Invoke-CaseArchive`).
-            8.  Shows the values to record in the case notes (the hash of
-                `final_hashes.csv` and, if made, of the ZIP), and stores a
-                summary in `$global:TriageResult`.
+        1.  Resets the error and warning counters, the task timing list,
+            and `$global:TriageResult`, and writes the opening lines to
+            the log.
+        2.  Writes the case record (`case_info.json`) with
+            `Write-CaseInfo`.
+        3.  Verifies the tools in the `\bin\ folder with
+            `Initialize-TriageSystemTools`.
+        4.  Runs the optional captures that were selected, in this order:
+            (a) Magnet RAM Capture [-CaptureRam | -Ram],
+            (b) Encrypted Disk Detector [-RunEdd | -Edd], and
+            (c) Magnet Process Capture [-GetProcesses | -GP].
+        5.  Mounts the user registry hives, runs each selected module
+            into its own subfolder of the results folder, and dismounts
+            the hives.  The dismount happens even if a module fails.
+        6.  Saves the task timings to `\Logs\task_timings.csv`, hashes all
+            evidence with `Get-FileHashes`, and closes and hashes the
+            log with `Close-TriageLog`.
+        7.  Creates a ZIP of the results folder if -Archive was given
+            (`Invoke-CaseArchive`).
+        8.  Shows the values to record in the case notes (the hash of
+            `final_hashes.csv` and, if made, of the ZIP), and stores a
+            summary in `$global:TriageResult`.
 
-        Modules always run in the fixed order of the internal workflow table,
-        not in the order given in -Modules.
+    Modules always run in the fixed order of the internal workflow table,
+    not in the order given in -Modules.
 
-        Modules that are not selected are logged as skipped.
+    Modules that are not selected are logged as skipped.
 
-        A module that throws is logged as an error and the run continues with
-        the next one.
+    A module that throws is logged as an error and the run continues with
+    the next one.
 
-        The exit code in the summary is 1 if any error was recorded and 0
-        otherwise.
+    The exit code in the summary is 1 if any error was recorded and 0
+    otherwise.
 
-        Warnings do not change the exit code.
+    Warnings do not change the exit code.
 
     .PARAMETER ResultsFolder
-        Path of the case results folder.
-        Normally created beforehand by `Get-InitialSetup`, which also creates
-        the log.
+    Path of the case results folder.
+
+    Normally created beforehand by `Get-InitialSetup`, which also creates the log.
 
     .PARAMETER Operator
-        Name of the person running the collection.
-        Recorded in `case_info.json`.
+    Name of the person running the collection.
+
+    Recorded in `case_info.json`.
 
     .PARAMETER CaseNumber
-        The case number.
-        Recorded in `case_info.json`.
+    The case number.
+
+    Recorded in `case_info.json`.
 
     .PARAMETER Agency
-        The agency name.
-        Optional; recorded in `case_info.json`.
+    The agency name.
+
+    Optional; recorded in `case_info.json`.
 
     .PARAMETER Modules
-        Names of the modules to run, such as "001_Device" and "003_Network".
-        Defaults to every module listed in `TriageConfig.psd1`.
-        Each name must match the workflow table exactly.
+    Names of the modules to run, such as "001_Device" and "003_Network".
+    Defaults to every module listed in `TriageConfig.psd1`.
+    Each name must match the workflow table exactly.
 
     .PARAMETER RunEdd
-        Runs Encrypted Disk Detector before the modules.
+    Runs Encrypted Disk Detector before the modules.
 
     .PARAMETER GetProcesses
-        Captures the memory of running processes with Magnet Process Capture.
+    Captures the memory of running processes with Magnet Process Capture.
 
     .PARAMETER CaptureRam
-        Captures physical memory with Magnet RAM Capture.
+    Captures physical memory with Magnet RAM Capture.
 
     .PARAMETER Archive
-        Creates a ZIP of the results folder and a .sha256 file after the
-        log is closed.
+    Creates a ZIP of the results folder and a .sha256 file after the
+    log is closed.
 
     .INPUTS
-        None.
-        This function does not accept pipeline input.
+    None.
+
+    This function does not accept pipeline input.
 
     .OUTPUTS
-        None on the pipeline.
+    None on the pipeline.
 
-        Results are written to the results folder, and a summary object is
-        stored in `$global:TriageResult` with these properties:
-            ExitCode,
-            Errors,
-            Warnings,
-            ResultsFolder,
-            LogFile, and
-            Duration.
-
-    .EXAMPLE
-        Invoke-DfirTriageScan `
-            -ResultsFolder $global:ResultsFolder `
-            -Operator "SA John Doe" `
-            -CaseNumber "2026-12345"
-
-        Runs every module with no optional captures and no archive.
+    Results are written to the results folder, and a summary object is stored 
+    in `$global:TriageResult` with these properties:
+        ExitCode,
+        Errors,
+        Warnings,
+        ResultsFolder,
+        LogFile, and
+        Duration.
 
     .EXAMPLE
-        Invoke-DfirTriageScan `
-            -ResultsFolder $global:ResultsFolder `
-            -Operator "SA John Doe" `
-            -CaseNumber "2026-12345" `
-            -Modules "001_Device", "003_Network" `
-            -CaptureRam `
-            -Archive `
-            $global:TriageResult.ExitCode
+    Invoke-DfirTriageScan `
+        -ResultsFolder $global:ResultsFolder `
+        -Operator "SA John Doe" `
+        -CaseNumber "2026-12345"
 
-        Runs two modules, captures RAM, creates an archive, and then reads the
-        exit code.
+    Runs every module with no optional captures and no archive.
+
+    .EXAMPLE
+    Invoke-DfirTriageScan `
+        -ResultsFolder $global:ResultsFolder `
+        -Operator "SA John Doe" `
+        -CaseNumber "2026-12345" `
+        -Modules "001_Device", "003_Network" `
+        -CaptureRam `
+        -Archive `
+        $global:TriageResult.ExitCode
+
+    Runs two modules, captures RAM, creates an archive, and then reads the
+    exit code.
 
     .NOTES
-        Run from an elevated PowerShell session with the toolkit's bin folder
-        present.
-        Uses these global variables:
-            `ToolkitRoot` (read),
-            `TriageTimings`,
-            `TriageErrorCount`,
-            `TriageWarningCount`,
-            `TriageResult`, and
-            `TriageUserHives` (set).
+    Run from an elevated PowerShell session with the toolkit's bin folder
+    present.
 
-        The nested functions `Initialize-TriageScan` and `Invoke-TriageScan`
-        are private to this function.
+    Uses these global variables:
+        `ToolkitRoot` (read),
+        `TriageTimings`,
+        `TriageErrorCount`,
+        `TriageWarningCount`,
+        `TriageResult`, and
+        `TriageUserHives` (set).
 
-        Because the memory captures and the case record run before the modules,
-        the most volatile data is collected first; only the hash and archive
-        steps depend on the log being closed.
+    The nested functions `Initialize-TriageScan` and `Invoke-TriageScan`
+    are private to this function.
 
-    .LINK
-        Get-Gui
+    Because the memory captures and the case record run before the modules,
+    the most volatile data is collected first; only the hash and archive
+    steps depend on the log being closed.
 
     .LINK
-        Write-CaseInfo
+    Get-Gui
 
     .LINK
-        Get-FileHashes
+    Write-CaseInfo
 
     .LINK
-        Invoke-CaseArchive
+    Get-FileHashes
+
+    .LINK
+    Invoke-CaseArchive
     #>
     [CmdletBinding()]
     param(
