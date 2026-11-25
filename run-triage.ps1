@@ -225,7 +225,9 @@ if ($CaseFile) {
         }
     }
     catch {
-        $Problems.Add("Cannot read -CaseFile [ $CaseFile ] => $( $_.Exception.Message )")
+        $Problems.Add(
+            "Cannot read -CaseFile [ $CaseFile ] => $( $_.Exception.Message )"
+        )
     }
 }
 
@@ -295,7 +297,7 @@ if ($Problems.Count -gt 0) {
 if (-not $Gui) {
     Show-TriageBanner
 
-    Show-Message "Press [ENTER] to begin..." -MessageColor Green -NoTime
+    Show-Message -Message "Press [ENTER] to begin..." -MessageColor Green -NoTime
     Read-Host
 
     $YesNo = { param($b) if ($b) { "YES" } else { "NO" } }
@@ -312,7 +314,10 @@ if (-not $Gui) {
 }
 
 if ($DryRun) {
-    Show-Message -Message "Dry run => nothing was collected." -Level INFO -MessageColor DarkGreen
+    Show-Message `
+        -Message "Dry run => nothing was collected." `
+        -Level INFO `
+        -MessageColor DarkGreen
     exit 0
 }
 
@@ -338,14 +343,20 @@ try {
         Get-InitialSetup -OutputRoot $OutputRoot
         Disable-PSReadLineHistory
         Write-LaunchContext
-        Show-Message -Message "Results folder => [ $global:ResultsFolder ]" -Level INFO -AddToLog
+        Show-Message `
+            -Message "Results folder => [ $global:ResultsFolder ]" `
+            -Level INFO `
+            -AddToLog
         # The command that begins the actual scan
         $null = Invoke-DfirTriageScan -ResultsFolder $global:ResultsFolder @Options
         $Result = $global:TriageResult
     }
 }
 catch {
-    Show-Message -Message "FATAL ERROR => $( $_.Exception.Message )" -Level ERROR -AddToLog
+    Show-Message `
+        -Message "FATAL ERROR => $( $_.Exception.Message )" `
+        -Level ERROR `
+        -AddToLog
     exit 3
 }
 
