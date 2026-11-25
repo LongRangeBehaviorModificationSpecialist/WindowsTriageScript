@@ -176,7 +176,12 @@ Example:
 
 # Load the toolkit and its configuration
 try {
-    Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath "modules\triage.psd1") -Force -ErrorAction Stop
+    Import-Module -Name (
+        Join-Path `
+            -Path $PSScriptRoot `
+            -ChildPath "modules\triage.psd1") `
+            -Force `
+            -ErrorAction Stop
     $null       = Get-TriageConfig
     $AllModules = @(Get-TriageConfig -Key "Modules")
 }
@@ -189,7 +194,10 @@ catch {
 $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $IsAdmin -and -not $DryRun) {
-    Show-Message -Message "CRITICAL ACCESS ERROR: This triage tool must be run as Administrator." -Level ERROR
+    Show-Message `
+        -Message "CRITICAL ACCESS ERROR: This triage tool must be run as " +
+            "Administrator." `
+        -Level ERROR
     exit 2
 }
 
@@ -198,7 +206,11 @@ $Problems = [System.Collections.Generic.List[string]]::new()
 
 if ($CaseFile) {
     try {
-        $Case = Get-Content -LiteralPath $CaseFile -Raw -ErrorAction Stop | ConvertFrom-Json
+        $Case = Get-Content `
+            -LiteralPath $CaseFile `
+            -Raw `
+            -ErrorAction Stop | 
+            ConvertFrom-Json
 
         if (-not $PSBoundParameters.ContainsKey("Operator") -and $Case.Operator) {
             $Operator = [string]$Case.Operator
