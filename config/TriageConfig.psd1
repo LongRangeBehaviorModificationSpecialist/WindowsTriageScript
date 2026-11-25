@@ -174,40 +174,40 @@
 
     Browsers = @(
         @{
-            Name = "Chrome"
-            Type = "Chromium"
-            Root = "AppData\Local\Google\Chrome\User Data"
+            Name   = "Chrome"
+            Type   = "Chromium"
+            Root   = "AppData\Local\Google\Chrome\User Data"
         }
         @{
-            Name = "Edge"
-            Type = "Chromium"
-            Root = "AppData\Local\Microsoft\Edge\User Data"
+            Name   = "Edge"
+            Type   = "Chromium"
+            Root   = "AppData\Local\Microsoft\Edge\User Data"
         }
         @{
-            Name = "Brave"
-            Type = "Chromium"
-            Root = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
+            Name   = "Brave"
+            Type   = "Chromium"
+            Root   = "AppData\Local\BraveSoftware\Brave-Browser\User Data"
         }
         @{
-            Name = "Firefox"
-            Type = "Firefox"
-            Root = "AppData\Roaming\Mozilla\Firefox\Profiles"
+            Name   = "Firefox"
+            Type   = "Firefox"
+            Root   = "AppData\Roaming\Mozilla\Firefox\Profiles"
         }
         @{
-            Name = "Vivaldi"
-            Type = "Chromium"
-            Root = "AppData\Local\Vivaldi\User Data"
+            Name   = "Vivaldi"
+            Type   = "Chromium"
+            Root   = "AppData\Local\Vivaldi\User Data"
         }
         @{
-            Name = "Opera"
-            Type = "Chromium"
-            Root = "AppData\Roaming\Opera Software\Opera Stable"
+            Name   = "Opera"
+            Type   = "Chromium"
+            Root   = "AppData\Roaming\Opera Software\Opera Stable"
             Direct = $true
         }
         @{
-            Name = "OperaGX"
-            Type = "Chromium"
-            Root = "AppData\Roaming\Opera Software\Opera GX Stable"
+            Name   = "OperaGX"
+            Type   = "Chromium"
+            Root   = "AppData\Roaming\Opera Software\Opera GX Stable"
             Direct = $true
         }
     )
