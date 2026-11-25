@@ -120,8 +120,8 @@ Download these directly from their publishers and place them in `/bin/` at the r
 
 | File                                                    | Source                                                                                        |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `sqlite3.exe` (from `sqlite-tools-win-x64-3530100.zip`) | [SQLite](https://sqlite.org/)                                                                 |
-| `PsInfo.exe` (from Sysinternals Suite)                  | [PsInfo](https://learn.microsoft.com/en-us/sysinternals/downloads/psinfo)                     |
+| `sqlite3.exe` ( from `sqlite-tools-win-x64-3530100.zip` ) | [SQLite](https://sqlite.org/)                                                                 |
+| `PsInfo.exe` ( from Sysinternals Suite )                  | [PsInfo](https://learn.microsoft.com/en-us/sysinternals/downloads/psinfo)                     |
 | `MagnetRAMCapture.exe`                                  | [Magnet RAM Capture](https://www.magnetforensics.com/resources/magnet-ram-capture/)           |
 | `MagnetProcessCapture.exe`                              | [Magnet Process Capture](https://www.magnetforensics.com/resources/magnet-process-capture/)   |
 | `EDDv310.exe`                                           | [Encrypted Disk Detector](https://www.magnetforensics.com/resources/encrypted-disk-detector/) |
