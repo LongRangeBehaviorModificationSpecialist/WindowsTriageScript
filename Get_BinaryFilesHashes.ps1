@@ -1,4 +1,10 @@
-Import-Module -Name (Join-Path -Path (Get-Location) -ChildPath "modules\Get_FileHashes.psm1") -Force
+Import-Module `
+    -Name (
+        Join-Path `
+            -Path (Get-Location) `
+            -ChildPath "modules\Get_FileHashes.psm1"
+    ) `
+    -Force
 
 function Get-BinaryFilesHashes {
     <#
