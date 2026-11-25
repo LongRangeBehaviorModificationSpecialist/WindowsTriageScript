@@ -70,36 +70,36 @@
 
     UserArtifacts = @(
         @{
-            Name = "ActivitiesCache"
-            Path = "AppData\Local\ConnectedDevicesPlatform"
+            Name   = "ActivitiesCache"
+            Path   = "AppData\Local\ConnectedDevicesPlatform"
             Filter = "ActivitiesCache.db*"
         }
         @{
-            Name = "Thumbcache"
-            Path = "AppData\Local\Microsoft\Windows\Explorer"
+            Name   = "Thumbcache"
+            Path   = "AppData\Local\Microsoft\Windows\Explorer"
             Filter = "thumbcache_*.db"
         }
         @{
-            Name = "IconCache"
-            Path = "AppData\Local\Microsoft\Windows\Explorer"
+            Name   = "IconCache"
+            Path   = "AppData\Local\Microsoft\Windows\Explorer"
             Filter = "iconcache_*.db"
         }
         @{
-            Name = "Notifications"
-            Path = "AppData\Local\Microsoft\Windows\Notifications"
+            Name   = "Notifications"
+            Path   = "AppData\Local\Microsoft\Windows\Notifications"
             Filter = "wpndatabase.db*"
         }
         @{
-            Name = "RdpBitmapCache"
-            Path = "AppData\Local\Microsoft\Terminal Server Client\Cache"
+            Name   = "RdpBitmapCache"
+            Path   = "AppData\Local\Microsoft\Terminal Server Client\Cache"
         }
         @{
-            Name = "OneDriveLogs"
-            Path = "AppData\Local\Microsoft\OneDrive\logs"
+            Name   = "OneDriveLogs"
+            Path   = "AppData\Local\Microsoft\OneDrive\logs"
         }
         @{
-            Name = "AnyDesk"
-            Path = "AppData\Roaming\AnyDesk"
+            Name   = "AnyDesk"
+            Path   = "AppData\Roaming\AnyDesk"
             Filter = "*.trace"
         }
     )
