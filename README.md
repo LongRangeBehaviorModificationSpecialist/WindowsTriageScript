@@ -323,8 +323,8 @@ The **case folder** is named `yyyyMMdd_HHmmss_<IPv4>_<COMPUTERNAME>` and is crea
 |-- Registry_Hives/<SID>/       Pristine NTUSER.DAT copies or reg-save snapshots
 |-- Process_Capture/            ( if selected )
 |-- Ram_Capture/                ( if selected )
-|-- <case folder>.zip               ( if selected; RAM image excluded )
-|-- <case folder>.zip.sha256        Hash of the zip, stored beside it
+|-- <case folder>.zip           ( if selected; RAM image excluded )
+|-- <case folder>.zip.sha256    Hash of the zip, stored beside it
 ----------------------------------------------------------------------
 ```
 
