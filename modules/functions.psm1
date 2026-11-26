@@ -13,7 +13,7 @@ function Get-InitialSetup {
     The IPv4 address is taken from the interface that owns the
     lowest-metric default route ( 0.0.0.0/0 ).
 
-    If no address can be found, "0.0.0.0" is used in the folder name.
+    If no address can be found, '0.0.0.0' is used in the folder name.
 
     The function sets two global variables that the rest of the toolkit
     relies on:
@@ -21,7 +21,7 @@ function Get-InitialSetup {
         '$global:ResultsFolder'  Full path to the new results folder.
         '$global:LogFile'        Full path to the new log file.
 
-    If OutputRoot is not supplied, the "ToolkitRoot" value from
+    If OutputRoot is not supplied, the 'ToolkitRoot' value from
     'TriageConfig.psd1' is used.
 
     .PARAMETER OutputRoot
@@ -36,20 +36,21 @@ function Get-InitialSetup {
     '$global:ResultsFolder' and '$global:LogFile'.
 
     .EXAMPLE
-    Get-InitialSetup -OutputRoot "E:\Collections"
+    Get-InitialSetup -OutputRoot 'E:\Collections'
 
     Creates the results folder on the E: drive.
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.  Results are returned through the '$global:ResultsFolder' and
-    '$global:LogFile' variables.
+    None ( Results are returned through the '$global:ResultsFolder' and
+    '$global:LogFile' variables )
 
     .NOTES
     Throws a terminating error if 'OutputRoot' does not exist.
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -121,9 +122,9 @@ function Write-OutputToCsv {
     header, UTF-8 encoding ).
 
     If Data is $null or an empty collection, a single line of text,
-    "No data was found when running this operation.", is written to
+    'No data was found when running this operation.', is written to
     OutputFile instead, so that the file always exists and the
-    examiner can tell "nothing found" apart from "collector failed".
+    examiner can tell 'nothing found' apart from 'collector failed'.
 
     Note that in the no-data case the file contains plain text rather
     than CSV content.
@@ -148,14 +149,18 @@ function Write-OutputToCsv {
         -Data $null `
         -OutputFile "$global:ResultsFolder\empty.csv"
 
-    Writes the "No data was found" message to empty csv.
+    Writes the 'No data was found' message to empty csv.
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -191,8 +196,8 @@ function Show-Message {
 
         SUCCESS = Green,
         WARNING = Yellow,
-        ERROR = Red,
-        INFO = MessageColor
+        ERROR   = Red,
+        INFO    = MessageColor
 
     Side effects:
 
@@ -200,10 +205,10 @@ function Show-Message {
         - Level WARNING increments '$global:TriageWarningCount'.
 
         Invoke-TriageTask uses these counters to decide whether a
-        task "completed with errors".
+        task 'completed with errors'.
 
-        With '-AddToLog', a plain-text entry "[timestamp] [LEVEL]
-        message" is appended to $LogFile.
+        With '-AddToLog', a plain-text entry '[timestamp] [LEVEL]
+        message' is appended to $LogFile.
 
         If the log write fails, a critical error is printed to the
         console so the examiner knows the log is incomplete.
@@ -211,7 +216,7 @@ function Show-Message {
     When Level is SUCCESS and '-File' is supplied, the message text
     is generated automatically:
 
-        "Process completed.  Output saved to [ file1, file2 ]",
+        'Process completed.  Output saved to [ file1, file2 ]',
 
     followed by the 'ExecutionTime' if given.
 
@@ -229,14 +234,14 @@ function Show-Message {
 
     Only the file names are shown.
 
-    Used with Level SUCCESS to build the "Output saved to" message.
+    Used with Level SUCCESS to build the 'Output saved to' message.
 
     .PARAMETER ExecutionTime
     Pre-formatted duration text ( see 'Format-TriageDuration' ) appended to
     the auto-generated SUCCESS message.
 
     .PARAMETER TimestampColor
-    Console color of the "[timestamp]" prefix.  Default is Cyan.
+    Console color of the '[timestamp]' prefix.  Default is Cyan.
 
     .PARAMETER MessageColor
     Console color for INFO messages.  Other levels use their fixed
@@ -255,32 +260,33 @@ function Show-Message {
 
     .EXAMPLE
     Show-Message `
-        -Message "Collecting event logs" `
+        -Message 'Collecting event logs' `
         -Level INFO `
         -AddToLog
 
     .EXAMPLE
     Show-Message `
-        -Message "Could not read key" `
+        -Message 'Could not read key' `
         -Level ERROR `
         -AddToLog
 
     .EXAMPLE
     Show-Message `
         -Level SUCCESS `
-        -File "C:\Results\services.csv" `
-        -ExecutionTime "1.52 seconds" `
+        -File 'C:\Results\services.csv' `
+        -ExecutionTime '1.52 seconds' `
         -AddToLog
 
     .INPUTS
     None
 
     .OUTPUTS
-    None.  Output is written to the host and, optionally, to the log file.
+    None ( output is written to the host and, optionally, to the log file )
 
     .NOTES
     None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -387,7 +393,7 @@ function Write-LogMessage {
     to the console.
 
     .DESCRIPTION
-    Writes "[yyyy-MM-ddTHH:mm:ss.fffZ] Message" (UTC) to the file
+    Writes '[yyyy-MM-ddTHH:mm:ss.fffZ] Message' ( UTC ) to the file
     named by '$LogFile' using UTF-8 encoding.
 
     Use this when something belongs in the log but should not appear
@@ -402,17 +408,18 @@ function Write-LogMessage {
 
     .EXAMPLE
     Write-LogMessage `
-        -Message "Operator confirmed the target is powered by AC."
+        -Message 'Operator confirmed the target is powered by AC.'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
 
     .NOTES
     Requires '$LogFile' to have been set by 'Get-InitialSetup'.
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -435,18 +442,18 @@ function Write-OutputToFile {
     <#
     .SYNOPSIS
     Writes command output to a plain-text file, with an optional
-    "Command:" header.
+    'Command:' header.
 
     .DESCRIPTION
     Formats Data as it would appear in the console ( Out-String, 4096
     characters wide so tables are not truncated ) and writes it to
     'OutputFile' as UTF-8.
 
-    If Command is supplied, a "Command: <text>" header and a blank
+    If Command is supplied, a 'Command: <text>' header and a blank
     line are written first.
 
-    If Data is empty or $null, the body becomes "No data was found
-    when running this function."
+    If Data is empty or $null, the body becomes 'No data was found
+    when running this function.'
 
     Use '-Append' to add several command results to the same file.
 
@@ -468,22 +475,26 @@ function Write-OutputToFile {
     .EXAMPLE
     Write-OutputToFile `
         -OutputFile "$global:ResultsFolder\network.txt" `
-        -Command "ipconfig /all" `
+        -Command 'ipconfig /all' `
         -Data (ipconfig /all)
 
     .EXAMPLE
     Write-OutputToFile `
         -OutputFile $File `
-        -Command "arp -a" `
+        -Command 'arp -a' `
         -Data (arp -a) `
         -Append
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -526,7 +537,7 @@ function Read-LogHost {
     as 'Show-Message'.
 
     .DESCRIPTION
-    Displays "[UTC timestamp] Prompt" in color and then reads a line
+    Displays '[UTC timestamp] Prompt' in color and then reads a line
     with 'Read-Host'.
 
     Optionally reads the response as a 'SecureString'.
@@ -549,20 +560,24 @@ function Read-LogHost {
 
     .EXAMPLE
     $Operator = Read-LogHost `
-        -Prompt "Enter operator name: "
+        -Prompt 'Enter operator name: '
 
     .EXAMPLE
     $Secret = Read-LogHost `
-        -Prompt "Enter archive password: " `
+        -Prompt 'Enter archive password: ' `
         -AsSecureString
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.String, or System.Security.SecureString when '-AsSecureString'
-    is used.
+    is used
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([System.String], [System.Security.SecureString])]
     param(
@@ -595,10 +610,10 @@ function Test-IfExists {
 
     .DESCRIPTION
     For Type FOLDER, checks FolderName and, if present, logs
-    "[ /name/ ] directory created successfully".
+    '[ /name/ ] directory created successfully'.
 
     For Type FILE, checks FileName and, if present, logs
-    "[ name ] file was created successfully".
+    '[ name ] file was created successfully'.
 
     Messages are INFO level and are written to both the console
     and the log file.
@@ -629,11 +644,15 @@ function Test-IfExists {
         -Type FILE
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -685,40 +704,41 @@ function Get-PerUserRegistryValue {
 
     .DESCRIPTION
     For each entry in '$global:TriageUserHives' that has a Root,
-    reads the value names and data under "<Root>\<SubKey>" and
+    reads the value names and data under '<Root>\<SubKey>' and
     returns one object per value.
 
     Users whose hive could not be prepared ( no Root ) and users
     who do not have the key are skipped silently.
 
     Data formatting: byte arrays are returned as a lowercase hex
-    string; other arrays are joined with "; ".
+    string; other arrays are joined with '; '.
 
     The PowerShell housekeeping properties ( PSPath, PSParentPath,
     etc. ) are excluded.
 
     .PARAMETER SubKey
     Registry path relative to the root of the user hive, for
-    example "Software\Microsoft\Windows\CurrentVersion\Run".
+    example 'Software\Microsoft\Windows\CurrentVersion\Run'.
 
     .EXAMPLE
     Get-PerUserRegistryValue `
-        -SubKey "Software\Microsoft\Windows\CurrentVersion\Run"
+        -SubKey 'Software\Microsoft\Windows\CurrentVersion\Run'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject with the properties
-    UserName, SID, Key, ValueName and Data.
+    'UserName', 'SID', 'Key', 'ValueName', and 'Data'
 
     .NOTES
     Requires '$global:TriageUserHives' to be populated from the output
     of 'Mount-TriageUserHives'.
 
-    The Key property shows the path as "HKU\<SID>\<SubKey>"
+    The Key property shows the path as 'HKU\<SID>\<SubKey>'
     regardless of how the hive was mounted.
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -766,7 +786,7 @@ function Get-PerUserRegistrySubKey {
     Companion to 'Get-PerUserRegistryValue'.
 
     Instead of reading values, it returns the names of the child keys
-    under "<Root>\<SubKey>" for each user hive.
+    under '<Root>\<SubKey>' for each user hive.
 
     Useful for keys whose evidence is the key names themselves, such
     as MountPoints2 or EscDomains. Hives without a Root, and users
@@ -774,23 +794,24 @@ function Get-PerUserRegistrySubKey {
 
     .PARAMETER SubKey
     Registry path relative to the root of the user hive, for example
-    "Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2".
+    'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'.
 
     .EXAMPLE
     Get-PerUserRegistrySubKey -SubKey `
-        "Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2"
+        'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject with the properties
-    UserName, SID, Key and SubKeyName.
+    'UserName', 'SID', 'Key', and 'SubKeyName'
 
     .NOTES
     Requires '$global:TriageUserHives' to be populated from the output
     of 'Mount-TriageUserHives'.
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -846,22 +867,26 @@ function Export-PerUserRegistry {
 
     .EXAMPLE
     Export-PerUserRegistry -SubKey `
-        "Software\Microsoft\Windows\CurrentVersion\Run",
-        "Software\Microsoft\Windows\CurrentVersion\RunOnce" `
+        'Software\Microsoft\Windows\CurrentVersion\Run',
+        'Software\Microsoft\Windows\CurrentVersion\RunOnce' `
         -OutputFile "$global:ResultsFolder\run_keys.csv"
 
     .EXAMPLE
     Export-PerUserRegistry -SubKey `
-        "Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2" `
+        'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2' `
         -OutputFile "$global:ResultsFolder\mountpoints2.csv"
         -EnumerateSubKeys
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.  Results are written to OutputFile.
+    None ( results are written to OutputFile )
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -891,18 +916,18 @@ function Export-PerUserRegistry {
 function Mount-TriageUserHives {
     <#
     .SYNOPSIS
-    Makes every user's NTUSER.DAT readable, preserving a copy of 
+    Makes every user's NTUSER.DAT readable, preserving a copy of
     each hive as evidence.
 
     .DESCRIPTION
     Enumerates the local profile list (domain/local user SIDs
     beginning 'S-1-5-21' and Entra ID SIDs beginning S-1-12-1;
-    ".bak" entries are ignored) and prepares each user's registry
+    '.bak' entries are ignored) and prepares each user's registry
     hive:
 
         Logged-on user
             The live HKEY_USERS\<SID> hive is used and a snapshot
-            is saved with "reg save" as NTUSER.DAT.regsave.
+            is saved with 'reg save' as NTUSER.DAT.regsave.
 
         Not logged on
             'NTUSER.DAT', 'NTUSER.DAT.LOG1' and 'NTUSER.DAT.LOG2'
@@ -935,24 +960,25 @@ function Mount-TriageUserHives {
 
     .EXAMPLE
     $global:TriageUserHives = Mount-TriageUserHives `
-        -HiveFolder "$global:ResultsFolder\Hives" `
-        -ScratchFolder "$env:TEMP\TriageScratch"
+        -HiveFolder '$global:ResultsFolder\Hives' `
+        -ScratchFolder '$env:TEMP\TriageScratch'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject, one per profile,
-    with the properties UserName, Sid, ProfilePath, Root, MountName,
-    and Note.
+    with the properties 'UserName', 'Sid', 'ProfilePath', 'Root',
+    'MountName', and 'Note'
 
     Root is $null when the hive could not be prepared; Note explains
     what happened.
 
     .NOTES
-    Requires an elevated session and the trusted "reg" binary registered
+    Requires an elevated session and the trusted 'reg' binary registered
     by 'Initialize-TriageSystemTools'.
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -1104,14 +1130,18 @@ function Dismount-TriageUserHives {
     .EXAMPLE
     Dismount-TriageUserHives `
         -Hives $global:TriageUserHives `
-        -ScratchFolder "$env:TEMP\TriageScratch"
+        -ScratchFolder '$env:TEMP\TriageScratch'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -1139,7 +1169,7 @@ function Get-TriageBinary {
     toolkit's '\bin\' folder.
 
     .DESCRIPTION
-    Looks up Name in the "Binaries" section of the configuration,
+    Looks up Name in the 'Binaries' section of the configuration,
     then checks that the matching executable was verified and
     registered in '$global:TriageSys' by
     'Initialize-TriageSystemTools'.
@@ -1155,21 +1185,25 @@ function Get-TriageBinary {
     or failed its SHA256 check.
 
     .PARAMETER Name
-    Key of the tool as defined in the "Binaries" section of
-    'TriageConfig.psd1', for example "reg", "robocopy" or
-    "RawCopy".
+    Key of the tool as defined in the 'Binaries' section of
+    'TriageConfig.psd1', for example 'reg', 'robocopy', or
+    'RawCopy'.
 
     Not case-sensitive for the lookup of the verified file.
 
     .EXAMPLE
-    & (Get-TriageBinary "reg") query "HKLM\SOFTWARE\Microsoft" /s
+    & (Get-TriageBinary 'reg') query 'HKLM\SOFTWARE\Microsoft' /s
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    System.String.  Full path to the verified executable.
+    System.String ( full path to the verified executable )
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([System.String])]
     param(
@@ -1217,15 +1251,16 @@ function Disable-PSReadLineHistory {
     Disable-PSReadLineHistory
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
 
     .NOTES
     If PSReadLine is not loaded ( non-interactive launch ) there is
     nothing to disable, and this is logged as such.
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param()
@@ -1291,15 +1326,19 @@ function Write-LaunchContext {
 
     .EXAMPLE
     Write-LaunchContext `
-        -HistFile "C:\Users\Operator\AppData\Roaming\Microsoft\`
-        Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+        -HistFile 'C:\Users\Operator\AppData\Roaming\Microsoft\`
+        Windows\PowerShell\PSReadLine\ConsoleHost_history.txt'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -1356,7 +1395,7 @@ function Initialize-TriageSystemTools {
     If the manifest is missing or unreadable, a message is logged and
     no tools are registered, so any later call to 'Get-TriageBinary'
     will fail.
-    
+
     A summary line ( verified count, failed count and callable tool
     names ) is logged at the end.
 
@@ -1367,18 +1406,19 @@ function Initialize-TriageSystemTools {
 
     .EXAMPLE
     Initialize-TriageSystemTools `
-        -ToolkitRoot (Get-TriageConfig -Key "ToolkitRoot")
+        -ToolkitRoot (Get-TriageConfig -Key 'ToolkitRoot')
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.  Results are stored in '$global:TriageSys'.
+    None ( results are stored in '$global:TriageSys' )
 
     .NOTES
-    The manifest is expected to contain a "Files" array of objects
-    with "Path" ( relative to '\bin\' ) and "SHA256" properties.
+    The manifest is expected to contain a 'Files' array of objects
+    with 'Path' ( relative to '\bin\' ) and 'SHA256' properties.
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -1457,11 +1497,15 @@ function Show-TriageBanner {
     Show-TriageBanner
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param()
@@ -1535,7 +1579,7 @@ function Write-CaseInfo {
     Dictionary ( hashtable or ordered dictionary ) of the options and
     modules chosen for this run.
 
-    Stored under "Options".
+    Stored under 'Options'.
 
     .PARAMETER Agency
     Name of the investigating agency.
@@ -1550,17 +1594,21 @@ function Write-CaseInfo {
     .EXAMPLE
     Write-CaseInfo
         -ResultsFolder $global:ResultsFolder `
-        -Operator "SA John Doe" `
-        -CaseNumber "26-12345" `
-        -Agency "Agency" `
+        -Operator 'SA John Doe' `
+        -CaseNumber '26-12345' `
+        -Agency 'Agency' `
         -Selected ([ordered]@{ Modules = "all")
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.  The JSON file is written to disk.
+    None ( the JSON file is written to disk )
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -1601,7 +1649,7 @@ function Write-CaseInfo {
             "(1) HKCU\Software\Sysinternals\PsInfo\EulaAccepted set for " +
             "$env:USERDOMAIN\$env:USERNAME (psinfo -accepteula)." +
             "(2) Typical execution artifacts (Prefetch, Amcache, ShimCache) " +
-            "for powershell.exe and each tool run from bin\ (confirm on a " + 
+            "for powershell.exe and each tool run from bin\ (confirm on a " +
             "lab VM)." +
             "(3) Event log entries the OS writes while the toolkit runs (for " +
             "example PowerShell 4104 if script-block logging is enabled, " +
@@ -1630,8 +1678,8 @@ function Invoke-RegistryCommand {
     Executes Command with its error stream merged into the output,
     then separates the error records from the data:
 
-        -   "Path not found" errors are logged as INFO ( "No data
-            found for registry key [ ... ]" ), since a key that
+        -   'Path not found' errors are logged as INFO ( 'No data
+            found for registry key [ ... ]' ), since a key that
             does not exist is a normal finding.
 
         -   Any other error ( for example, access denied ) is logged
@@ -1643,23 +1691,24 @@ function Invoke-RegistryCommand {
 
     .PARAMETER Command
     Script block containing the registry read, for example
-    { Get-ItemProperty -Path "HKLM:\..." }.
+    { Get-ItemProperty -Path 'HKLM:\...' }.
 
     .EXAMPLE
     $Run = Invoke-RegistryCommand `
         -Command { Get-ItemProperty `
-        -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+        -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
     }
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    The objects emitted by Command, excluding error records.
+    The objects emitted by Command, excluding error records
 
     .NOTES
     None
     #>
+
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -1699,7 +1748,7 @@ function Clear-TriageHives {
     .DESCRIPTION
     Forces garbage collection to release PowerShell's registry
     handles, then finds each key under HKEY_USERS whose name
-    starts with "TRIAGE_" and unloads it with "reg unload".
+    starts with 'TRIAGE_' and unloads it with 'reg unload'.
 
     If an unload fails, the function waits two seconds, collects
     garbage again and retries once.
@@ -1716,15 +1765,16 @@ function Clear-TriageHives {
     Clear-TriageHives
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
 
     .NOTES
-    Requires an elevated session and the trusted "reg" binary
+    Requires an elevated session and the trusted 'reg' binary
     (see 'Get-TriageBinary').
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param()
@@ -1800,8 +1850,8 @@ function Import-TriageConfig {
 
     .DESCRIPTION
     Reads the configuration data file from the toolkit and checks
-    that the required top-level keys ( "Modules", "Binaries",
-    "Defaults" ) exist.
+    that the required top-level keys ( 'Modules', 'Binaries',
+    'Defaults' ) exist.
 
     Relative binary paths are converted to full paths under
     ToolkitRoot.
@@ -1828,14 +1878,18 @@ function Import-TriageConfig {
     folder that contains this module file.
 
     .EXAMPLE
-    Import-TriageConfig -ToolkitRoot "E:\WinTriageScript"
+    Import-TriageConfig -ToolkitRoot 'E:\WinTriageScript'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.  The configuration is stored in '$script:TriageConfig'.
+    None ( the configuration is stored in '$script:TriageConfig' )
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -1888,24 +1942,28 @@ function Get-TriageConfig {
     first with 'Import-TriageConfig'.
 
     .PARAMETER Key
-    Name of the configuration entry, for example "Modules",
-    "Binaries", "Defaults", "Branding" or "ToolkitRoot".
+    Name of the configuration entry, for example 'Modules',
+    'Binaries', 'Defaults', 'Branding', or 'ToolkitRoot'.
 
     Omit to return everything.
 
     .EXAMPLE
-    Get-TriageConfig -Key "ToolkitRoot"
+    Get-TriageConfig -Key 'ToolkitRoot'
 
     .EXAMPLE
     (Get-TriageConfig).ConfigSha256
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    The requested value (type depends on the key), or
-    System.Collections.Hashtable for the full configuration.
+    The requested value ( type depends on the key ), or
+    System.Collections.Hashtable for the full configuration
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([System.String], [System.Collections.Hashtable])]
     param(
@@ -1934,9 +1992,9 @@ function Format-TriageDuration {
     Output depends on the length of the span (invariant culture
     is always used):
 
-        under 1 minute   "12.34 seconds"
-        under 1 hour     "5 min 07 sec"
-        1 hour or more   "2 hr 05 min 09 sec"
+        under 1 minute   '12.34 seconds'
+        under 1 hour     '5 min 07 sec'
+        1 hour or more   '2 hr 05 min 09 sec'
 
     .PARAMETER Span
     The elapsed time to format, for example the Elapsed value
@@ -1945,14 +2003,18 @@ function Format-TriageDuration {
     .EXAMPLE
     Format-TriageDuration -Span (New-TimeSpan -Seconds 75)
 
-    Returns "1 min 15 sec".
+    Returns '1 min 15 sec'.
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    System.String.
+    System.String
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([System.String])]
     param(
@@ -1990,7 +2052,7 @@ function Invoke-TriageTask {
 
         2.  Runs Action inside a try/catch and discards its output.
             An exception is logged as ERROR and the task is marked
-            "Failed".
+            'Failed'.
 
         3.  Stops the timer and formats the elapsed time.
 
@@ -2035,20 +2097,24 @@ function Invoke-TriageTask {
 
     .EXAMPLE
     Invoke-TriageTask `
-        -Message "Collecting services" `
-        -ExpectedFile "$global:ResultsFolder\services.csv" `
+        -Message 'Collecting services' `
+        -ExpectedFile '$global:ResultsFolder\services.csv' `
         -Action { `
             Write-OutputToCsv `
             -Data (Get-CimInstance Win32_Service) `
-            -OutputFile "$global:ResultsFolder\services.csv" `
+            -OutputFile '$global:ResultsFolder\services.csv' `
         }
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -2165,26 +2231,30 @@ function Invoke-TriageTaskList {
     .EXAMPLE
     $Tasks = @(
         @{
-            Message = "Collecting services"
-            Files = @("services.csv")
+            Message = 'Collecting services'
+            Files = @('services.csv')
             Action = { Get-ServiceData }
         }
         @{
-            Message = "Collecting drivers"
-            Files = @("drivers.csv")
+            Message = 'Collecting drivers'
+            Files = @('drivers.csv')
             Action = { Get-DriverData }
         }
     )
     Invoke-TriageTaskList `
         -Tasks $Tasks `
-        -Folder "$global:ResultsFolder\System"
+        -Folder '$global:ResultsFolder\System'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -2216,14 +2286,14 @@ function New-TriageCopyResult {
     Creates a blank result record for a file or folder copy operation.
 
     .DESCRIPTION
-    Returns a PSCustomObject with Status preset to "Failed" and the
+    Returns a PSCustomObject with Status preset to 'Failed' and the
     other fields empty.
 
     The copy functions fill it in as they work, so that every attempt,
     successful or not, produces the same kind of record for the
     collection log.
 
-    Properties: Source, Destination, Method, Status, SizeBytes,
+    Properties : Source, Destination, Method, Status, SizeBytes,
     SourceCreatedUtc, SourceModifiedUtc, SourceAccessedUtc, Detail.
 
     .PARAMETER Source
@@ -2234,15 +2304,19 @@ function New-TriageCopyResult {
 
     .EXAMPLE
     $R = New-TriageCopyResult `
-        -Source "C:\Windows\System32\config\SAM" `
-        -Destination "$global:ResultsFolder\SAM"
+        -Source 'C:\Windows\System32\config\SAM' `
+        -Destination '$global:ResultsFolder\SAM'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject.
+    System.Management.Automation.PSCustomObject
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -2292,25 +2366,26 @@ function Invoke-TriageRawCopy {
     .PARAMETER Source
     Full path of the file to copy.
 
-    RawCopy also accepts NTFS metadata paths such as "C:\$MFT".
+    RawCopy also accepts NTFS metadata paths such as 'C:\$MFT'.
 
     .PARAMETER Destination
     Full path of the file to create, including the file name.
 
     .EXAMPLE
     Invoke-TriageRawCopy `
-        -Source "C:\Windows\System32\config\SYSTEM" `
-        -Destination "$global:ResultsFolder\Registry\SYSTEM"
+        -Source 'C:\Windows\System32\config\SYSTEM' `
+        -Destination '$global:ResultsFolder\Registry\SYSTEM'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
-    None.
+    None
 
     .NOTES
     Requires an elevated session.
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -2329,12 +2404,12 @@ function Invoke-TriageRawCopy {
     $Name = Split-Path -Path $Destination -Leaf
     $null = New-Item -ItemType Directory -Path $Dir -Force
     # Start-Process -Wait: RawCopy may be a GUI-subsystem program,
-    # which "&" would not wait for.
+    # which '&' would not wait for.
 
     # WorkingDirectory keeps any log file it writes next to the output.
     $ArgList = @(
-        "/FileNamePath:`"$Source`"", 
-        "/OutputPath:`"$Dir`"", 
+        "/FileNamePath:`"$Source`"",
+        "/OutputPath:`"$Dir`"",
         "/OutputName:`"$Name`""
     )
 
@@ -2363,18 +2438,18 @@ function Copy-TriageFile {
     1.  Reads the source file's size and created, modified and
         accessed times ( UTC ) before touching it.
 
-        Returns Status "NotFound" if the source does not exist.
+        Returns Status 'NotFound' if the source does not exist.
 
     2.  Tries a normal copy that opens the source with read/write/delete
-        sharing ( Method "SharedRead" ).
+        sharing ( Method 'SharedRead' ).
 
         On success, the destination's last-write time is set to match
         the source.
 
     3.  If that fails ( for example, an exclusive lock ), removes the
-        partial copy and tries 'Invoke-TriageRawCopy' ( Method "RawCopy" ).
+        partial copy and tries 'Invoke-TriageRawCopy' ( Method 'RawCopy' ).
 
-    4.  If both fail, Status is "Locked" and Detail contains both error
+    4.  If both fail, Status is 'Locked' and Detail contains both error
         messages.
 
     The record returned always contains the source's timestamps so they
@@ -2390,18 +2465,22 @@ function Copy-TriageFile {
 
     .EXAMPLE
     $Result = Copy-TriageFile `
-        -Source "C:\Windows\appcompat\Programs\Amcache.hve" `
-        -Destination "$global:ResultsFolder\Amcache\Amcache.hve"
+        -Source 'C:\Windows\appcompat\Programs\Amcache.hve' `
+        -Destination '$global:ResultsFolder\Amcache\Amcache.hve'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' ).
+    ( see 'New-TriageCopyResult' )
 
-    Status is "OK", "NotFound", or "Locked".
+    Status is 'OK', 'NotFound', or 'Locked'.
+
+    .NOTES
+    None
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -2481,14 +2560,14 @@ function Copy-TriageRawFile {
     and $UsnJrnl.
 
     Calls 'Invoke-TriageRawCopy' and returns a result record with Method
-    "RawCopy", Status "OK" or "Failed", the output size, and the error
+    'RawCopy', Status 'OK' or 'Failed', the output size, and the error
     message in Detail if it failed.
 
     Source timestamps are not recorded because these are NTFS metadata
     files.
 
     .PARAMETER Source
-    Path of the item to copy, for example "C:\$MFT".
+    Path of the item to copy, for example 'C:\$MFT'.
 
     .PARAMETER Destination
     Full path of the file to create, including the file name.
@@ -2496,18 +2575,19 @@ function Copy-TriageRawFile {
     .EXAMPLE
     Copy-TriageRawFile `
         -Source 'C:\$MFT' `
-        -Destination "$global:ResultsFolder\NTFS\MFT"
+        -Destination '$global:ResultsFolder\NTFS\MFT'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' ).
+    ( see 'New-TriageCopyResult' )
 
     .NOTES
     Requires an elevated session.
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -2535,7 +2615,7 @@ function Copy-TriageRawFile {
 function Save-TriageRegistryHive {
     <#
     .SYNOPSIS
-    Exports a loaded registry hive to a file with "reg save".
+    Exports a loaded registry hive to a file with 'reg save'.
 
     .DESCRIPTION
     Runs the trusted reg.exe ( see 'Get-TriageBinary' ) to write a
@@ -2543,11 +2623,11 @@ function Save-TriageRegistryHive {
     Destination, overwriting any existing file.
 
     The result is OK only if reg.exe returns exit code 0 and the file
-    exists; otherwise Status is "Failed" and Detail holds the tool's
+    exists; otherwise Status is 'Failed' and Detail holds the tool's
     output or the exception message.
 
     .PARAMETER HiveKey
-    Registry key to save, in reg.exe syntax, for example "HKLM\SYSTEM".
+    Registry key to save, in reg.exe syntax, for example 'HKLM\SYSTEM'.
 
     .PARAMETER Destination
     Full path of the file to create.
@@ -2556,21 +2636,22 @@ function Save-TriageRegistryHive {
 
     .EXAMPLE
     Save-TriageRegistryHive `
-        -HiveKey "HKLM\SYSTEM" `
-        -Destination "$global:ResultsFolder\Registry\SYSTEM.regsave"
+        -HiveKey 'HKLM\SYSTEM' `
+        -Destination '$global:ResultsFolder\Registry\SYSTEM.regsave'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' ).
+    ( see 'New-TriageCopyResult' )
 
-    Method is "reg save".
+    Method is 'reg save'
 
     .NOTES
     Requires an elevated session.
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -2625,8 +2706,8 @@ function Copy-TriageFolderBackup {
     Robocopy exit codes of 8 or higher are treated as failures ( Status
     "Failed"; Detail holds the exit code and output ).
 
-    Otherwise the destination is scanned: Status is "OK" if at least
-    one file was copied, or "NotFound" if nothing was copied.
+    Otherwise the destination is scanned: Status is 'OK' if at least
+    one file was copied, or 'NotFound' if nothing was copied.
 
     'SizeBytes' is the total size of the copied files.
 
@@ -2638,21 +2719,22 @@ function Copy-TriageFolderBackup {
 
     .EXAMPLE
     Copy-TriageFolderBackup `
-        -Source "C:\Windows\Prefetch" `
-        -Destination "$global:ResultsFolder\Prefetch"
+        -Source 'C:\Windows\Prefetch' `
+        -Destination '$global:ResultsFolder\Prefetch'
 
     .INPUTS
-    None.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' ).
+    ( see 'New-TriageCopyResult' )
 
-    Method is "robocopy /B".
+    Method is 'robocopy /B'
 
     .NOTES
     Requires an elevated session.
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param(
@@ -2728,20 +2810,20 @@ function Add-TriageLogLine {
     The function adds the line ending.
 
     .INPUTS
-    None.  This function does not accept pipeline input.
+    None
 
     .OUTPUTS
-    None.
+    None
 
     .EXAMPLE
     Add-TriageLogLine `
-        -Line " [2026-11-06 10:15:02] Starting collection..."
+        -Line ' [2026-11-06 10:15:02] Starting collection...'
 
     Appends one line to the current triage log.
 
     .NOTES
-    Uses these global variables: LogFile ( input ), TriageLogWriter and
-    TriageLogWriterPath ( internal state ).
+    Uses these global variables: 'LogFile' ( input ), 'TriageLogWriter',
+    and 'TriageLogWriterPath' ( internal state ).
 
     The folder that holds the log must already exist; FileMode.Append
     creates a missing file but not a missing folder.
@@ -2751,6 +2833,7 @@ function Add-TriageLogLine {
     'Show-Message' and 'Write-LogMessage' call this function; call it
     directly only for file-only log entries.
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -2800,10 +2883,10 @@ function Close-TriageLogWriter {
     'Add-TriageLogLine' also calls it when '$global:LogFile' changes.
 
     .INPUTS
-    None.  This function does not accept pipeline input.
+    None
 
     .OUTPUTS
-    None.
+    None
 
     .EXAMPLE
     Close-TriageLogWriter
@@ -2818,6 +2901,7 @@ function Close-TriageLogWriter {
     A later call to 'Add-TriageLogLine' opens a new writer if
     '$global:LogFile' is still set.
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param()
@@ -2862,7 +2946,7 @@ function Get-LastAccessUpdateState {
     times.
 
     .INPUTS
-    None.  This function does not accept pipeline input.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject
@@ -2883,7 +2967,7 @@ function Get-LastAccessUpdateState {
     Get-LastAccessUpdateState
 
     Returns the current setting, for example UpdatesEnabled = $false
-    with a Summary of "DISABLED ( System managed )...".
+    with a Summary of 'DISABLED ( System managed )...'.
 
     .EXAMPLE
     (Get-LastAccessUpdateState).Summary
@@ -2900,6 +2984,7 @@ function Get-LastAccessUpdateState {
     To confirm the decoding once on a lab computer, compare against:
     'fsutil behavior query disablelastaccess'
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param()
@@ -2940,7 +3025,7 @@ function Get-LastAccessUpdateState {
 function Resolve-TriageModuleName {
     <#
     .SYNOPSIS
-    Turns a module number such as "004" into its full name from
+    Turns a module number such as '004' into its full name from
     'TriageConfig.psd1'.
 
     .DESCRIPTION
@@ -2960,25 +3045,25 @@ function Resolve-TriageModuleName {
     configuration.
 
     .PARAMETER Id
-    The module number, such as "004".
+    The module number, such as '004'.
 
     Matching uses '-like', so do not include wildcard characters.
 
     .INPUTS
-    None.  This function does not accept pipeline input.
+    None
 
     .OUTPUTS
     System.String
 
-    The full module name exactly as written in the configuration file.
+    The full module name exactly as written in the configuration file
 
     .EXAMPLE
-    Resolve-TriageModuleName -Id "004"
+    Resolve-TriageModuleName -Id '004'
 
-    Returns the Modules entry that begins with "004_".
+    Returns the Modules entry that begins with '004_'.
 
     .EXAMPLE
-    $Name = Resolve-TriageModuleName -Id "011"
+    $Name      = Resolve-TriageModuleName -Id '011'
     $RawFolder = Join-Path $ResultsFolder $Name
 
     Builds a results folder path from the configured module name.
@@ -2988,6 +3073,7 @@ function Resolve-TriageModuleName {
 
     Used by 'Invoke-DfirTriageScan' and the GUI.
     #>
+
     [CmdletBinding()]
     [OutputType([string])]
     param(
@@ -3030,12 +3116,12 @@ function Get-TriageScanRoots {
     used separately for signature checks.
 
     .INPUTS
-    None.  This function does not accept pipeline input.
+    None
 
     .OUTPUTS
     System.String
 
-    Full paths of existing folders, one string per folder.
+    Full paths of existing folders, one string per folder
 
     .EXAMPLE
     Get-TriageScanRoots
@@ -3062,6 +3148,7 @@ function Get-TriageScanRoots {
     ScanFolders paths are relative because a .psd1 data file cannot
     contain variables such as '$env:SystemDrive'.
     #>
+
     [CmdletBinding()]
     [OutputType([string])]
     param()
@@ -3116,7 +3203,7 @@ function Get-ToolkitScriptHashes {
     Files that cannot be listed are skipped.
 
     .INPUTS
-    None.  This function does not accept pipeline input.
+    None
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject
@@ -3151,6 +3238,7 @@ function Get-ToolkitScriptHashes {
     If 'Get-StreamHash' cannot read a file, a warning is logged and
     that file's SHA256 is $null; the other files are still hashed.
     #>
+
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSCustomObject])]
     param()
