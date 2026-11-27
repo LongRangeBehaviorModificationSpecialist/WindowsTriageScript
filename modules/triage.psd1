@@ -120,6 +120,7 @@
         "Read-LogHost",
         "Resolve-TriageModuleName",
         "Save-TriageRegistryHive",
+        "Show-ErrorMessage",
         "Show-Message",
         "Show-TriageBanner",
         "Test-IfExists",

@@ -1,76 +1,74 @@
 function Invoke-EDD {
     <#
     .SYNOPSIS
-        Runs Encrypted Disk Detector (EDD) and saves its report to the
-        results folder.
+    Runs Encrypted Disk Detector (EDD) and saves its report to the
+    results folder.
 
     .DESCRIPTION
-        Creates an "EDD" folder inside the results folder, and an empty
-        `edd_results.txt` in it.
+    Creates an 'EDD' folder inside the results folder, and an empty
+    'edd_results.txt' in it.
 
-        Runs EDD from the toolkit's verified bin folder with /batch, so it
-        runs without prompting, and redirects its standard output to
-        `edd_results.txt`.
+    Runs EDD from the toolkit's verified bin folder with '/batch', so it
+    runs without prompting, and redirects its standard output to
+    'edd_results.txt'.
 
-        The function waits for the tool to finish.
+    The function waits for the tool to finish.
 
-        The report is then read and written into the log with
-        `Write-LogMessage` (log only, not the screen), so the finding is
-        part of the permanent record. If EDD produced no output, a
-        placeholder line saying so is written to the log instead; the file
-        itself is left as the tool wrote it.
+    The report is then read and written into the log with
+    'Write-LogMessage' ( log only, not the screen ), so the finding is
+    part of the permanent record.
 
-        Finally, the file name and elapsed time are logged.
+    If EDD produced no output, a placeholder line saying so is written
+    to the log instead; the file itself is left as the tool wrote it.
 
-        EDD checks for encrypted volumes and containers, such as BitLocker
-        and VeraCrypt.
+    Finally, the file name and elapsed time are logged.
 
-        Knowing this before the computer is powered off tells the examiner
-        whether a live capture is the only chance to get decrypted data.
+    EDD checks for encrypted volumes and containers, such as BitLocker
+    and VeraCrypt.
+
+    Knowing this before the computer is powered off tells the examiner
+    whether a live capture is the only chance to get decrypted data.
 
     .PARAMETER ResultsFolder
-        Path of the case results folder. The EDD subfolder is created
-        inside it.
+    Path of the case results folder.  The EDD subfolder is created
+    inside it.
 
     .INPUTS
-        None.
-
-        This function does not accept pipeline input.
+    None.
 
     .OUTPUTS
-        None.
-
-        The report is written to `<ResultsFolder>\EDD\edd_results.txt`, and
-        progress is written to the screen and the log.
+    None.  The report is written to '<ResultsFolder>\EDD\edd_results.txt',
+    and progress is written to the screen and the log.
 
     .EXAMPLE
-        Invoke-EDD -ResultsFolder "E:\Triage\Case-2026-12345"
+    Invoke-EDD -ResultsFolder 'E:\Triage\Case-2026-12345'
 
-        Writes the detector's report to
-        `E:\Triage\Case-2026-12345\EDD\edd_results.txt`.
+    Writes the detector's report to
+    'E:\Triage\Case-2026-12345\EDD\edd_results.txt'.
 
     .EXAMPLE
-        Invoke-DfirTriageScan -ResultsFolder $Folder -Operator "SA John Doe" `
-            -CaseNumber "26-12345" -RunEdd
+    Invoke-DfirTriageScan -ResultsFolder $Folder -Operator 'SA John Doe' `
+        -CaseNumber '26-12345' -RunEdd
 
-        The usual way this function runs: `Invoke-DfirTriageScan` calls it
-        when the `-RunEdd` parameter is given.
+    The usual way this function runs : 'Invoke-DfirTriageScan' calls it
+    when the '-RunEdd' parameter is given.
 
     .NOTES
-        Requires EDD in the bin folder, verified by `Get-TriageBinary`, and
-        an elevated session so the tool can read all disks.
+    Requires EDD in the bin folder, verified by 'Get-TriageBinary', and
+    an elevated session so the tool can read all disks.
 
-        Errors are logged and do not throw.
+    Errors are logged and do not throw.
 
-        The 009_Encryption module separately records BitLocker details
-        through the Windows BitLocker commands.
-
-    .LINK
-        Invoke-DfirTriageScan
+    The 009_Encryption module separately records BitLocker details
+    through the Windows BitLocker commands.
 
     .LINK
-        Get-TriageBinary
+    Invoke-DfirTriageScan
+
+    .LINK
+    Get-TriageBinary
     #>
+
     [CmdletBinding()]
     [OutputType([void])]
     param(
@@ -124,9 +122,10 @@ function Invoke-EDD {
             -AddToLog
     }
     catch {
-        $ErrorMsg = "Execution failed during $( $MyInvocation.MyCommand.Name ) " +
-            "on $( $ComputerName ).  Error => $( $_.Exception.Message )"
-        Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+        Show-ErrorMessage `
+            -Function $( $MyInvocation.MyCommand.Name ) `
+            -ComputerName $( $env:COMPUTERNAME ) `
+            -ErrorMsg $( $_.Exception.Message )
     }
     finally {
         if ($Stopwatch.IsRunning) {

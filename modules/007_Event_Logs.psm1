@@ -6,26 +6,30 @@ function Get-TriageEventLogData {
         [string]$EventLogFolder
     )
 
+    # 07.01
     function Get-AvailableLogFiles {
         param(
-            [string]$TxtFile = (
-                Join-Path -Path $EventLogFolder -ChildPath "available_log_files.txt"
+            [string]$OutputFile = (
+                Join-Path -Path $EventLogFolder -ChildPath "07.01_available_log_files.txt"
             )
         )
         $Data = Get-WinEvent -ListLog * |
             Where-Object { $_.IsEnabled } |
             Select-Object LogName, RecordCount, FileSize, LogMode, LogFilePath, LastWriteTime |
             Sort-Object -Property @{ Expression = "RecordCount"; Descending = $true }
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
     function Get-EventLogEntryCount {
         <#
         .SYNOPSIS
-            Gets the count of entries in each event log.
-            '$null' = log does not exist; '-1' = exists but no count; otherwise the record count
-            Reads log metadata only.  No events are loaded.
+        Gets the count of entries in each event log.
+
+        '$null' = log does not exist; '-1' = exists but no count; otherwise the
+        record count.
+
+        Reads log metadata only.  No events are loaded.
         #>
         param(
             [string]$LogName
@@ -79,26 +83,30 @@ function Get-TriageEventLogData {
         $FreeMb = [math]::Round($Drive.AvailableFreeSpace / 1MB)
 
         if ($Drive.AvailableFreeSpace -lt ($Need * 1.1)) {
-            Show-Message -Message "Event log export needs about $NeedMb MB but $FreeMb MB is free on `
-                $( $Drive.Name )." -Level WARNING -AddToLog
+            $NeedMbMsg = "Event log export needs about $NeedMb MB but $FreeMb " +
+                "MB is free on $( $Drive.Name )."
+            Show-Message -Message $NeedMbMsg -Level WARNING -AddToLog
         }
         else {
-            Show-Message -Message "Event log export needs about $NeedMb MB; $FreeMb MB is free." `
-                -Level INFO -AddToLog
+            $NeedSpaceMsg = "Event log export needs about $NeedMb MB; " +
+                "$FreeMb MB is free."
+            Show-Message -Message $NeedSpaceMsg -Level INFO -AddToLog
         }
     }
     # UNC destinations cannot be checked this way; wevtutil reports a full disk itself
     catch { }
 
-    Invoke-TriageTask -Message "Gathering list of available Event Log files..." `
+    $GettingListMsg = "Gathering list of available Event Log files..."
+    Invoke-TriageTask `
+        -Message $GettingListMsg `
         -Action { Get-AvailableLogFiles } `
         -ExpectedFile (Join-Path -Path $EventLogFolder -ChildPath "available_log_files.txt")
 
     foreach ($LogName in (Get-TriageConfig -Key "EventLogs")) {
         $Count = Get-EventLogEntryCount -LogName $LogName
         if ($null -eq $Count) {
-            Show-Message -Message "Event Log [ $( $LogName ) ] was not found on this computer." `
-                -Level INFO -AddToLog -MessageColor Yellow
+            $LogNotFoundMsg = "Event Log [ $( $LogName ) ] was not found on this computer."
+            Show-Message -Message $LogNotFoundMsg -Level INFO -AddToLog -MessageColor Yellow
             continue
         }
 

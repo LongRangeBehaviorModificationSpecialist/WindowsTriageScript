@@ -41,11 +41,11 @@ function Get-InitialSetup {
     Creates the results folder on the E: drive.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None ( Results are returned through the '$global:ResultsFolder' and
-    '$global:LogFile' variables )
+    None.  Results are returned through the '$global:ResultsFolder' and
+    '$global:LogFile' variables
 
     .NOTES
     Throws a terminating error if 'OutputRoot' does not exist.
@@ -152,13 +152,13 @@ function Write-OutputToCsv {
     Writes the 'No data was found' message to empty csv.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -259,32 +259,25 @@ function Show-Message {
     Prints a blank line above the message ( ignored when -NoTime is used ).
 
     .EXAMPLE
-    Show-Message `
-        -Message 'Collecting event logs' `
-        -Level INFO `
+    Show-Message -Message 'Collecting event logs' -Level INFO `
         -AddToLog
 
     .EXAMPLE
-    Show-Message `
-        -Message 'Could not read key' `
-        -Level ERROR `
+    Show-Message -Message 'Could not read key' -Level ERROR `
         -AddToLog
 
     .EXAMPLE
-    Show-Message `
-        -Level SUCCESS `
-        -File 'C:\Results\services.csv' `
-        -ExecutionTime '1.52 seconds' `
-        -AddToLog
+    Show-Message -Level SUCCESS -File 'C:\Results\services.csv' `
+        -ExecutionTime '1.52 seconds' -AddToLog
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None ( output is written to the host and, optionally, to the log file )
+    None.  Output is written to the host and, optionally, to the log file.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -411,10 +404,10 @@ function Write-LogMessage {
         -Message 'Operator confirmed the target is powered by AC.'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
     Requires '$LogFile' to have been set by 'Get-InitialSetup'.
@@ -486,13 +479,13 @@ function Write-OutputToFile {
         -Append
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -568,14 +561,14 @@ function Read-LogHost {
         -AsSecureString
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
     System.String, or System.Security.SecureString when '-AsSecureString'
-    is used
+    is used.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -644,13 +637,13 @@ function Test-IfExists {
         -Type FILE
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -667,13 +660,9 @@ function Test-IfExists {
         $FolderNameText = $(Split-Path -Path $FolderName -Leaf)
 
         if (Test-Path $FolderName) {
-            $DirMadeMsg = "[ /$FolderNameText/ ] directory created successfully"
-            Show-Message `
-                -Message $DirMadeMsg `
-                -Level INFO `
-                -AddToLog `
-                -SpaceAbove `
-                -MessageColor Magenta
+            $DirMsg = "[ /$FolderNameText/ ] directory created successfully"
+            Show-Message -Message $DirMsg -Level INFO `
+                -AddToLog -SpaceAbove -MessageColor Magenta
         }
         else {
             return
@@ -684,10 +673,8 @@ function Test-IfExists {
         $FileNameText = $(Split-Path -Path $FileName -Leaf)
 
         if (Test-Path $FileName) {
-            Show-Message `
-                -Message "[ $FileNameText ] file was created successfully." `
-                -Level INFO `
-                -AddToLog
+            $FileNameMsg = "[ $FileNameText ] file was created successfully."
+            Show-Message -Message $FileNameMsg -Level INFO -AddToLog
         }
         else {
             return
@@ -725,11 +712,11 @@ function Get-PerUserRegistryValue {
         -SubKey 'Software\Microsoft\Windows\CurrentVersion\Run'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject with the properties
-    'UserName', 'SID', 'Key', 'ValueName', and 'Data'
+    System.Management.Automation.PSCustomObject with the properties :
+    'UserName', 'SID', 'Key', 'ValueName', and 'Data'.
 
     .NOTES
     Requires '$global:TriageUserHives' to be populated from the output
@@ -801,11 +788,11 @@ function Get-PerUserRegistrySubKey {
         'Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject with the properties
-    'UserName', 'SID', 'Key', and 'SubKeyName'
+    System.Management.Automation.PSCustomObject with the properties :
+    'UserName', 'SID', 'Key', and 'SubKeyName'.
 
     .NOTES
     Requires '$global:TriageUserHives' to be populated from the output
@@ -878,13 +865,13 @@ function Export-PerUserRegistry {
         -EnumerateSubKeys
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None ( results are written to OutputFile )
+    None.  Results are written to OutputFile.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -964,12 +951,12 @@ function Mount-TriageUserHives {
         -ScratchFolder '$env:TEMP\TriageScratch'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
     System.Management.Automation.PSCustomObject, one per profile,
-    with the properties 'UserName', 'Sid', 'ProfilePath', 'Root',
-    'MountName', and 'Note'
+    with the properties : 'UserName', 'Sid', 'ProfilePath', 'Root',
+    'MountName', and 'Note'.
 
     Root is $null when the hive could not be prepared; Note explains
     what happened.
@@ -1093,8 +1080,9 @@ function Mount-TriageUserHives {
             # Collectors skip a hive with no Root
             $Out.Root = $null
             $Out.Note = "FAILED => $( $_.Exception.Message )"
-            Show-Message -Message "User hive for $Sid could not be prepared => $( $_.Exception.Message )" `
-                -Level ERROR -AddToLog
+            $HiveFailMsg = "User hive for $Sid could not be prepared => " +
+                "$( $_.Exception.Message )"
+            Show-Message -Message $HiveFailMsg -Level ERROR -AddToLog
         }
         [PSCustomObject]$Out
     }
@@ -1133,13 +1121,13 @@ function Dismount-TriageUserHives {
         -ScratchFolder '$env:TEMP\TriageScratch'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -1149,14 +1137,24 @@ function Dismount-TriageUserHives {
         [string]$ScratchFolder
     )
 
+    # Drop references that may pin the hives BEFORE unloading:
+    $global:TriageUserHives = $null
+    $Hives = $null
+    Get-PSDrive -PSProvider Registry -ErrorAction SilentlyContinue |
+        Where-Object { $_.Root -like "*TRIAGE_*" } |
+        Remove-PSDrive -ErrorAction SilentlyContinue
+
+    [gc]::Collect()
+    [gc]::WaitForPendingFinalizers()
+
     Clear-TriageHives
 
     if ($ScratchFolder -and (Test-Path -LiteralPath $ScratchFolder)) {
         Remove-Item -LiteralPath $ScratchFolder -Recurse -Force
 
         if (Test-Path -LiteralPath $ScratchFolder) {
-            Show-Message -Message "Scratch folder could not be removed [ $ScratchFolder ]" `
-                -Level WARNING -AddToLog
+            $RemoveErrMsg = "Scratch folder could not be removed [ $ScratchFolder ]"
+            Show-Message -Message $RemoveErrMsg -Level WARNING -AddToLog
         }
     }
 }
@@ -1195,13 +1193,13 @@ function Get-TriageBinary {
     & (Get-TriageBinary 'reg') query 'HKLM\SOFTWARE\Microsoft' /s
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.String ( full path to the verified executable )
+    System.String.  Full path to the verified executable.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -1251,10 +1249,10 @@ function Disable-PSReadLineHistory {
     Disable-PSReadLineHistory
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
     If PSReadLine is not loaded ( non-interactive launch ) there is
@@ -1330,43 +1328,52 @@ function Write-LaunchContext {
         Windows\PowerShell\PSReadLine\ConsoleHost_history.txt'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
     [OutputType([void])]
     param(
         [string]$HistFile = (
-            Join-Path -Path $env:APPDATA -ChildPath "Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+            Join-Path `
+                -Path $env:APPDATA `
+                -ChildPath "Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
         )
     )
 
     $ArgList = [Environment]::GetCommandLineArgs()
     $NoProf  = [bool]($ArgList | Where-Object { $_ -like "-NoProf*" })
 
-    Show-Message -Message "Launch command line => [ $( [Environment]::CommandLine ) ]" -Level INFO -AddToLog
-    $Msg = "PowerShell $( $PSVersionTable.PSVersion ), -NoProfile used: $NoProf, operator account:" +
-        "$env:USERDOMAIN\$env:USERNAME"
+    Show-Message `
+        -Message "Launch command line => [ $( [Environment]::CommandLine ) ]" `
+        -Level INFO `
+        -AddToLog
+    $Msg = "PowerShell $( $PSVersionTable.PSVersion ), -NoProfile used: " +
+        "$NoProf, operator account: $env:USERDOMAIN\$env:USERNAME"
     Show-Message -Message $Msg -Level INFO -AddToLog
 
     if (-not $NoProf) {
-        Show-Message -Message "Not launched with -NoProfile; target profile scripts may have run." `
-            -Level WARNING -AddToLog
+        $NoProfMsg = "Not launched with -NoProfile; target profile scripts " +
+            "may have run."
+        Show-Message -Message $NoProfMsg -Level WARNING -AddToLog
     }
 
     if (Test-Path -LiteralPath $HistFile) {
         $Item = Get-Item -LiteralPath $HistFile -Force
-        Show-Message -Message "Operator PSReadLine history at start => [ $HistFile ], $( $Item.Length ) `
-            bytes, last write (UTC) $( $Item.LastWriteTimeUtc.ToString('o') )" -Level INFO -AddToLog
+        $PSHistMsg = "Operator PSReadLine history at start => [ $HistFile ], " +
+            "$( $Item.Length ) bytes, last write (UTC) " +
+            "$( $Item.LastWriteTimeUtc.ToString('o') )"
+        Show-Message -Message $PSHistMsg -Level INFO -AddToLog
     }
     else {
-        Show-Message -Message "Operator PSReadLine history file not present at start." -Level INFO -AddToLog
+        $NoPSHistMsg = "Operator PSReadLine history file not present at start."
+        Show-Message -Message $NoPSHistMsg -Level INFO -AddToLog
     }
 }
 
@@ -1409,10 +1416,10 @@ function Initialize-TriageSystemTools {
         -ToolkitRoot (Get-TriageConfig -Key 'ToolkitRoot')
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None ( results are stored in '$global:TriageSys' )
+    None.  Results are stored in '$global:TriageSys'.
 
     .NOTES
     The manifest is expected to contain a 'Files' array of objects
@@ -1431,7 +1438,8 @@ function Initialize-TriageSystemTools {
     $global:TriageSys = @{}
 
     if (-not (Test-Path -LiteralPath $ManifestPath)) {
-        Show-Message -Message "No trusted tool manifest at $ManifestPath." -Level WARNING -AddToLog
+        $NoTrustToolMsg = "No trusted tool manifest at $ManifestPath."
+        Show-Message -Message $NoTrustToolMsg -Level WARNING -AddToLog
         return
     }
 
@@ -1439,8 +1447,8 @@ function Initialize-TriageSystemTools {
         $Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json -ErrorAction Stop
     }
     catch {
-        Show-Message -Message "Could not read $ManifestPath => $( $_.Exception.Message )" `
-            -Level ERROR -AddToLog
+        $NoReadManifestMsg = "Could not read $ManifestPath => $( $_.Exception.Message )"
+        Show-Message -Message $NoReadManifestMsg -Level ERROR -AddToLog
         return
     }
 
@@ -1451,16 +1459,16 @@ function Initialize-TriageSystemTools {
         $Path = Join-Path -Path $Folder -ChildPath $Entry.Path
 
         if (-not (Test-Path -LiteralPath $Path)) {
-            Show-Message -Message "Listed in manifest but missing => $( $Entry.Path )" `
-                -Level ERROR -AddToLog
+            $MissingManifestMsg = "Listed in manifest but missing => $( $Entry.Path )"
+            Show-Message -Message $MissingManifestMsg -Level ERROR -AddToLog
             $Failed++
             continue
         }
 
         $Actual = (Get-StreamHash -LiteralPath $Path -IncludeMd5:$false).SHA256
         if ($Actual -ne $Entry.SHA256) {
-            Show-Message -Message "Hash mismatch for $( $Entry.Path ) => binary is not trusted." `
-                -Level ERROR -AddToLog
+            $HashNotMatchMsg = "Hash mismatch for $( $Entry.Path ) => binary is not trusted."
+            Show-Message -Message $HashNotMatchMsg -Level ERROR -AddToLog
             $Failed++
             continue
         }
@@ -1473,8 +1481,9 @@ function Initialize-TriageSystemTools {
         }
     }
 
-    Show-Message -Message "Trusted tools => $Verified files verified, $Failed failed. `
-        Callable => $( $global:TriageSys.Keys -join ', ' )" -Level INFO -AddToLog
+    $VerifyToolsMsg = "Trusted tools => $Verified files verified, $Failed failed. " +
+        "Callable => $( $global:TriageSys.Keys -join ', ' )"
+    Show-Message -Message $VerifyToolsMsg -Level INFO -AddToLog
 }
 
 
@@ -1497,13 +1506,13 @@ function Show-TriageBanner {
     Show-TriageBanner
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -1600,13 +1609,13 @@ function Write-CaseInfo {
         -Selected ([ordered]@{ Modules = "all")
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None ( the JSON file is written to disk )
+    None.  The JSON file is written to disk.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -1662,9 +1671,11 @@ function Write-CaseInfo {
     $Info.LastAccessUpdates = $LastAccess
     $Info.ToolkitFileHashes = @(Get-ToolkitScriptHashes)
     $Info.TimeZoneId        = (Get-TimeZone).Id
-    Show-Message -Message "NTFS last-access updates => $( $LastAccess.Summary )" -Level INFO -AddToLog
+    $NtfsMsg = "NTFS last-access updates => $( $LastAccess.Summary )"
+    Show-Message -Message $NtfsMsg -Level INFO -AddToLog
 
-    $Info | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $JsonFile -Encoding UTF8
+    $Info | ConvertTo-Json -Depth 5 |
+        Set-Content -LiteralPath $JsonFile -Encoding UTF8
 }
 
 
@@ -1700,23 +1711,27 @@ function Invoke-RegistryCommand {
     }
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    The objects emitted by Command, excluding error records
+    None.  The objects emitted by Command, excluding error records.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
+    [OutputType([void])]
     param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [scriptblock]$Command
     )
 
-    # 2>&1 turns non-terminating errors into objects we can inspect instead of printing them
+    <#
+    '2>&1' turns non-terminating errors into objects we can inspect
+    instead of printing them
+    #>
     $Output = & $Command 2>&1
     $Errors = @(
         $Output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] }
@@ -1726,12 +1741,12 @@ function Invoke-RegistryCommand {
     )
     foreach ($E in $Errors) {
         if ($E.FullyQualifiedErrorId -like "PathNotFound*") {
-            $Msg = "No data found for registry key [ $( $E.TargetObject ) ]"
-            Show-Message -Message $Msg -Level INFO -AddToLog -MessageColor Yellow
+            $NoDataMsg = "No data found for registry key [ $( $E.TargetObject ) ]"
+            Show-Message -Message $NoDataMsg -Level INFO -AddToLog -MessageColor Yellow
         }
         else {
-            Show-Message -Message "Registry read problem [ $( $E.Exception.Message ) ]" `
-                -Level ERROR -AddToLog
+            $RegReadErrMsg = "Registry read problem [ $( $E.Exception.Message ) ]"
+            Show-Message -Message $RegReadErrMsg -Level ERROR -AddToLog
         }
     }
     # Empty when nothing was found, so the caller sees $null
@@ -1765,10 +1780,10 @@ function Clear-TriageHives {
     Clear-TriageHives
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
     Requires an elevated session and the trusted 'reg' binary
@@ -1783,29 +1798,36 @@ function Clear-TriageHives {
     [gc]::Collect()
     [gc]::WaitForPendingFinalizers()
 
-    $Stale = @(
+    $Reg = Get-TriageBinary "reg"
+
+    $Names = @(
         Get-ChildItem -LiteralPath "Registry::HKEY_USERS" |
-            Where-Object { $_.PSChildName -like "TRIAGE_*"
-        }
+            Where-Object { $_.PSChildName -like "TRIAGE_*" } |
+            ForEach-Object { $_.PSChildName }
     )
 
-    foreach ($K in $Stale) {
-        $Name = $K.PSChildName
-        & (Get-TriageBinary "reg") unload "HKU\$Name" 2>&1 | Out-Null
+    foreach ($Name in $Names) {
+
+        # Defensive: never call reg.exe with a blank key name
+        if ([string]::IsNullOrWhiteSpace($Name)) { continue }
+
+        $Err = & $Reg unload "HKU\$Name" 2>&1
 
         if ($LASTEXITCODE -ne 0) {
             Start-Sleep -Seconds 2
             [gc]::Collect()
             [gc]::WaitForPendingFinalizers()
-            & (Get-TriageBinary "reg") unload "HKU\$Name" 2>&1 | Out-Null
+            $Err = & $Reg unload "HKU\$Name" 2>&1
         }
 
         if ($LASTEXITCODE -eq 0) {
             Show-Message -Message "Unloaded hive $Name" -Level INFO -AddToLog
         }
         else {
-            Show-Message -Message "Could not unload hive $Name. Close other PowerShell windows and `
-                run: 'reg unload HKU\$Name'" -Level ERROR -AddToLog
+            $NoUnLoadHiveMsg =("Could not unload hive {0} => {1}. " +
+                "Close other PowerShell windows and run: 'reg unload HKU\{0}'") -f `
+                $Name, ($Err | Out-String).Trim()
+            Show-Message -Message $NoUnLoadHiveMsg -Level ERROR -AddToLog
         }
     }
 }
@@ -1881,13 +1903,13 @@ function Import-TriageConfig {
     Import-TriageConfig -ToolkitRoot 'E:\WinTriageScript'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None ( the configuration is stored in '$script:TriageConfig' )
+    None.  The configuration is stored in '$script:TriageConfig'.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -1954,14 +1976,14 @@ function Get-TriageConfig {
     (Get-TriageConfig).ConfigSha256
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
     The requested value ( type depends on the key ), or
-    System.Collections.Hashtable for the full configuration
+    System.Collections.Hashtable for the full configuration.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -2006,13 +2028,13 @@ function Format-TriageDuration {
     Returns '1 min 15 sec'.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.String
+    System.String.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -2088,6 +2110,12 @@ function Invoke-TriageTask {
     .PARAMETER Action
     Script block that performs the work.
 
+    If the script block declares a 'param($Paths)' block, it is invoked
+    with the resolved output paths ( an array of full paths, one element
+    per entry in ExpectedFile ).  Script blocks without that parameter
+    are invoked without arguments, which keeps older task definitions
+    working unchanged.
+
     .PARAMETER ExpectedFile
     Full paths of the files the task should create.
 
@@ -2095,24 +2123,49 @@ function Invoke-TriageTask {
 
     Optional; when omitted, no output check is made.
 
+    .PARAMETER Paths
+    Resolved output paths to hand to the action.
+
+    Normally supplied by 'Invoke-TriageTaskList', which derives them
+    from the task's Files property.  When calling 'Invoke-TriageTask'
+    directly, pass the same paths you pass in ExpectedFile.
+
+    Optional; when omitted, the action is invoked without arguments
+    unless it declares 'param($Paths)' and ExpectedFile is non-empty.
+
     .EXAMPLE
-    Invoke-TriageTask `
-        -Message 'Collecting services' `
-        -ExpectedFile '$global:ResultsFolder\services.csv' `
+    Invoke-TriageTask -Message 'Collecting services' `
+        -ExpectedFile "$global:ResultsFolder\services.csv" `
         -Action { `
             Write-OutputToCsv `
             -Data (Get-CimInstance Win32_Service) `
-            -OutputFile '$global:ResultsFolder\services.csv' `
+            -OutputFile "$global:ResultsFolder\services.csv" `
         }
 
+    A classic task: the action builds its own path.
+
+    .EXAMPLE
+    Invoke-TriageTask -Message 'Collecting services' `
+        -ExpectedFile "$global:ResultsFolder\services.csv" `
+        -Paths "$global:ResultsFolder\services.csv" `
+        -Action { param($Paths) `
+            Write-OutputToCsv `
+            -Data (Get-CimInstance Win32_Service) `
+            -OutputFile $Paths[0] `
+        }
+
+    A path-injected task : the action declares 'param($Paths)' and
+    receives the resolved paths, so the filename is not duplicated
+    between the task definition and the action.
+
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -2126,7 +2179,9 @@ function Invoke-TriageTask {
         [ValidateNotNullOrEmpty()]
         [scriptblock]$Action,
 
-        [string[]]$ExpectedFile = @()
+        [string[]]$ExpectedFile = @(),
+
+        [object[]]$Paths = @()
     )
 
     $StartedUtc  = (Get-Date).ToUniversalTime().ToString("o")
@@ -2136,13 +2191,35 @@ function Invoke-TriageTask {
 
     Show-Message -Message $Message -Level INFO -AddToLog
 
+    <#
+    Fall back to the verification paths when no explicit paths were
+    given, so 'Invoke-TriageTask' also works when called directly:
+    #>
+    if ($Paths.Count -eq 0 -and $ExpectedFile.Count -gt 0) {
+        $Paths = $ExpectedFile
+    }
+
+    <#
+    Inject the resolved paths only into actions that expect them.
+    Older actions ({ Get-ServiceData } style) are invoked bare:
+    #>
+    $AcceptsPaths = $false
+    if ($Action.Ast.ParamBlock) {
+        $AcceptsPaths = $Action.Ast.ParamBlock.Extent.Text -match '(?<![A-Za-z0-9_])\$Paths\b'
+    }
+
     try {
-        $null = & $Action
+        if ($AcceptsPaths) {
+            $null = & $Action $Paths
+        }
+        else {
+            $null = & $Action
+        }
     }
     catch {
         $Status = "Failed"
-        Show-Message -Message "Execution failed during [ $Action ] => $( $_.Exception.Message )" `
-            -Level ERROR -AddToLog
+        $FailedMsg = "Execution failed during [ $Action ] => $( $_.Exception.Message )"
+        Show-Message -Message $FailedMsg -Level ERROR -AddToLog
     }
 
     $Sw.Stop()
@@ -2172,17 +2249,22 @@ function Invoke-TriageTask {
 
         if ($Missing.Count -gt 0) {
             $Status = "MissingOutput"
-            Show-Message -Message "[ $Message ] finished ($Time) but expected output is missing or empty => $( ($Missing | ForEach-Object { Split-Path -Path $_ -Leaf }) -join ', ' )" -Level ERROR -AddToLog
+            $MissingLeaves = @($Missing | ForEach-Object { Split-Path -Path $_ -Leaf }) -join ', '
+            $MissingMsg = "[ $Message ] finished ( $Time ) but expected output is " +
+                "missing or empty => $MissingLeaves"
+            Show-Message -Message $MissingMsg -Level ERROR -AddToLog
         }
         elseif ($NewErrors -gt 0) {
             $Status = "CompletedWithErrors"
-            Show-Message -Message "[ $Message ] completed with $NewErrors error(s) ($Time). See application log." -Level WARNING -AddToLog
+            $ErrMsg = "[ $Message ] completed with $NewErrors error(s) " +
+                "( $Time ). See application log."
+            Show-Message -Message $ErrMsg -Level WARNING -AddToLog
         }
         elseif ($Present.Count -gt 0) {
             Show-Message -File $Present -ExecutionTime $Time -Level SUCCESS -AddToLog
         }
         else {
-            Show-Message -Message "Process completed ($Time)." -Level SUCCESS -AddToLog
+            Show-Message -Message "Process completed ( $Time )." -Level SUCCESS -AddToLog
         }
     }
 
@@ -2197,15 +2279,29 @@ function Invoke-TriageTask {
 }
 
 
+
 function Invoke-TriageTaskList {
     <#
     .SYNOPSIS
     Runs a list of task definitions through 'Invoke-TriageTask'.
 
     .DESCRIPTION
+    This is the main function that handles running all of the functions
+    from each module.
+
     For each task, the file names in its Files property are combined
     with Folder to form the expected output paths, and the task is run
     with 'Invoke-TriageTask'.
+
+    The resolved paths are also passed to the action itself, as a single
+    array argument.
+
+    Actions that declare a 'param($Paths)' block receive them and can forward
+    the paths to their collector functions, so the file names are declared
+    only once, in the Files property.
+
+    Actions without that parameter are invoked without arguments and keep
+    building their own paths, exactly as before.
 
     Tasks run one after another in the order given.
 
@@ -2215,7 +2311,8 @@ function Invoke-TriageTaskList {
             Description shown and logged.
 
         Action
-            Script block that does the work.
+            Script block that does the work. Optionally declares
+            'param($Paths)' to receive the resolved output paths.
 
         Files
             Array of file names ( relative to Folder ) the task should
@@ -2231,28 +2328,32 @@ function Invoke-TriageTaskList {
     .EXAMPLE
     $Tasks = @(
         @{
-            Message = 'Collecting services'
-            Files = @('services.csv')
-            Action = { Get-ServiceData }
+            Action  = { Get-ServiceData }
+            Message = 'Collecting services...'
+            Files   = @('services.csv')
         }
         @{
-            Message = 'Collecting drivers'
-            Files = @('drivers.csv')
-            Action = { Get-DriverData }
+            Action = { param($Paths) Get-ServiceData -OutputFile $Paths[0] }
+            Message = 'Collecting services...'
+            Files = @('services.csv')
         }
     )
     Invoke-TriageTaskList `
         -Tasks $Tasks `
-        -Folder '$global:ResultsFolder\System'
+        -Folder $global:ResultsFolder
+
+    Both styles work side by side. The first action builds its own
+    path; the second receives the resolved paths, so the file name
+    appears only in the Files property.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -2275,7 +2376,19 @@ function Invoke-TriageTaskList {
                 Join-Path -Path $Folder -ChildPath $_
             }
         )
-        Invoke-TriageTask -Message $Task.Message -Action $Task.Action -ExpectedFile $Expected
+
+        # First command called in the action, e.g. 'Get-IpConfig':
+        $Call = $Task.Action.Ast.Find(
+            { param($Ast) $Ast -is [System.Management.Automation.Language.CommandAst] },
+            $true   # search nested script blocks too
+        ) | Select-Object -First 1
+
+        $Display = $Task.Message
+        if ($Call -and $Call.GetCommandName()) {
+            $Display = "{0} ( {1} )..." -f $Task.Message.TrimEnd('.'), $Call.GetCommandName()
+        }
+
+        Invoke-TriageTask -Message $Display -Action $Task.Action -ExpectedFile $Expected -Paths $Expected
     }
 }
 
@@ -2305,16 +2418,16 @@ function New-TriageCopyResult {
     .EXAMPLE
     $R = New-TriageCopyResult `
         -Source 'C:\Windows\System32\config\SAM' `
-        -Destination '$global:ResultsFolder\SAM'
+        -Destination "$global:ResultsFolder\SAM"
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject
+    System.Management.Automation.PSCustomObject.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -2374,13 +2487,13 @@ function Invoke-TriageRawCopy {
     .EXAMPLE
     Invoke-TriageRawCopy `
         -Source 'C:\Windows\System32\config\SYSTEM' `
-        -Destination '$global:ResultsFolder\Registry\SYSTEM'
+        -Destination "$global:ResultsFolder\Registry\SYSTEM"
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    None
+    None.
 
     .NOTES
     Requires an elevated session.
@@ -2406,7 +2519,7 @@ function Invoke-TriageRawCopy {
     # Start-Process -Wait: RawCopy may be a GUI-subsystem program,
     # which '&' would not wait for.
 
-    # WorkingDirectory keeps any log file it writes next to the output.
+    # 'WorkingDirectory' keeps any log file it writes next to the output.
     $ArgList = @(
         "/FileNamePath:`"$Source`"",
         "/OutputPath:`"$Dir`"",
@@ -2466,19 +2579,20 @@ function Copy-TriageFile {
     .EXAMPLE
     $Result = Copy-TriageFile `
         -Source 'C:\Windows\appcompat\Programs\Amcache.hve' `
-        -Destination '$global:ResultsFolder\Amcache\Amcache.hve'
+        -Destination "$global:ResultsFolder\Amcache\Amcache.hve"
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' )
+    System.Management.Automation.PSCustomObject.
+
+    See 'New-TriageCopyResult'.
 
     Status is 'OK', 'NotFound', or 'Locked'.
 
     .NOTES
-    None
+    None.
     #>
 
     [CmdletBinding()]
@@ -2578,11 +2692,12 @@ function Copy-TriageRawFile {
         -Destination '$global:ResultsFolder\NTFS\MFT'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' )
+    System.Management.Automation.PSCustomObject.
+
+    See 'New-TriageCopyResult'
 
     .NOTES
     Requires an elevated session.
@@ -2640,11 +2755,12 @@ function Save-TriageRegistryHive {
         -Destination '$global:ResultsFolder\Registry\SYSTEM.regsave'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' )
+    System.Management.Automation.PSCustomObject.
+
+    See 'New-TriageCopyResult'
 
     Method is 'reg save'
 
@@ -2723,11 +2839,12 @@ function Copy-TriageFolderBackup {
         -Destination '$global:ResultsFolder\Prefetch'
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject
-    ( see 'New-TriageCopyResult' )
+    System.Management.Automation.PSCustomObject.
+
+    See 'New-TriageCopyResult'.
 
     Method is 'robocopy /B'
 
@@ -2783,7 +2900,7 @@ function Add-TriageLogLine {
 
     Instead of opening and closing the file for every message ( as
     Out-File -Append does ), the function opens a StreamWriter the first
-    time it is called and keeps it in `$global:TriageLogWriter` for
+    time it is called and keeps it in '$global:TriageLogWriter' for
     later calls.
 
     The writer is opened lazily, so a GUI worker runspace opens its own
@@ -2809,17 +2926,17 @@ function Add-TriageLogLine {
 
     The function adds the line ending.
 
-    .INPUTS
-    None
-
-    .OUTPUTS
-    None
-
     .EXAMPLE
     Add-TriageLogLine `
         -Line ' [2026-11-06 10:15:02] Starting collection...'
 
     Appends one line to the current triage log.
+
+    .INPUTS
+    None.
+
+    .OUTPUTS
+    None.
 
     .NOTES
     Uses these global variables: 'LogFile' ( input ), 'TriageLogWriter',
@@ -2882,16 +2999,16 @@ function Close-TriageLogWriter {
 
     'Add-TriageLogLine' also calls it when '$global:LogFile' changes.
 
-    .INPUTS
-    None
-
-    .OUTPUTS
-    None
-
     .EXAMPLE
     Close-TriageLogWriter
 
     Closes the log file so it can be hashed or archived.
+
+    .INPUTS
+    None.
+
+    .OUTPUTS
+    None.
 
     .NOTES
     Uses these global variables:
@@ -2946,10 +3063,10 @@ function Get-LastAccessUpdateState {
     times.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject
+    System.Management.Automation.PSCustomObject.
 
     An object with three properties:
 
@@ -3050,12 +3167,12 @@ function Resolve-TriageModuleName {
     Matching uses '-like', so do not include wildcard characters.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.String
+    System.String.
 
-    The full module name exactly as written in the configuration file
+    The full module name exactly as written in the configuration file.
 
     .EXAMPLE
     Resolve-TriageModuleName -Id '004'
@@ -3116,12 +3233,12 @@ function Get-TriageScanRoots {
     used separately for signature checks.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.String
+    System.String.
 
-    Full paths of existing folders, one string per folder
+    Full paths of existing folders, one string per folder.
 
     .EXAMPLE
     Get-TriageScanRoots
@@ -3203,10 +3320,10 @@ function Get-ToolkitScriptHashes {
     Files that cannot be listed are skipped.
 
     .INPUTS
-    None
+    None.
 
     .OUTPUTS
-    System.Management.Automation.PSCustomObject
+    System.Management.Automation.PSCustomObject.
 
     One object per file with these properties:
 
@@ -3255,8 +3372,9 @@ function Get-ToolkitScriptHashes {
             (Get-StreamHash -LiteralPath $File.FullName -IncludeMd5:$false).SHA256
         }
         catch {
-            $Msg = "Could not hash toolkit file [ $( $File.FullName ) ] => $( $_.Exception.Message )"
-            Show-Message -Message $Msg -Level WARNING -AddToLog
+            $NoHashMsg = "Could not hash toolkit file [ $( $File.FullName ) ] " +
+                "=> $( $_.Exception.Message )"
+            Show-Message -Message $NoHashMsg -Level WARNING -AddToLog
             $null
         }
         [PSCustomObject]@{
@@ -3264,4 +3382,17 @@ function Get-ToolkitScriptHashes {
             Sha256 = $Hash
         }
     }
+}
+
+
+function Show-ErrorMessage {
+    param(
+        [string]$Function,
+        [string]$ComputerName,
+        [string]$ErrorMsg
+    )
+
+    $ErrorMsg = "Execution failed during $Function " +
+            "on $ComputerName. Error => $ErrorMsg"
+    Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
 }

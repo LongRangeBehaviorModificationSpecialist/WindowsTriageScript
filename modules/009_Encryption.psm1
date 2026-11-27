@@ -6,21 +6,20 @@ function Get-TriageEncryptionData {
         [string]$EncryptionFolder
     )
 
+
+    # 09.01
     function Get-BitlockerInfoAndRecoveryKeys {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $EncryptionFolder -ChildPath "09.01_bitlocker_encryption.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-BitLockerVolume |
                 Select-Object -Property * |
                 Sort-Object MountPoint
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
 
 
         function Search-BitlockerVolumes {
             # Recovery passwords stay in the main output file
-            $KeyFile = $TxtFile
+            $KeyFile = $OutputFile
             # Get all BitLocker-protected drives on the computer
             $Volumes = $Data
             # Iterate through each drive
@@ -37,27 +36,35 @@ function Get-TriageEncryptionData {
                 if ($null -ne $RecoveryKey) {
                     foreach ($Key in @($RecoveryKey)) {
                         # The password goes to the output file ONLY
-                        Add-Content -LiteralPath $KeyFile -Encoding UTF8 -Value "Drive $DriveID => `
-                            ProtectorId => $( $Key.KeyProtectorId ) => RecoveryPassword => `
-                            $( $Key.RecoveryPassword )"
+                        $Value = (
+                            "Drive $DriveID => ProtectorId => $( $Key.KeyProtectorId ) => " +
+                            "RecoveryPassword => $( $Key.RecoveryPassword )"
+                        )
+                        Add-Content -LiteralPath $KeyFile -Encoding UTF8 -Value $Value
                         # Console and log get the protector ID, which is not secret
-                        Show-Message -Message "Drive $DriveID => recovery password saved to => `
-                            $( Split-Path -Path $KeyFile -Leaf ) (protector ID $( $Key.KeyProtectorId ))" `
-                            -Level INFO -AddToLog
+                        $BitLockerMsg = (
+                            "Drive $DriveID => recovery password saved to => " +
+                            "$( Split-Path -Path $KeyFile -Leaf ) (protector ID " +
+                            "$( $Key.KeyProtectorId ))"
+                        )
+                        Show-Message -Message $BitLockerMsg -Level INFO -AddToLog
                     }
 
-                    $Data1 = "Drive $DriveID => Recovery Key => $( $RecoveryKey.RecoveryPassword )"
-                    Write-OutputToFile -Data $Data1 -OutputFile $TxtFile -Append
+                    $Data1 = "Drive $DriveID => Recovery Key => " +
+                        "$( $RecoveryKey.RecoveryPassword )"
+                    Write-OutputToFile -Data $Data1 -OutputFile $OutputFile -Append
                     Show-Message -Message $Data1 -Level INFO -AddToLog
                 }
                 elseif ($ProtectionStatus -eq "Unknown" -and $LockStatus -eq "Locked") {
-                    $Data1 = "Drive $DriveID => This drive is mounted, but IT IS NOT decrypted"
-                    Write-OutputToFile -Data $Data1 -OutputFile $TxtFile -Append
+                    $Data1 = "Drive $DriveID => This drive is mounted, " +
+                        "but IT IS NOT decrypted"
+                    Write-OutputToFile -Data $Data1 -OutputFile $OutputFile -Append
                     Show-Message -Message $Data1 -Level INFO -AddToLog
                 }
                 else {
-                    $Data1 = "Drive $DriveID => Does not have a recovery key or is not BitLocker protected"
-                    Write-OutputToFile -Data $Data1 -OutputFile $TxtFile -Append
+                    $Data1 = "Drive $DriveID => Does not have a recovery key or " +
+                        "is not BitLocker protected"
+                    Write-OutputToFile -Data $Data1 -OutputFile $OutputFile -Append
                     Show-Message -Message $Data1 -Level INFO -AddToLog
                 }
             }
@@ -72,7 +79,7 @@ function Get-TriageEncryptionData {
 
     $Tasks = @(
         @{
-            Action  = { Get-BitlockerInfoAndRecoveryKeys }
+            Action  = { param($Paths) Get-BitlockerInfoAndRecoveryKeys -OutputFile $Paths[0] }
             Message = "09.01_Getting BitLocker Data & Recovery Keys..."
             Files   = "09.01_bitlocker_encryption.txt"
         }

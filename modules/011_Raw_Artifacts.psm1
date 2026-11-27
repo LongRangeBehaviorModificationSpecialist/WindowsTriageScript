@@ -290,8 +290,9 @@ function Get-TriageRawArtifactsData {
 
     foreach ($Set in $Cfg.Enabled) {
         if (-not $Sets.Contains($Set)) {
-            $Msg = "Unknown raw artifact set [ $Set ] in the configuration file."
-            Show-Message -Message $Msg -Level WARNING -AddToLog
+            $UnkArtifactMsg = "Unknown raw artifact set [ $Set ] in the " +
+                "configuration file."
+            Show-Message -Message $UnkArtifactMsg -Level WARNING -AddToLog
             continue
         }
 
@@ -331,8 +332,8 @@ function Get-TriageRawArtifactsData {
             $Failed = @($Rows | Where-Object Status -eq "Failed").Count
 
             if ($Failed) {
-                $FailedMsg = "[ $Set ] $Ok copied, $Failed failed, $Locked locked. " +
-                    "See raw_artifacts_manifest.csv."
+                $FailedMsg = "[ $Set ] $Ok copied, $Failed failed, $Locked " +
+                    "locked. See raw_artifacts_manifest.csv."
                 Show-Message -Message $FailedMsg -Level ERROR -AddToLog
             }
             elseif ($Locked) {
@@ -340,7 +341,8 @@ function Get-TriageRawArtifactsData {
                 Show-Message -Message $LockMsg -Level WARNING -AddToLog
             }
             else {
-                Show-Message -Message "[ $Set ] $Ok file(s) copied." -Level INFO -AddToLog
+                $OkMsg = "[ $Set ] $Ok file(s) copied."
+                Show-Message -Message $OkMsg -Level INFO -AddToLog
             }
         }
     }

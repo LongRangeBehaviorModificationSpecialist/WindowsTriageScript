@@ -6,24 +6,21 @@ function Get-TriagePrefetchData {
         [string]$PrefetchFolder
     )
 
+
+    # 06.01
     function Get-PrefetchFiles {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $PrefetchFolder -ChildPath "06.01_prefetch_files.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-ChildItem -Path "$env:SystemRoot\Prefetch\*.pf" |
             Select-Object -Property *
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 06.02
     function Get-RecentExecutions {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $PrefetchFolder -ChildPath "06.02_recent_executions.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Folders = @("$env:SystemDrive\Temp")
         foreach ($User in $global:TriageUserHives) {
             if (-not $User.ProfilePath) {
@@ -39,10 +36,10 @@ function Get-TriagePrefetchData {
             }
             Get-ChildItem -LiteralPath $Folder -Recurse -Depth 3 -Force `
                 -ErrorAction SilentlyContinue |
-                Select-Object FullName, Length, Attributes, CreationTimeUtc, `
+                Select-Object FullName, Length, Attributes, CreationTimeUtc,
                 LastWriteTimeUtc, LastAccessTimeUtc
         }
-        Write-OutputToCsv -Data ($Data | Sort-Object LastAccessTimeUtc -Descending) -OutputFile $CsvFile
+        Write-OutputToCsv -Data ($Data | Sort-Object LastAccessTimeUtc -Descending) -OutputFile $OutputFile
     }
 
     # ----------------------------------
@@ -51,12 +48,12 @@ function Get-TriagePrefetchData {
 
     $Tasks = @(
         @{
-            Action  = { Get-PrefetchFiles }
+            Action  = { param($Paths) Get-PrefetchFiles -OutputFile $Paths[0] }
             Message = "06.01_Getting Prefetch File Information..."
             Files   = "06.01_prefetch_files.csv"
         }
         @{
-            Action  = { Get-RecentExecutions }
+            Action  = { param($Paths) Get-RecentExecutions -OutputFile $Paths[0] }
             Message = "06.02_Getting Recently Executed Files..."
             Files   = "06.02_recent_executions.csv"
         }

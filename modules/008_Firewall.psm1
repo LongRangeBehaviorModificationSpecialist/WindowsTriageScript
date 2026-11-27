@@ -6,34 +6,29 @@ function Get-TriageFirewallData {
         [string]$FirewallFolder
     )
 
+
+    # 08.01
     function Get-FirewallRules {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $FirewallFolder -ChildPath "08.01_firewall_rules.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = & (Get-TriageBinary "netsh") advfirewall firewall show rule name=all verbose
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 08.02
     function Get-DefenderPreferences {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $FirewallFolder -ChildPath "08.02_defender_preferences.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-MpPreference | Select-Object -Property *
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 08.03
     function Copy-DefenderLogs {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $FirewallFolder -ChildPath "08.03_defender_log_files.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $MpOutputFolder = Join-Path -Path $FirewallFolder -ChildPath "Defender_Log_Files"
         $null = New-Item -ItemType Directory -Path $MpOutputFolder -Force
 
@@ -42,24 +37,17 @@ function Get-TriageFirewallData {
 
         foreach ($File in $MpLogFiles) {
             Copy-Item -LiteralPath $File.FullName -Destination $MpOutputFolder
-            Add-Content -Path $TxtFile -Value $File.FullName -Encoding UTF8 -Force
+            Add-Content -Path $OutputFile -Value $File.FullName -Encoding UTF8 -Force
         }
     }
 
 
+    # 08.04
     function Get-DefenderDetections {
-        param(
-            [string]$ThreatDetectionsFile = (
-                Join-Path -Path $FirewallFolder -ChildPath "08.04a_defender_threat_detections.csv"
-            ),
-            [string]$ThreatsFile = (
-                Join-Path -Path $FirewallFolder -ChildPath "08.04b_defender_threats.csv"
-            ),
-            [string]$StatusFile = (
-                Join-Path -Path $FirewallFolder -ChildPath "08.04c_defender_status.txt"
-            )
-        )
+        param([string[]]$OutputFiles)
+
         $Skip = "CimClass", "CimInstanceProperties", "CimSystemProperties"
+
         $Detections = Get-MpThreatDetection -ErrorAction SilentlyContinue |
             Select-Object -Property *, @{
                 Name       = "ResourceList";
@@ -72,11 +60,12 @@ function Get-TriageFirewallData {
                 Expression = { @($_.Resources) -join "; " }
             } -ExcludeProperty ($Skip + "Resources")
 
-        Write-OutputToCsv -Data $Detections -OutputFile $ThreatDetectionsFile
-        Write-OutputToCsv -Data $Threats -OutputFile $ThreatsFile
+        Write-OutputToCsv -Data $Detections -OutputFile $OutputFiles[0]
+        Write-OutputToCsv -Data $Threats -OutputFile $OutputFiles[1]
+
         $Status = Get-MpComputerStatus -ErrorAction SilentlyContinue |
             Out-String -Width 4096
-        Write-OutputToFile -Data $Status -OutputFile $StatusFile
+        Write-OutputToFile -Data $Status -OutputFile $OutputFiles[2]
     }
 
     # ----------------------------------
@@ -85,22 +74,22 @@ function Get-TriageFirewallData {
 
     $Tasks = @(
         @{
-            Action    = { Get-FirewallRules }
+            Action    = { param($Paths) Get-FirewallRules -OutputFile $Paths[0] }
             Message   = "08.01_Getting Device Firewall Configuration..."
             Files     = "08.01_firewall_rules.txt"
         }
         @{
-            Action    = { Get-DefenderPreferences }
+            Action    = { param($Paths) Get-DefenderPreferences -OutputFile $Paths[0] }
             Message   = "08.02_Parsing Windows Defender Preferences..."
             Files     = "08.02_defender_preferences.txt"
         }
         @{
-            Action    = { Copy-DefenderLogs }
+            Action    = { param($Paths) Copy-DefenderLogs -OutputFile $Paths[0] }
             Message   = "08.03_Copying Windows Defender Log Files..."
             Files     = "08.03_defender_log_files.txt"
         }
         @{
-            Action    = { Get-DefenderDetections }
+            Action    = { param($Paths) Get-DefenderDetections -OutputFiles $Paths }
             Message   = "08.04_Listing Windows Defender Detections..."
             Files     = "08.04a_defender_threat_detections.csv",
                         "08.04b_defender_threats.csv",

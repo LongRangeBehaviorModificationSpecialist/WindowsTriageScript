@@ -5,41 +5,49 @@ function Invoke-DfirTriageScan {
     the selected modules, evidence hashing, and an optional case archive.
 
     .DESCRIPTION
-    This is the main entry point of the toolkit.  Both `run-triage.ps1`
-    and the GUI call it. In order, it:
+    This is the main entry point of the toolkit.  Both 'run-triage.ps1'
+    and the GUI call it.  In order, it:
 
         1.  Resets the error and warning counters, the task timing list,
-            and `$global:TriageResult`, and writes the opening lines to
+            and '$global:TriageResult', and writes the opening lines to
             the log.
-        2.  Writes the case record (`case_info.json`) with
-            `Write-CaseInfo`.
-        3.  Verifies the tools in the `\bin\ folder with
-            `Initialize-TriageSystemTools`.
+
+        2.  Writes the case record ( 'case_info.json' ) with
+            'Write-CaseInfo'.
+
+        3.  Verifies the tools in the '\bin\' folder with
+            'Initialize-TriageSystemTools'.
+
         4.  Runs the optional captures that were selected, in this order:
-            (a) Magnet RAM Capture [-CaptureRam | -Ram],
-            (b) Encrypted Disk Detector [-RunEdd | -Edd], and
-            (c) Magnet Process Capture [-GetProcesses | -GP].
+
+            (a) Magnet RAM Capture [-CaptureRam|-Ram],
+            (b) Encrypted Disk Detector [-RunEdd|-Edd], and
+            (c) Magnet Process Capture [-GetProcesses|-GP].
+
         5.  Mounts the user registry hives, runs each selected module
             into its own subfolder of the results folder, and dismounts
             the hives.  The dismount happens even if a module fails.
-        6.  Saves the task timings to `\Logs\task_timings.csv`, hashes all
-            evidence with `Get-FileHashes`, and closes and hashes the
-            log with `Close-TriageLog`.
+
+        6.  Saves the task timings to '\Logs\task_timings.csv', hashes all
+            evidence with 'Get-FileHashes', and closes and hashes the
+            log with 'Close-TriageLog'.
+
         7.  Creates a ZIP of the results folder if -Archive was given
-            (`Invoke-CaseArchive`).
-        8.  Shows the values to record in the case notes (the hash of
-            `final_hashes.csv` and, if made, of the ZIP), and stores a
-            summary in `$global:TriageResult`.
+            ( 'Invoke-CaseArchive' ).
+
+        8.  Shows the values to record in the case notes ( the hash of
+            'final_hashes.csv' and, if made, of the ZIP ), and stores a
+            summary in '$global:TriageResult'.
 
     Modules always run in the fixed order of the internal workflow table,
-    not in the order given in -Modules.
+    not in the order given in '-Modules'.
 
     Modules that are not selected are logged as skipped.
 
     A module that throws is logged as an error and the run continues with
     the next one.
 
-    The exit code in the summary is 1 if any error was recorded and 0
+    The exit code in the summary is '1' if any error was recorded and '0'
     otherwise.
 
     Warnings do not change the exit code.
@@ -47,26 +55,27 @@ function Invoke-DfirTriageScan {
     .PARAMETER ResultsFolder
     Path of the case results folder.
 
-    Normally created beforehand by `Get-InitialSetup`, which also creates the log.
+    Normally created beforehand by 'Get-InitialSetup', which also creates
+    the log.
 
     .PARAMETER Operator
     Name of the person running the collection.
 
-    Recorded in `case_info.json`.
+    Recorded in 'case_info.json'.
 
     .PARAMETER CaseNumber
     The case number.
 
-    Recorded in `case_info.json`.
+    Recorded in 'case_info.json'.
 
     .PARAMETER Agency
     The agency name.
 
-    Optional; recorded in `case_info.json`.
+    Optional; recorded in 'case_info.json'.
 
     .PARAMETER Modules
-    Names of the modules to run, such as "001_Device" and "003_Network".
-    Defaults to every module listed in `TriageConfig.psd1`.
+    Names of the modules to run, such as '001_Device' and '003_Network'.
+    Defaults to every module listed in 'TriageConfig.psd1'.
     Each name must match the workflow table exactly.
 
     .PARAMETER RunEdd
@@ -85,34 +94,32 @@ function Invoke-DfirTriageScan {
     .INPUTS
     None.
 
-    This function does not accept pipeline input.
-
     .OUTPUTS
-    None on the pipeline.
+    None.
 
-    Results are written to the results folder, and a summary object is stored 
-    in `$global:TriageResult` with these properties:
-        ExitCode,
-        Errors,
-        Warnings,
-        ResultsFolder,
-        LogFile, and
-        Duration.
+    Results are written to the results folder, and a summary object is stored
+    in '$global:TriageResult' with these properties:
+        'ExitCode',
+        'Errors',
+        'Warnings',
+        'ResultsFolder',
+        'LogFile', and
+        'Duration.'
 
     .EXAMPLE
     Invoke-DfirTriageScan `
         -ResultsFolder $global:ResultsFolder `
-        -Operator "SA John Doe" `
-        -CaseNumber "2026-12345"
+        -Operator 'SA John Doe' `
+        -CaseNumber '2026-12345'
 
     Runs every module with no optional captures and no archive.
 
     .EXAMPLE
     Invoke-DfirTriageScan `
         -ResultsFolder $global:ResultsFolder `
-        -Operator "SA John Doe" `
-        -CaseNumber "2026-12345" `
-        -Modules "001_Device", "003_Network" `
+        -Operator 'SA John Doe' `
+        -CaseNumber '2026-12345' `
+        -Modules '001_Device', '003_Network' `
         -CaptureRam `
         -Archive `
         $global:TriageResult.ExitCode
@@ -125,14 +132,14 @@ function Invoke-DfirTriageScan {
     present.
 
     Uses these global variables:
-        `ToolkitRoot` (read),
-        `TriageTimings`,
-        `TriageErrorCount`,
-        `TriageWarningCount`,
-        `TriageResult`, and
-        `TriageUserHives` (set).
+        'ToolkitRoot' (read),
+        'TriageTimings',
+        'TriageErrorCount',
+        'TriageWarningCount',
+        'TriageResult', and
+        'TriageUserHives' (set).
 
-    The nested functions `Initialize-TriageScan` and `Invoke-TriageScan`
+    The nested functions 'Initialize-TriageScan' and 'Invoke-TriageScan'
     are private to this function.
 
     Because the memory captures and the case record run before the modules,
@@ -151,6 +158,7 @@ function Invoke-DfirTriageScan {
     .LINK
     Invoke-CaseArchive
     #>
+
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -179,15 +187,11 @@ function Invoke-DfirTriageScan {
     $global:TriageWarningCount = 0
     $global:TriageResult       = $null
 
-    Show-Message `
-        -Message "Script Log for VECTOR DFIR Script Usage" `
-        -Level INFO `
-        -AddToLog
+    Show-Message -Message "Script Log for VECTOR DFIR Script Usage" `
+        -Level INFO -AddToLog
 
-    Show-Message `
-        -Message "[ $( $MyInvocation.MyCommand.Name ) ] execution started." `
-        -Level INFO `
-        -AddToLog
+    $StartMsg = "[ $( $MyInvocation.MyCommand.Name ) ] execution started."
+    Show-Message -Message $StartMsg -Level INFO -AddToLog
 
     Write-CaseInfo `
         -ResultsFolder $ResultsFolder `
@@ -204,36 +208,37 @@ function Invoke-DfirTriageScan {
 
     Initialize-TriageSystemTools -ToolkitRoot $global:ToolkitRoot
 
-    # Optional captures: the decision was made up front, so just
-    # checking for which switches, if any, were passed.
-    # Follows the order of volatility - RAM, Edd, then Processes.
-
+    <#
+    Optional captures: the decision was made up front, so just
+    checking for which switches, if any, were passed.
+    Follows the order of volatility - RAM, Edd, then Processes.
+    #>
     if (-not $CaptureRam) {
-        $Msg = "Skipped [ Magnet RAM Capture ] (not selected)."
-        Show-Message -Message $Msg -Level INFO -AddToLog
+        $NoRamMsg = "Skipped [ Magnet RAM Capture ] (not selected)."
+        Show-Message -Message $NoRamMsg -Level INFO -AddToLog
     }
     else {
         Get-ComputerRam -ResultsFolder $ResultsFolder
     }
     if (-not $RunEdd) {
-        $Msg = "Skipped [ Encrypted Disk Detector ] (not selected)."
-        Show-Message -Message $Msg -Level INFO -AddToLog
+        $NoEddMsg = "Skipped [ Encrypted Disk Detector ] (not selected)."
+        Show-Message -Message $NoEddMsg -Level INFO -AddToLog
     }
     else {
         Invoke-EDD -ResultsFolder $ResultsFolder
     }
 
     if (-not $GetProcesses) {
-        $Msg = "Skipped [ Magnet Process Capture ] (not selected)."
-        Show-Message -Message $Msg -Level INFO -AddToLog
+        $NoProcessMsg = "Skipped [ Magnet Process Capture ] (not selected)."
+        Show-Message -Message $NoProcessMsg -Level INFO -AddToLog
     }
     else {
         Get-RunningProcesses -ResultsFolder $ResultsFolder
     }
 
     if (-not $Archive) {
-        $Msg = "Skipped [ Creating Case Archive ] (not selected)."
-        Show-Message -Message $Msg -Level INFO -AddToLog
+        $NoArchiveMsg = "Skipped [ Creating Case Archive ] (not selected)."
+        Show-Message -Message $NoArchiveMsg -Level INFO -AddToLog
     }
 
     function Initialize-TriageScan {
@@ -257,13 +262,14 @@ function Invoke-DfirTriageScan {
                 Test-IfExists -FolderName $SubFolderPathName -Type FOLDER
                 $ModuleSw = [System.Diagnostics.Stopwatch]::StartNew()
                 & $Action $SubFolderPathName
-                $Msg = "Module $FolderName finished ($( Format-TriageDuration -Span $ModuleSw.Elapsed ))"
+                $Msg = "Module $FolderName finished " +
+                    "($( Format-TriageDuration -Span $ModuleSw.Elapsed ))`n"
                 Show-Message -Message $Msg -Level INFO -AddToLog -MessageColor Magenta
             }
             catch {
-                $ErrorMsg = "Execution failed during $FolderName on $( $env:COMPUTERNAME ).  " +
+                $ErrMsg = "Execution failed during $FolderName on $( $env:COMPUTERNAME ). " +
                     "Error => $( $_.Exception.Message )"
-                Show-Message -Message $ErrorMsg -Level ERROR -AddToLog
+                Show-Message -Message $ErrMsg -Level ERROR -AddToLog
             }
         }
 
@@ -292,8 +298,8 @@ function Invoke-DfirTriageScan {
         foreach ($Entry in $DfirScanWorkflow.GetEnumerator()) {
             $Name = Resolve-TriageModuleName -Id $Entry.Key
             if ($Modules -notcontains $Name) {
-                Show-Message -Message "Skipped module [ /$Name/ ] (not selected)" `
-                    -Level INFO -AddToLog
+                $SkipMsg = "Skipped module [ /$Name/ ] (not selected)"
+                Show-Message -Message $SkipMsg -Level INFO -AddToLog
                 continue
             }
             Invoke-TriageScan -ResultsFolder $ResultsFolder -FolderName $Name -Action $Entry.Value
@@ -310,8 +316,8 @@ function Invoke-DfirTriageScan {
             -ChildPath "Registry_Hives") -ScratchFolder $Scratch)
 
         foreach ($Hive in $global:TriageUserHives) {
-            Show-Message -Message "User hive: $( $Hive.UserName ) [ $( $Hive.Sid ) ] - $( $Hive.Note )" `
-                -Level INFO -AddToLog
+            $HiveMsg = "User hive: $( $Hive.UserName ) [ $( $Hive.Sid ) ] - $( $Hive.Note )"
+            Show-Message -Message $HiveMsg -Level INFO -AddToLog
         }
 
         Initialize-TriageScan -ResultsFolder $ResultsFolder -Modules $Modules
@@ -367,7 +373,8 @@ function Invoke-DfirTriageScan {
     Show-Message `
         -Message ("Data collection completed in {0:hh\:mm\:ss}" -f $Duration) `
         -Level INFO
-    $ErrWarnCountMsg = "$global:TriageErrorCount error(s), $global:TriageWarningCount warning(s)"
+    $ErrWarnCountMsg = "$global:TriageErrorCount error(s), " +
+        "$global:TriageWarningCount warning(s)"
     Show-Message -Message $ErrWarnCountMsg -Level INFO
     Show-Message -Message "Exit code: $Code" -Level INFO
     Show-Message -Message "Results saved to [ $ResultsFolder ]" -Level INFO

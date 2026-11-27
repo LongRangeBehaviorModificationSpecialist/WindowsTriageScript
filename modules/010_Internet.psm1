@@ -6,14 +6,15 @@ function Get-TriageInternetData {
         [string]$InternetFolder
     )
 
+
+    # 10.01
     function Get-StoredCookies {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $InternetFolder -ChildPath "10.01_stored_cookies.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = foreach ($U in $global:TriageUserHives) {
-            $Dir = Join-Path -Path $U.ProfilePath -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
+            $Dir = Join-Path `
+                -Path $U.ProfilePath `
+                -ChildPath "AppData\Local\Microsoft\Windows\INetCookies"
             if (-not (Test-Path -LiteralPath $Dir)) {
                 continue
             }
@@ -29,52 +30,55 @@ function Get-TriageInternetData {
                 }
             }
         }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 10.02
     function Get-TypedUrls {
         param(
-            [string]$CsvFile = (
-                Join-Path -Path $InternetFolder -ChildPath "10.02_typed_urls.csv"
-            ),
-            [string]$SubKey = "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
+            [string]$OutputFile,
+            [string]$SubKey =
+                "SOFTWARE\Microsoft\Internet Explorer\TypedURLs"
         )
-        Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
+
+        Export-PerUserRegistry -OutputFile $OutputFile -SubKey $SubKey
     }
 
 
+    # 10.03
     function Get-InternetSettings {
         param(
-            [string]$CsvFile = (
-                Join-Path -Path $InternetFolder -ChildPath "10.03_internet_settings.csv"
-            ),
-            [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
+            [string]$OutputFile,
+            [string]$SubKey =
+                "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings"
         )
-        Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
+
+        Export-PerUserRegistry -OutputFile $OutputFile -SubKey $SubKey
     }
 
 
+    # 10.04
     function Get-TrustedInternetDomains {
         param(
-            [string]$CsvFile = (
-                Join-Path -Path $InternetFolder -ChildPath "10.04_trusted_domains.csv"
-            ),
-            [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
+            [string]$OutputFile,
+            [string]$SubKey =
+                "SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"
         )
-        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $CsvFile -SubKey $SubKey
+
+        Export-PerUserRegistry -EnumerateSubKeys -OutputFile $OutputFile -SubKey $SubKey
     }
 
 
+    # 10.05
     function Get-BrowserAnalysis {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $InternetFolder -ChildPath "10.05_browser_analysis_summary.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         function Copy-SharedFile {
-            # Normal copy first. If a running browser has the file locked,
-            # retry with a stream opened for shared read access.
+            <#
+            Normal copy first.  If a running browser has the file locked,
+            retry with a stream opened for shared read access.
+            #>
             param(
                 [string]$Source,
                 [string]$Destination
@@ -87,8 +91,13 @@ function Get-TriageInternetData {
                 $Out = $null
                 try {
                     $Share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
-                    $In    = [System.IO.File]::Open($Source, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, $Share)
-                    $Out   = [System.IO.File]::Open($Destination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
+                    $In    = [System.IO.File]::Open($Source,
+                        [System.IO.FileMode]::Open,
+                        [System.IO.FileAccess]::Read,
+                        $Share)
+                    $Out   = [System.IO.File]::Open($Destination,
+                        [System.IO.FileMode]::Create,
+                        [System.IO.FileAccess]::Write)
                     $In.CopyTo($Out)
                 }
                 catch {
@@ -110,20 +119,22 @@ function Get-TriageInternetData {
             }
         }
 
-        # Trusted sqlite3 path (a string; do NOT call it with `&` here)
+        # Trusted sqlite3 path (a string; do NOT call it with '&' here)
         try {
             $SqlitePath = [string](Get-TriageBinary "SQLite3")
         }
         catch {
-            $SqlUnavailMsg = "sqlite3.exe is unavailable. Skipping browser analysis => " +
-                "$($_.Exception.Message)"
+            $SqlUnavailMsg = "sqlite3.exe is unavailable. Skipping browser " +
+                "analysis => $($_.Exception.Message)"
             Show-Message -Message $SqlUnavailMsg -Level ERROR -AddToLog
             return
         }
 
-        # Each browser's root folder holds one sub-folder per profile
-        # (Chromium: Default, Profile 1, ... /
-        # Firefox: <random>.default-release, ...)
+        <#
+        Each browser's root folder holds one sub-folder per profile
+        (Chromium: Default, Profile 1, ... /
+        Firefox: <random>.default-release, ...)
+        #>
         $Browsers = [ordered]@{
             "Chrome"  = @{
                 Type  = "Chromium"
@@ -188,8 +199,10 @@ function Get-TriageInternetData {
             }
         }
 
-        # Profiles found by the hive-mounting step (covers profiles outside
-        # C:\Users). Fall back to C:\Users if that list is empty.
+        <#
+        Profiles found by the hive-mounting step (covers profiles outside
+        C:\Users). Fall back to C:\Users if that list is empty.
+        #>
         $ProfilePaths = @($global:TriageUserHives |
             Where-Object {
                 $_.ProfilePath -and (Test-Path -LiteralPath $_.ProfilePath -PathType Container)
@@ -214,9 +227,11 @@ function Get-TriageInternetData {
         $DbFound   = 0
         $Failures  = 0
 
-        # `sqlite3` writes UTF-8, but PowerShell decodes native output with the
-        # console code page. Switch it for the duration of the queries so
-        # non-ASCII titles are not mangled.
+        <#
+        'sqlite3' writes UTF-8, but PowerShell decodes native output with the
+        console code page.  Switch it for the duration of the queries so
+        non-ASCII titles are not mangled.
+        #>
         $OldEncoding = $null
         try {
             $OldEncoding = [Console]::OutputEncoding
@@ -228,14 +243,13 @@ function Get-TriageInternetData {
 
         try {
             foreach ($ProfilePath in $ProfilePaths) {
-                Show-Message `
-                    -Message "Profile found => [ $ProfilePath ]" `
-                    -MessageColor Magenta
+                $ProfileMsg = "Profile found => [ $ProfilePath ]"
+                Show-Message -Message $ProfileMsg -MessageColor Magenta
                 $UserLeaf = Split-Path -Path $ProfilePath -Leaf
 
                 foreach ($BrowserName in $Browsers.Keys) {
-                    $Msg = "Examining $BrowserName data in [ $ProfilePath ]"
-                    Show-Message -Message $Msg -MessageColor Magenta
+                    $BrowserNameMsg = "Examining $BrowserName data in [ $ProfilePath ]"
+                    Show-Message -Message $BrowserNameMsg -MessageColor Magenta
                     $Browser = $Browsers[$BrowserName]
                     $Root    = Join-Path -Path $ProfilePath -ChildPath $Browser.Root
                     if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
@@ -275,10 +289,12 @@ function Get-TriageInternetData {
                                     -Path $BrowserDir `
                                     -ChildPath "$Tag-$DbName.sqlite"
 
-                        # Copy the database plus its -wal/-journal files so
-                        # recent entries are not lost. (-shm is not copied;
-                        # SQLite rebuilds it from the WAL, and a stale copy can
-                        # confuse it.)
+                        <#
+                        Copy the database plus its -wal/-journal files so
+                        recent entries are not lost. (-shm is not copied;
+                        SQLite rebuilds it from the WAL, and a stale copy can
+                        confuse it.)
+                        #>
                         try {
                             Copy-SharedFile -Source $Source -Destination $Db
                             foreach ($Suffix in "-wal", "-journal") {
@@ -287,12 +303,10 @@ function Get-TriageInternetData {
                                         Copy-SharedFile -Source "$Source$Suffix" -Destination "$Db$Suffix"
                                     }
                                     catch {
-                                        $NoCopyMsg = "Could not copy $( Split-Path -Path " +
-                                            "$Source$Suffix -Leaf ) for $Tag => $( $_.Exception.Message )"
-                                        Show-Message `
-                                            -Message $NoCopyMsg `
-                                            -Level WARNING `
-                                            -AddToLog
+                                        $FileName = $( Split-Path -Path $Source$Suffix -Leaf )
+                                        $NoCopyMsg = "Could not copy $FileName " +
+                                            "for $Tag => $( $_.Exception.Message )"
+                                        Show-Message -Message $NoCopyMsg -Level WARNING -AddToLog
                                     }
                                 }
                             }
@@ -316,10 +330,8 @@ function Get-TriageInternetData {
                             continue
                         }
 
-                        Show-Message `
-                            -Message "Browser database copied [ $Tag ]" `
-                            -Level INFO `
-                            -AddToLog
+                        $CopyDbMsg = "Browser database copied [ $Tag ]"
+                        Show-Message -Message $CopyDbMsg -Level INFO -AddToLog
 
                         foreach ($Q in $Queries[$Browser.Type].GetEnumerator()) {
                             $OutFile = Join-Path `
@@ -330,11 +342,13 @@ function Get-TriageInternetData {
                             $Detail  = ""
 
                             try {
-                                # NOTE: -header is deliberately omitted;
-                                # the header line is built below from the
-                                # query's AS aliases so it is always written,
-                                # regardless of how this sqlite3 build renders
-                                # its output.
+                                <#
+                                NOTE: '-header' is deliberately omitted;
+                                the header line is built below from the
+                                query's AS aliases so it is always written,
+                                regardless of how this sqlite3 build renders
+                                its output.
+                                #>
                                 $Raw  = & $SqlitePath -batch -readonly -header -csv $Db $Q.Value 2>&1
                                 $Code = $LASTEXITCODE
 
@@ -423,8 +437,8 @@ function Get-TriageInternetData {
                                 $Status = "Failed"
                                 $Failures++
                                 $Detail = $_.Exception.Message
-                                $Msg = "Query '$( $Q.Key )' failed for $Tag => $Detail"
-                                Show-Message -Message $Msg -Level ERROR -AddToLog
+                                $QueryFailMsg = "Query '$( $Q.Key )' failed for $Tag => $Detail"
+                                Show-Message -Message $QueryFailMsg -Level ERROR -AddToLog
                             }
 
                             $Summary.Add([PSCustomObject]@{
@@ -452,9 +466,10 @@ function Get-TriageInternetData {
             }
         }
 
-        Write-OutputToCsv -Data $Summary -OutputFile $CsvFile
-        $Msg = "Browser analysis => $DbFound database(s) found, $Failures failure(s)."
-        Show-Message -Message $Msg -Level INFO -AddToLog
+        Write-OutputToCsv -Data $Summary -OutputFile $OutputFile
+        $EndMsg = "Browser analysis => $DbFound database(s) found, " +
+            "$Failures failure(s)."
+        Show-Message -Message $EndMsg -Level INFO -AddToLog
     }
 
     # ----------------------------------

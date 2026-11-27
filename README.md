@@ -3,29 +3,46 @@
 
 A PowerShell toolkit for fast, live triage of a Windows computer.  It is run from removable media, collects volatile and system artifacts, writes everything to a time-stamped case folder on that media, logs every action in UTC, and hashes the results so they can be verified later.
 
-> **Legal notice.**  Use this tool only with lawful authority ( a warrant, valid consent, or agency policy ).  Validate it on a test system before using it on a live case. The examiner is responsible for documenting its use.
+**Legal notice.**
 
-> **Important.**  Do not open the collected files on the target computer.  Move the collection drive to a forensic workstation first.
+    Use this tool only with lawful authority ( a warrant, valid consent, or agency policy ).  Validate it on a test system before using it on a live case. The examiner is responsible for documenting its use.
+
+**Important.**
+
+    Do not open the collected files on the target computer.  Move the collection drive to a forensic workstation first.
 
 
 ## Contents
 
 
-1. [Features](#1-features)
-2. [Requirements](#2-requirements)
-3. [Folder layout](#3-folder-layout)
-4. [Setup](#4-setup)
-5. [Running the tool](#5-running-the-tool)
-6. [What is collected](#6-what-is-collected)
-7. [Output layout](#7-output-layout)
-8. [Logging, hashing and chain of custody](#8-logging-hashing-and-chain-of-custody)
-9. [Configuration](#9-configuration)
-10. [Footprint on the target](#10-footprint-on-the-target)
-11. [Sensitive data](#11-sensitive-data)
-12. [Known limitations](#12-known-limitations)
-13. [Troubleshooting](#13-troubleshooting)
-14. [Development notes](#14-development-notes)
-15. [License](#15-license)
+- [NOVA ICAC VECTOR Windows Forensic Triage Suite](#nova-icac-vector-windows-forensic-triage-suite)
+  - [Contents](#contents)
+  - [1. Features](#1-features)
+  - [2. Requirements](#2-requirements)
+  - [3. Folder Layout](#3-folder-layout)
+  - [4. Setup](#4-setup)
+    - [4.1 Third-Party Tools](#41-third-party-tools)
+    - [4.2 Trusted Copies Of Windows Utilities](#42-trusted-copies-of-windows-utilities)
+    - [4.3 Build The Hash Manifest](#43-build-the-hash-manifest)
+  - [5. Running The Application](#5-running-the-application)
+    - [5.1 Command Line ( Recommended )](#51-command-line--recommended-)
+    - [5.2 Parameters](#52-parameters)
+    - [5.3 Exit Codes](#53-exit-codes)
+  - [6. What Is Collected](#6-what-is-collected)
+    - [6.1 Optional Captures](#61-optional-captures)
+    - [6.2 User Registry Hives](#62-user-registry-hives)
+  - [7. Output Layout](#7-output-layout)
+  - [8. Logging, Hashing \& Chain Of Custody](#8-logging-hashing--chain-of-custody)
+  - [9. Configuration](#9-configuration)
+  - [10. Footprint On The Target Machine](#10-footprint-on-the-target-machine)
+  - [11. Sensitive Data](#11-sensitive-data)
+  - [12. Known Limitations](#12-known-limitations)
+  - [13. Troubleshooting](#13-troubleshooting)
+  - [14. Development Notes](#14-development-notes)
+    - [14.1 Adding A Collector](#141-adding-a-collector)
+    - [14.2 Quality Checks](#142-quality-checks)
+    - [14.3 Repository Conventions](#143-repository-conventions)
+  - [15. License](#15-license)
 
 
 ## 1. Features
@@ -184,7 +201,7 @@ The launcher then:
 
 1. `-Gui` : Show the graphical interface.
 
-2. `-Operator` | `-O` : Examiner name recorded in the log and `case_info.json`.
+2. `-Operator` | `-Op` : Examiner name recorded in the log and `case_info.json`.
 
 3. `-Agency` | `-A` : Agency name ( optional ).
 
@@ -206,7 +223,7 @@ The launcher then:
 
 | Parameter       | Alias   |
 | --------------- | ------- |
-| `-Operator`     | `-O`    |
+| `-Operator`     | `-Op`   |
 | `-Agency`       | `-A`    |
 | `-CaseNumber`   | `-CN`   |
 | `-Modules`      | `-Mods` |
@@ -223,7 +240,7 @@ run-triage.cmd -Gui
 run-triage.cmd -Operator "SA John Doe" -Agency "Example PD" -CaseNumber "2026-12345" -RunEdd -CaptureRam -Archive -RunEdd -Modules [<Modules>]
 
 # Using the parameter aliases:
-run-triage.cmd -O "Operator" -A "Agency" -CN 26-00001 -Edd -GP -Ram -Zip -Mods "001","005"
+run-triage.cmd -Op "Operator" -A "Agency" -CN 26-00001 -Edd -GP -Ram -Zip -Mods "001","005"
 ```
 
 Run `Get-Help .\run-triage.ps1 -full` for the full built-in help.

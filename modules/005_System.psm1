@@ -6,62 +6,44 @@ function Get-TriageSystemData {
         [string]$SystemFolder
     )
 
+    # 05.01
     function Get-PnPSignedDrivers {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "pnp_signed_drivers.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-CimInstance -ClassName Win32_PnPSignedDriver |
             Select-Object -Property *
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
-        $ResultCount = ($Data).Count
-        Show-Message -Message "There were $ResultCount results returned for this function." -AddToLog
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
+
+        $Msg = ("There were {0} results returned for this function." -f $Data.Count)
+        Show-Message -Message $Msg -Level INFO -AddToLog
     }
 
 
-    function Get-OpenFilesList {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "list_of_open_files.txt"
-            )
-        )
-        $Data = & (Get-TriageBinary "openfiles") /query /FO CSV
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
-    }
-
-
+    # 05.02
     function Get-OpenShares {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "open_shares.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-CimInstance -ClassName Win32_Share |
             Select-Object -Property * |
             Sort-Object -Property Path
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.03
     function Get-LogicalDisks {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "logical_disks.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-CimInstance -ClassName Win32_LogicalDisk |
             Select-Object -Property *
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.04
     function Get-MappedLogicalDisks {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "logical_disks_mapped.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-CimInstance -ClassName Win32_MappedLogicalDisk |
             Select-Object -Property * |
             Format-List
@@ -69,26 +51,19 @@ function Get-TriageSystemData {
     }
 
 
+    # 05.05
     function Get-ScheduledJobs {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "scheduled_jobs.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-CimInstance -ClassName Win32_ScheduledJob
         Write-OutputToFile -Data $Data -OutputFile $CsvFile
     }
 
 
+    # 05.06
     function Get-ScheduledTasks {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "scheduled_task_events.txt"
-            ),
-            [string]$TxtInfoFile = (
-                Join-Path -Path $SystemFolder -ChildPath "scheduled_task_info.txt"
-            )
-        )
+        param([string[]]$OutputFiles)
+
         $Data1 = Get-ScheduledTask |
             Select-Object -Property * |
             Where-Object { $_.State -ne "Disabled" } |
@@ -97,28 +72,22 @@ function Get-TriageSystemData {
             Where-Object { $_.State -ne "Disabled" } |
             Get-ScheduledTaskInfo
 
-        Write-OutputToFile -Data $Data1 -OutputFile $TxtFile
-        Write-OutputToFile -Data $Data2 -OutputFile $TxtInfoFile
+        Write-OutputToFile -Data $Data1 -OutputFile $OutputFiles[0]
+        Write-OutputToFile -Data $Data2 -OutputFile $OutputFiles[1]
     }
 
 
+    # 05.07
     function Get-HotFixes {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "hot_fixes.csv"
-            )
-        )
+        param([string]$OutputFile)
         $Data = Get-HotFix | Select-Object -Property *
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.08
     function Get-InstalledApps {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "installed_apps.csv"
-            )
-        )
+        param([string]$OutputFile)
         $Columns = "DisplayName", "DisplayVersion", "Publisher", "InstallDate",
                 "InstallLocation", "InstallSource", "EstimatedSize", "UninstallString",
                 "QuietUninstallString", "ModifyPath", "DisplayIcon", "URLInfoAbout",
@@ -201,19 +170,18 @@ function Get-TriageSystemData {
             Sort-Object -Property @{
                 Expression = { [string]::IsNullOrEmpty($_.DisplayName) }
             }, DisplayName
-        Write-OutputToCsv -Data $Sorted -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Sorted -OutputFile $OutputFile
     }
 
 
+    # 05.09
     function Get-AppxPackages {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "appx_packages.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue |
-            Select-Object -Property Name, Version, Publisher, Architecture, PackageFullName, `
-            InstallLocation, SignatureKind, IsFramework, NonRemovable, @{
+            Select-Object -Property Name, Version, Publisher, Architecture,
+            PackageFullName, InstallLocation, SignatureKind, IsFramework,
+            NonRemovable, @{
                 Name = "Users"
                 Expression = { @($_.PackageUserInformation |
                     ForEach-Object {
@@ -221,331 +189,285 @@ function Get-TriageSystemData {
                     }) -join "; "
                 }
             }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.10
     function Get-VolumeShadowCopies {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "volume_shadow_copies.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-CimInstance -ClassName Win32_ShadowCopy | Select-Object -Property *
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.11
     function Get-AppInitDllKey {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "appinit_dll_key.txt"
-            )
-        )
-        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" | Select-Object AppInit_DLLs }
+        param([string]$OutputFile)
+
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" |
+            Select-Object AppInit_DLLs }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.12
     function Get-UacGroupPolicy {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "uac_group_policy.txt"
-            )
-        )
-        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" | Select-Object -Property * -ExcludeProperty PS* }
+        param([string]$OutputFile)
+
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" |
+            Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.13
     function Get-ActiveSetupInstalls {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "active_setup_installs.txt"
-            )
-        )
-        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" | Select-Object ComponentID, Version, "(Default)", StubPath | Format-List }
+        param([string]$OutputFile)
+
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\*" |
+            Select-Object ComponentID, Version, "(Default)", StubPath | Format-List }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.14
     function Get-AppPathRegKeys {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "app_path_reg_keys.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\*" | Select-Object PSChildName, "(Default)" | Format-List }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.15
     function Get-DllsLoadedByExplorerShell {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "dlls_loaded_by_explorer_shell.txt"
-            )
-        )
-        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" | Select-Object "(Default)", DllName }
+        param([string]$OutputFile)
+
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\*\*" |
+            Select-Object "(Default)", DllName }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.16
     function Get-ShellAndUserInitValues {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "shell_and_user_init_values.txt"
-            )
-        )
-        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" | Select-Object -Property * -ExcludeProperty PS* }
+        param([string]$OutputFile)
+
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" |
+            Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.17
     function Get-SvcValues {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "svc_values.txt"
-            )
-        )
-        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" | Select-Object -Property * -ExcludeProperty PS* }
+        param([string]$OutputFile)
+
+        $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Security Center\Svc" |
+            Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.18
     function Get-DesktopAddressBar {
         param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "desktop_address_bar.csv"
-            ),
+            [string]$OutputFile,
             [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths"
         )
-        Export-PerUserRegistry -OutputFile $TxtFile -SubKey $SubKey
+
+        Export-PerUserRegistry -OutputFile $OutputFile -SubKey $SubKey
     }
 
 
+    # 05.19
     function Get-RunMruKeyInfo {
         param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "run_mru_key_info.csv"
-            ),
+            [string]$OutputFile,
             [string]$SubKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RunMRU"
         )
-        Export-PerUserRegistry -OutputFile $CsvFile -SubKey $SubKey
+
+        Export-PerUserRegistry -OutputFile $OutputFile -SubKey $SubKey
     }
 
 
+    # 05.20
     function Get-StartMenuData {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "start_menu_data.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartMenu" |
             Select-Object -Property * -ExcludeProperty PS* |
             Format-List
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.21
     function Get-ProgExeBySessionManager {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "prog_exe_by_session_manager.txt"
-            )
-        )
-        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" | Select-Object -Property * -ExcludeProperty PS* }
+        param([string]$OutputFile)
+
+        $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" |
+            Select-Object -Property * -ExcludeProperty PS* }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.22
     function Get-ShellFolderInfo {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "shell_folders.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.23
     function Get-ApprovedShellExts {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "approved_shell_exts.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions\Approved" }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.24
     function Get-AppCertDlls {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "app_cert_dlls.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCertDlls" }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.25
     function Get-ExeFileShellCommands {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "exe_file_shell_commands.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\exefile\shell\open\command" }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.26
     function Get-ShellCommands {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "shell_commands.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Classes\http\shell\open\command" | Select-Object "(Default)" }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.27
     function Get-BcdRelatedData {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "bcd_related_data.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\BCD00000000\*\*\*\*" | Select-Object Element | Select-String "exe" | Select-Object Line }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.28
     function Get-LoadedLsaPackages {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "loaded_lsa_packages.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" | Select-Object -Property * }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.29
     function Get-BrowserHelperObjects {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "browser_helper_objects.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" | Select-Object "(Default)" }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.30
     function Get-BrowserHelperObjectsX64 {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "browser_helper_objects_x64.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Command = { Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\*" | Select-Object "(Default)" }
         $Data = Invoke-RegistryCommand -Command $Command
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    #  05.31
     function Get-UsbDevices {
-        param(
-            [string]$CsvFile1 = (
-                Join-Path -Path $SystemFolder -ChildPath "usb_devices_from_Enum-USB.csv"
-            ),
-            [string]$CsvFile2 = (
-                Join-Path -Path $SystemFolder -ChildPath "usb_devices_from_Control-USBSTOR.csv"
-            )
-        )
+        param([string[]]$OutputFiles)
+
         $Command1 = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Enum\USB\*\*" |
             Select-Object -Property * }
         $Data1 = Invoke-RegistryCommand -Command $Command1
-        Write-OutputToCsv -Data $Data1 -OutputFile $CsvFile1
+        Write-OutputToCsv -Data $Data1 -OutputFile $OutputFiles[0]
 
         $Command2 = { Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\usbstor\*\*" |
             Select-Object -Property * }
         $Data2 = Invoke-RegistryCommand -Command $Command2
-        Write-OutputToCsv -Data $Data2 -OutputFile $CsvFile2
+        Write-OutputToCsv -Data $Data2 -OutputFile $OutputFiles[1]
     }
 
 
+    # 05.32
     function Get-PnpDevices {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "pnp_devices.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-PnpDevice | Select-Object -Property *
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.33
     function Copy-HostFile {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "hosts_file.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-Content $env:windir\system32\drivers\etc\hosts
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.34
     function Copy-ServicesFile {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "services_file.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = Get-Content $env:windir\system32\drivers\etc\services
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.35
     function Get-AuditPolicy {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "audit_policy.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Data = & (Get-TriageBinary "auditpol") /get /category:*
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.36
     function Get-NonValidExes {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "non_valid_exe_files.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $Folders = foreach ($Sub in (Get-TriageConfig -Key "ScanFolders").SystemExeFolders) {
             Join-Path -Path "$env:SystemDrive\" -ChildPath $Sub
         }
@@ -553,16 +475,13 @@ function Get-TriageSystemData {
             -ErrorAction SilentlyContinue |
             Get-AuthenticodeSignature |
             Where-Object { $_.status -ne "Valid" }
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.37
     function Get-OptionalFeatures {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "optional_features.csv"
-            )
-        )
+        param([string]$OutputFile)
         $Data = Get-CimInstance -ClassName Win32_OptionalFeature |
             Select-Object Name, Caption, @{
                 Name       = "InstallState"
@@ -575,16 +494,13 @@ function Get-TriageSystemData {
                     }
                 }
             }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.38
     function Get-ServicingPackages {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "servicing_packages.csv"
-            )
-        )
+        param([string]$OutputFile)
         $Key  = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\Packages"
         $Data = Get-ChildItem -LiteralPath $Key |
             ForEach-Object {
@@ -598,22 +514,14 @@ function Get-TriageSystemData {
                     InstallTimeLow  = $P.InstallTimeLow
                 }
             }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.39
     function Get-WmiEventSubscriptions {
-        param(
-            [string]$CsvFile1 = (
-                Join-Path -Path $SystemFolder -ChildPath "wmi_event_filters.csv"
-            ),
-            [string]$CsvFile2 = (
-                Join-Path -Path $SystemFolder -ChildPath "wmi_event_consumers.csv"
-            ),
-            [string]$CsvFile3 = (
-                Join-Path -Path $SystemFolder -ChildPath "wmi_filter_consumer_bindings.csv"
-            )
-        )
+        param([string[]]$OutputFiles)
+
         $Ns  = "root\subscription"
         $Sid = { if ($_.CreatorSID) {
                 [System.Security.Principal.SecurityIdentifier]::new([byte[]]$_.CreatorSID, 0).Value
@@ -648,18 +556,16 @@ function Get-TriageSystemData {
                 Expression = { $_.Consumer.CimClass.CimClassName }
             }
 
-        Write-OutputToCsv -Data $Filters -OutputFile $CsvFile1
-        Write-OutputToCsv -Data $Consumers -OutputFile $CsvFile2
-        Write-OutputToCsv -Data $Bindings -OutputFile $CsvFile3
+        Write-OutputToCsv -Data $Filters -OutputFile $OutputFiles[0]
+        Write-OutputToCsv -Data $Consumers -OutputFile $OutputFiles[1]
+        Write-OutputToCsv -Data $Bindings -OutputFile $OutputFiles[2]
     }
 
 
+    # 05.40
     function Get-ImageFileExecutionOptions {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "image_file_execution_options.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Roots = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options",
                 "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Image File Execution Options",
                 "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit"
@@ -679,16 +585,14 @@ function Get-TriageSystemData {
                 }
             }
         }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.41
     function Get-StartupFolderItems {
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "startup_folder_items.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Folders = @([PSCustomObject]@{
             User = "ALL USERS"
             Path = Join-Path -Path $env:ProgramData -ChildPath "Microsoft\Windows\Start Menu\Programs\StartUp"
@@ -720,27 +624,27 @@ function Get-TriageSystemData {
                 }
             }
         }
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.42
     function Get-BitsJobs {
         <#
         .SYNOPSIS
             Querying BITS can start the service, which would change the target.
             Only query it if it is already running.
         #>
-        param(
-            [string]$CsvFile = (
-                Join-Path -Path $SystemFolder -ChildPath "bits_jobs.csv"
-            )
-        )
+        param([string]$OutputFile)
+
         $Svc = Get-Service -Name BITS
         if (-not $Svc -or $Svc.Status -ne "Running") {
             Write-OutputToCsv -Data ([PSCustomObject]@{
-                Note = "BITS service was not running; jobs not queried. See the BITS `
-                    database copy in 011_Raw_Artifacts."
-            }) -OutputFile $CsvFile
+                Note = (
+                    "BITS service was not running; jobs not queried. See the BITS " +
+                    "database copy in 011_Raw_Artifacts."
+                )
+            }) -OutputFile $OutputFile
             return
         }
         $Data = Get-BitsTransfer -AllUsers -ErrorAction Stop |
@@ -753,16 +657,14 @@ function Get-TriageSystemData {
                     }) -join "; "
                 }
             } -ExcludeProperty FileList
-        Write-OutputToCsv -Data $Data -OutputFile $CsvFile
+        Write-OutputToCsv -Data $Data -OutputFile $OutputFile
     }
 
 
+    # 05.43
     function Get-DownloadedExecutables {
-        param(
-            [string]$TxtFile = (
-                Join-Path -Path $SystemFolder -ChildPath "downloaded_executables.txt"
-            )
-        )
+        param([string]$OutputFile)
+
         $ExecutableFileTypes = @(Get-TriageConfig -Key "ExecutableFileTypes")
 
         $Data = foreach ($Root in (Get-TriageScanRoots)) {
@@ -780,7 +682,16 @@ function Get-TriageSystemData {
                     }
                 }
         }
-        Write-OutputToFile -Data $Data -OutputFile $TxtFile
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
+    }
+
+
+    # 05.44
+    function Get-OpenFilesList {
+        param([string]$OutputFile)
+
+        $Data = & (Get-TriageBinary "openfiles") /query /FO CSV
+        Write-OutputToFile -Data $Data -OutputFile $OutputFile
     }
 
     # ----------------------------------
@@ -789,228 +700,228 @@ function Get-TriageSystemData {
 
     $Tasks = @(
         @{
-            Action  = { Get-PnPSignedDrivers }
-            Message = "Gathering Driver Info for PnP Devices..."
-            Files   = "pnp_signed_drivers.csv"
+            Action  = { param($Paths) Get-PnPSignedDrivers -OutputFile $Paths[0] }
+            Message = "05.01_Gathering Driver Info for PnP Devices..."
+            Files   = "05.01_pnp_signed_drivers.csv"
         }
         @{
-            Action  = { Get-OpenFilesList }
-            Message = "Processing List of Open Files..."
-            Files   = "list_of_open_files.txt"
+            Action  = { param($Paths) Get-OpenShares -OutputFile $Paths[0] }
+            Message = "05.02_Getting Open Shares..."
+            Files   = "05.02_open_shares.txt"
         }
         @{
-            Action  = { Get-OpenShares }
-            Message = "Getting Open Shares..."
-            Files   = "open_shares.txt"
+            Action  = { param($Paths) Get-LogicalDisks -OutputFile $Paths[0] }
+            Message = "05.03_Getting Logical Drives..."
+            Files   = "05.03_logical_disks.csv"
         }
         @{
-            Action  = { Get-LogicalDisks }
-            Message = "Getting Logical Drives..."
-            Files   = "logical_disks.csv"
+            Action  = { param($Paths) Get-MappedLogicalDisks -OutputFile $Paths[0] }
+            Message = "05.04_Getting Mapped Logical Disks..."
+            Files   = "05.04_logical_disks_mapped.txt"
         }
         @{
-            Action  = { Get-MappedLogicalDisks }
-            Message = "Getting Mapped Logical Disks..."
-            Files   = "logical_disks_mapped.txt"
+            Action  = { param($Paths) Get-ScheduledJobs -OutputFile $Paths[0] }
+            Message = "05.05_Listing Scheduled Jobs..."
+            Files   = "05.05_scheduled_jobs.txt"
         }
         @{
-            Action  = { Get-ScheduledJobs }
-            Message = "Listing Scheduled Jobs..."
-            Files   = "scheduled_jobs.txt"
+            Action  = { param($Paths) Get-ScheduledTasks -OutputFile $Paths }
+            Message = "05.06_Getting Scheduled Tasks and Task Info..."
+            Files   = "05.06a_scheduled_task_events.txt",
+                      "05_06b_scheduled_task_info.txt"
         }
         @{
-            Action  = { Get-ScheduledTasks }
-            Message = "Getting Scheduled Tasks and Task Info..."
-            Files   = "scheduled_task_events.txt",
-                      "scheduled_task_info.txt"
+            Action  = { param($Paths) Get-HotFixes -OutputFile $Paths[0] }
+            Message = "05.07_Listing Applied HotFixes..."
+            Files   = "05.07_hot_fixes.csv"
         }
         @{
-            Action  = { Get-HotFixes }
-            Message = "Listing Applied HotFixes..."
-            Files   = "hot_fixes.csv"
+            Action  = { param($Paths) Get-InstalledApps -OutputFile $Paths[0] }
+            Message = "05.08_Getting Installed Applications..."
+            Files   = "05.08_installed_apps.csv"
         }
         @{
-            Action  = { Get-InstalledApps }
-            Message = "Getting Installed Applications..."
-            Files   = "installed_apps.csv"
+            Action  = { param($Paths) Get-AppxPackages -OutputFile $Paths[0] }
+            Message = "05.09_Getting AppX packages..."
+            Files   = "05.09_appx_packages.csv"
         }
         @{
-            Action  = { Get-AppxPackages }
-            Message = "Getting AppX packages..."
-            Files   = "appx_packages.csv"
+            Action  = { param($Paths) Get-VolumeShadowCopies -OutputFile $Paths[0] }
+            Message = "05.10_Listing Volume Shadow Copies..."
+            Files   = "05.10_volume_shadow_copies.csv"
         }
         @{
-            Action  = { Get-VolumeShadowCopies }
-            Message = "Listing Volume Shadow Copies..."
-            Files   = "volume_shadow_copies.csv"
+            Action  = { param($Paths) Get-AppInitDllKey -OutputFile $Paths[0] }
+            Message = "05.11_Getting AppInit_DLL Registry Keys..."
+            Files   = "05.11_appinit_dll_key.txt"
         }
         @{
-            Action  = { Get-AppInitDllKey }
-            Message = "Getting AppInit_DLL Registry Keys..."
-            Files   = "appinit_dll_key.txt"
+            Action  = { param($Paths) Get-UacGroupPolicy -OutputFile $Paths[0] }
+            Message = "05.12_Listing UAC Group Policy Settings..."
+            Files   = "05.12_uac_group_policy.txt"
         }
         @{
-            Action  = { Get-UacGroupPolicy }
-            Message = "Listing UAC Group Policy Settings..."
-            Files   = "uac_group_policy.txt"
+            Action  = { param($Paths) Get-ActiveSetupInstalls -OutputFile $Paths[0] }
+            Message = "05.13_Getting Active Setup Installs..."
+            Files   = "05.13_active_setup_installs.txt"
         }
         @{
-            Action  = { Get-ActiveSetupInstalls }
-            Message = "Getting Active Setup Installs..."
-            Files   = "active_setup_installs.txt"
+            Action  = { param($Paths) Get-AppPathRegKeys -OutputFile $Paths[0] }
+            Message = "05.14_Getting App Path Registry Keys..."
+            Files   = "05.14_app_path_reg_keys.txt"
         }
         @{
-            Action  = { Get-AppPathRegKeys }
-            Message = "Getting App Path Registry Keys..."
-            Files   = "app_path_reg_keys.txt"
+            Action  = { param($Paths) Get-DllsLoadedByExplorerShell -OutputFile $Paths[0] }
+            Message = "05.15_Listing .dll Files Loaded by Explorer.exe Shell..."
+            Files   = "05.15_dlls_loaded_by_explorer_shell.txt"
         }
         @{
-            Action  = { Get-DllsLoadedByExplorerShell }
-            Message = "Listing .dll Files Loaded by Explorer.exe Shell..."
-            Files   = "dlls_loaded_by_explorer_shell.txt"
+            Action  = { param($Paths) Get-ShellAndUserInitValues -OutputFile $Paths[0] }
+            Message = "05.16_Getting Shell and UserInit Values..."
+            Files   = "05.16_shell_and_user_init_values.txt"
         }
         @{
-            Action  = { Get-ShellAndUserInitValues }
-            Message = "Getting Shell and UserInit Values..."
-            Files   = "shell_and_user_init_values.txt"
+            Action  = { param($Paths) Get-SvcValues -OutputFile $Paths[0] }
+            Message = "05.17_Listing Security Center SVC Values..."
+            Files   = "05.17_svc_values.txt"
         }
         @{
-            Action  = { Get-SvcValues }
-            Message = "Listing Security Center SVC Values..."
-            Files   = "svc_values.txt"
+            Action  = { param($Paths) Get-DesktopAddressBar -OutputFile $Paths[0] }
+            Message = "05.18_Parsing Desktop Address Bar History..."
+            Files   = "05.18_desktop_address_bar.csv"
         }
         @{
-            Action  = { Get-DesktopAddressBar }
-            Message = "Parsing Desktop Address Bar History..."
-            Files   = "desktop_address_bar.csv"
+            Action  = { param($Paths) Get-RunMruKeyInfo -OutputFile $Paths[0] }
+            Message = "05.19_Getting RunMRU key Information..."
+            Files   = "05.19_run_mru_key_info.csv"
         }
         @{
-            Action  = { Get-RunMruKeyInfo }
-            Message = "Getting RunMRU key Information..."
-            Files   = "run_mru_key_info.csv"
+            Action  = { param($Paths) Get-StartMenuData -OutputFile $Paths[0] }
+            Message = "05.20_Listing Start Menu Data..."
+            Files   = "05.20_start_menu_data.txt"
         }
         @{
-            Action  = { Get-StartMenuData }
-            Message = "Listing Start Menu Data..."
-            Files   = "start_menu_data.txt"
+            Action  = { param($Paths) Get-ProgExeBySessionManager -OutputFile $Paths[0] }
+            Message = "05.21_Listing Programs Executed by Session Manager..."
+            Files   = "05.21_prog_exe_by_session_manager.txt"
         }
         @{
-            Action  = { Get-ProgExeBySessionManager }
-            Message = "Listing Programs Executed by Session Manager..."
-            Files   = "prog_exe_by_session_manager.txt"
+            Action  = { param($Paths) Get-ShellFolderInfo -OutputFile $Paths[0] }
+            Message = "05.22_Getting User Startup Shell Folder Information..."
+            Files   = "05.22_shell_folders.txt"
         }
         @{
-            Action  = { Get-ShellFolderInfo }
-            Message = "Getting User Startup Shell Folder Information..."
-            Files   = "shell_folders.txt"
+            Action  = { param($Paths) Get-ApprovedShellExts -OutputFile $Paths[0] }
+            Message = "05.23_Listing Approved Shell Extensions..."
+            Files   = "05.23_approved_shell_exts.txt"
         }
         @{
-            Action  = { Get-ApprovedShellExts }
-            Message = "Listing Approved Shell Extensions..."
-            Files   = "approved_shell_exts.txt"
+            Action  = { param($Paths) Get-AppCertDlls -OutputFile $Paths[0] }
+            Message = "05.24_Listing AppCert .dll Files..."
+            Files   = "05.24_app_cert_dlls.txt"
         }
         @{
-            Action  = { Get-AppCertDlls }
-            Message = "Listing AppCert .dll Files..."
-            Files   = "app_cert_dlls.txt"
+            Action  = { param($Paths) Get-ExeFileShellCommands -OutputFile $Paths[0] }
+            Message = "05.25_Listing .exe File Shell Command Configuration..."
+            Files   = "05.25_exe_file_shell_commands.txt"
         }
         @{
-            Action  = { Get-ExeFileShellCommands }
-            Message = "Listing .exe File Shell Command Configuration..."
-            Files   = "exe_file_shell_commands.txt"
+            Action  = { param($Paths) Get-ShellCommands -OutputFile $Paths[0] }
+            Message = "05.26_Listing Shell Commands..."
+            Files   = "05.26_shell_commands.txt"
         }
         @{
-            Action  = { Get-ShellCommands }
-            Message = "Listing Shell Commands..."
-            Files   = "shell_commands.txt"
+            Action  = { param($Paths) Get-BcdRelatedData -OutputFile $Paths[0] }
+            Message = "05.27_Getting BCD Related Data..."
+            Files   = "05.27_bcd_related_data.txt"
         }
         @{
-            Action  = { Get-BcdRelatedData }
-            Message = "Getting BCD Related Data..."
-            Files   = "bcd_related_data.txt"
+            Action  = { param($Paths) Get-LoadedLsaPackages -OutputFile $Paths[0] }
+            Message = "05.28_Reading Loaded LSA Packages Data..."
+            Files   = "05.28_loaded_lsa_packages.txt"
         }
         @{
-            Action  = { Get-LoadedLsaPackages }
-            Message = "Reading Loaded LSA Packages Data..."
-            Files   = "loaded_lsa_packages.txt"
+            Action  = { param($Paths) Get-BrowserHelperObjects -OutputFile $Paths[0] }
+            Message = "05.29_Parsing Browser Helper Objects..."
+            Files   = "05.29_browser_helper_objects.txt"
         }
         @{
-            Action  = { Get-BrowserHelperObjects }
-            Message = "Parsing Browser Helper Objects..."
-            Files   = "browser_helper_objects.txt"
+            Action  = { param($Paths) Get-BrowserHelperObjectsX64 -OutputFile $Paths[0] }
+            Message = "05.30_Parsing Browser Helper Objects (64 Bit)..."
+            Files   = "05.30_browser_helper_objects_x64.txt"
         }
         @{
-            Action  = { Get-BrowserHelperObjectsX64 }
-            Message = "Parsing Browser Helper Objects (64 Bit)..."
-            Files   = "browser_helper_objects_x64.txt"
+            Action  = { param($Paths) Get-UsbDevices -OutputFiles $Paths }
+            Message = "05.31_Listing Connected USB Devices..."
+            Files   = "05.31a_usb_devices_from_Enum-USB.csv",
+                      "05.31b_usb_devices_from_Control-USBSTOR.csv"
         }
         @{
-            Action  = { Get-UsbDevices }
-            Message = "Listing Connected USB Devices..."
-            Files   = "usb_devices_from_Enum-USB.csv",
-                      "usb_devices_from_Control-USBSTOR.csv"
+            Action  = { param($Paths) Get-PnpDevices -OutputFile $Paths[0] }
+            Message = "05.32_Listing Connected PnP Devices..."
+            Files   = "05.32_pnp_devices.csv"
         }
         @{
-            Action  = { Get-PnpDevices }
-            Message = "Listing Connected PnP Devices..."
-            Files   = "pnp_devices.csv"
+            Action  = { param($Paths) Copy-HostFile -OutputFile $Paths[0] }
+            Message = "05.33_Copying *hosts* File..."
+            Files   = "05.33_hosts_file.txt"
         }
         @{
-            Action  = { Copy-HostFile }
-            Message = "Copying *hosts* File..."
-            Files   = "hosts_file.txt"
+            Action  = { param($Paths) Copy-ServicesFile -OutputFile $Paths[0] }
+            Message = "05.34_Copying *services* File..."
+            Files   = "05.34_services_file.txt"
         }
         @{
-            Action  = { Copy-ServicesFile }
-            Message = "Copying *services* File..."
-            Files   = "services_file.txt"
+            Action  = { param($Paths) Get-AuditPolicy -OutputFile $Paths[0] }
+            Message = "05.35_Listing Computer Audit Policy..."
+            Files   = "05.35_audit_policy.txt"
         }
         @{
-            Action  = { Get-AuditPolicy }
-            Message = "Listing Computer Audit Policy..."
-            Files   = "audit_policy.txt"
+            Action  = { param($Paths) Get-NonValidExes -OutputFile $Paths[0] }
+            Message = "05.36_Listing Exes Without Valid Authenticode Signature..."
+            Files   = "05.36_non_valid_exe_files.txt"
         }
         @{
-            Action  = { Get-NonValidExes }
-            Message = "Listing Exes Without Valid Authenticode Signature..."
-            Files   = "non_valid_exe_files.txt"
+            Action  = { param($Paths) Get-OptionalFeatures -OutputFile $Paths[0] }
+            Message = "05.37_Gathering Optional Features..."
+            Files   = "05.37_optional_features.csv"
         }
         @{
-            Action  = { Get-OptionalFeatures }
-            Message = "Gathering Optional Features..."
-            Files   = "optional_features.csv"
+            Action  = { param($Paths) Get-ServicingPackages -OutputFile $Paths[0] }
+            Message = "05.38_Gathering Service Packages..."
+            Files   = "05.38_servicing_packages.csv"
         }
         @{
-            Action  = { Get-ServicingPackages }
-            Message = "Gathering Service Packages..."
-            Files   = "servicing_packages.csv"
+            Action  = { param($Paths) Get-WmiEventSubscriptions -OutputFiles $Paths }
+            Message = "05.39_Getting WMI event subscriptions..."
+            Files   = "05.39a_wmi_event_filters.csv",
+                      "05.39b_wmi_event_consumers.csv",
+                      "05.39c_wmi_filter_consumer_bindings.csv"
         }
         @{
-            Action  = { Get-WmiEventSubscriptions }
-            Message = "Getting WMI event subscriptions..."
-            Files   = "wmi_event_filters.csv",
-                      "wmi_event_consumers.csv",
-                      "wmi_filter_consumer_bindings.csv"
+            Action  = { param($Paths) Get-ImageFileExecutionOptions -OutputFile $Paths[0] }
+            Message = "05.40_Getting Image File Execution Options..."
+            Files   = "05.40_image_file_execution_options.csv"
         }
         @{
-            Action  = { Get-ImageFileExecutionOptions }
-            Message = "Getting Image File Execution Options..."
-            Files   = "image_file_execution_options.csv"
+            Action  = { param($Paths) Get-StartupFolderItems -OutputFile $Paths[0] }
+            Message = "05.41_Getting startup folder contents..."
+            Files   = "05.41_startup_folder_items.csv"
         }
         @{
-            Action  = { Get-StartupFolderItems }
-            Message = "Getting startup folder contents..."
-            Files   = "startup_folder_items.csv"
+            Action  = { param($Paths) Get-BitsJobs -OutputFile $Paths[0] }
+            Message = "05.42_Getting BITS jobs..."
+            Files   = "05.43_bits_jobs.csv"
         }
         @{
-            Action  = { Get-BitsJobs }
-            Message = "Getting BITS jobs..."
-            Files   = "bits_jobs.csv"
+            Action  = { param($Paths) Get-DownloadedExecutables -OutputFile $Paths[0] }
+            Message = "05.43_Getting downloaded executables..."
+            Files   = "05.43_downloaded_executables.txt"
         }
-        @{
-            Action  = { Get-DownloadedExecutables }
-            Message = "Getting downloaded executables..."
-            Files   = "downloaded_executables.txt"
+		@{
+            Action  = { param($Paths) Get-OpenFilesList -OutputFile $Paths[0] }
+            Message = "05.44_Processing List of Open Files..."
+            Files   = "05.44_list_of_open_files.txt"
         }
     )
 

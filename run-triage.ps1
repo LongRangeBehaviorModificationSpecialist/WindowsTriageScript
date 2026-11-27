@@ -11,7 +11,7 @@
     Add this switch to run a GUI version of this application interface.
 
 .PARAMETER Operator
-    Alias: `-O`
+    Alias: `-Op`
     Examiner's name (required unless -Gui).
 
 .PARAMETER Agency
@@ -73,13 +73,13 @@
     .\run-triage.cmd -GUI
 
 .EXAMPLE
-    run-triage.cmd -DryRun [-Operator|-O [str]] [-Agency|-A [str]] `
+    run-triage.cmd -DryRun [-Operator|-Op [str]] [-Agency|-A [str]] `
         [-CaseNumber|-CN [str|int]] [-Modules|-Mods [str|list]] [-RunEdd|-Edd] `
         [-GetProcesses|-GP] [-CaptureRam|-Ram] [-Archive|-Zip] `
         [-OutputRoot|-Out [str]]
 
 .EXAMPLE
-    run-triage.cmd -DryRun -O "MAS" -A "Agency" -CN "12345" `
+    run-triage.cmd -DryRun -Op "MAS" -A "Agency" -CN "12345" `
         -Edd -GP -Ram -Zip -Modules "001","002","003"
 .EXAMPLE
     run-triage.cmd -Operator "MAS" -Agency "Agency" -CaseNumber "12345" `
@@ -194,10 +194,9 @@ catch {
 $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $IsAdmin -and -not $DryRun) {
-    Show-Message `
-        -Message "CRITICAL ACCESS ERROR: This triage tool must be run as " +
-            "Administrator." `
-        -Level ERROR
+    $AccessErrMsg = "CRITICAL ACCESS ERROR: This triage tool must be run as " +
+            "Administrator."
+    Show-Message -Message $AccessErrMsg -Level ERROR
     exit 2
 }
 
@@ -209,7 +208,7 @@ if ($CaseFile) {
         $Case = Get-Content `
             -LiteralPath $CaseFile `
             -Raw `
-            -ErrorAction Stop | 
+            -ErrorAction Stop |
             ConvertFrom-Json
 
         if (-not $PSBoundParameters.ContainsKey("Operator") -and $Case.Operator) {
@@ -314,10 +313,8 @@ if (-not $Gui) {
 }
 
 if ($DryRun) {
-    Show-Message `
-        -Message "Dry run => nothing was collected." `
-        -Level INFO `
-        -MessageColor DarkGreen
+    $DryRunMsg = "Dry run => nothing was collected."
+    Show-Message -Message $DryRunMsg -Level INFO -MessageColor DarkGreen
     exit 0
 }
 
@@ -343,20 +340,16 @@ try {
         Get-InitialSetup -OutputRoot $OutputRoot
         Disable-PSReadLineHistory
         Write-LaunchContext
-        Show-Message `
-            -Message "Results folder => [ $global:ResultsFolder ]" `
-            -Level INFO `
-            -AddToLog
+        $ResultsFolderMsg = "Results folder => [ $global:ResultsFolder ]"
+        Show-Message -Message $ResultsFolderMsg -Level INFO -AddToLog
         # The command that begins the actual scan
         $null = Invoke-DfirTriageScan -ResultsFolder $global:ResultsFolder @Options
         $Result = $global:TriageResult
     }
 }
 catch {
-    Show-Message `
-        -Message "FATAL ERROR => $( $_.Exception.Message )" `
-        -Level ERROR `
-        -AddToLog
+    $FatalErrMsg = "FATAL ERROR => $( $_.Exception.Message )"
+    Show-Message -Message $FatalErrMsg -Level ERROR -AddToLog
     exit 3
 }
 
